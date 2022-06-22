@@ -1,0 +1,2 @@
+# K8s-Scanner-Benchmark
+A benchmark to compare (compliance) scanners for Kubernetes workloads (i.e. Misconfigurations of workloads and NOT infrastructure security) The tool generates a suite of manifests using cdk8s, where every manifest is considered a single check in the benchmark. The design idea is to have a hardened configurations as the base and then for each check one single misconfiguration is introduced. Scanners are supposed to detect this misconfiguration.
