@@ -1,0 +1,26 @@
+apiVersion: skaffold/v2beta27
+kind: Config
+metadata:
+  name: kalm-benchmark
+deploy:
+  # dont wait for the resources to be ready
+  # this settings seem to have no effect
+  # keep it aroud nontheless if the bug is fixed at some point
+  statusCheck: false
+  # as fallback just wait for 10 seconds per file to override the default 10 minuntes
+  statusCheckDeadlineSeconds: 10
+  kubectl:
+    manifests:
+    # the files starting with '_' are prequisites for other resources
+    - dist/_*.yaml
+    - dist/cm-*.yaml
+    - dist/np-*.yaml
+    - dist/ns-*.yaml
+    - dist/pod-*.yaml
+    - dist/rbac-*.yaml
+    - dist/rel-*.yaml
+    - dist/res-*.yaml
+    - dist/sc-*.yaml
+    - dist/wl-*.yaml
+    # deploy PSPs last so they have no effect on the misconfigured pods which are part of the benchmark
+    - dist/psp-*.yaml

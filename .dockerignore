@@ -1,0 +1,7 @@
+.*
+tox.ini
+Jenkinsfile
+tests
+
+# exclude: streamlit folder should be copied to the image
+!.streamlit

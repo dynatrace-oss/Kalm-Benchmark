@@ -1,0 +1,33 @@
+repos:
+  - repo: "https://github.com/PyCQA/isort"
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: "Sort imports with isort"
+  - repo: "https://github.com/ambv/black"
+    rev: 22.3.0
+    hooks:
+      - id: black
+        name: "Format files with black"
+        language_version: python3.10
+        exclude: manifest_generator/cdk8s_imports
+  - repo: "https://github.com/PyCQA/flake8"
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        name: "Lint files with flake8"
+        exclude: manifest_generator/cdk8s_imports
+  - repo: "https://github.com/pre-commit/pre-commit-hooks"
+    rev: v4.1.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: requirements-txt-fixer
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-xml
+      - id: check-toml
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+exclude: ^data/
