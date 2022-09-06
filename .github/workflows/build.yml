@@ -9,7 +9,10 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_call:
-
+  
+env:
+  BIN_NAME: 'kalm-benchmark.whl'
+  
 permissions:
   contents: read
 
@@ -39,5 +42,50 @@ jobs:
     - name: story binary
       uses: actions/upload-artifact@v3
       with:
-        name: kalm-benchmark.whl
+        name: ${{ env.BIN_NAME }}
         path: dist/kalm_benchmark-*.whl
+  gen-manifests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Dump job context
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
+        run: echo "$JOB_CONTEXT"
+      - name: Dump steps context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: echo "$STEPS_CONTEXT"
+      - name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJson(runner) }}
+        run: echo "$RUNNER_CONTEXT"
+      - name: Dump strategy context
+        env:
+          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
+        run: echo "$STRATEGY_CONTEXT"
+      - name: Dump matrix context
+        env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+        run: echo "$MATRIX_CONTEXT"
+      - uses: actions/download-artifact@v3
+        name: Download Kalm-Benchmark
+        with:
+          name: ${{ env.BIN_NAME }}
+      - name: Display structure of downloaded files
+        run: ls -la
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Kalm-Benchmark
+        run: pip install ${{ env.BIN_NAME }}
