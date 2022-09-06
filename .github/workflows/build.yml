@@ -44,8 +44,24 @@ jobs:
       with:
         name: ${{ env.BIN_NAME }}
         path: dist/kalm_benchmark-*.whl
+  changes: # check which modules were changed
+    runs-on: ubuntu-latest
+    # Set job outputs to values from filter step
+    outputs:
+      manifests: ${{ steps.filter.outputs.backend }}
+    steps:
+    # For pull requests it's not necessary to checkout the code
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          manifests:
+            - '**/manifest_generator/**/*.py'
+  
   gen-manifests:
-    needs: build
+    needs: ["build", "changes"]
+    # generate manifests only if files in the manifests module were changed
+    if: ${{ needs.changes.outputs.manifests == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Dump GitHub context
