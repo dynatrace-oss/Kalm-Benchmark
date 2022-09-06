@@ -40,4 +40,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: kalm-benchmark.whl
-        path: build/
+        path: dist/kalm_benchmark-*.whl
