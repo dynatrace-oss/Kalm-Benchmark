@@ -61,4 +61,3 @@ class Check(Chart):
 
 def determine_check_path(kwargs: dict) -> str:
     return None
-
