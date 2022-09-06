@@ -27,8 +27,9 @@ jobs:
       uses: abatilo/actions-poetry@v2.0.0
       with:
         poetry-version: "1.2"
-    - run: poetry --version
     - name: Install dependencies
       run: poetry install
+    - name: Run Pre-Commit hooks
+      run: poetry run pre-commit
     - name: Test with pytest
       run: poetry run pytest
