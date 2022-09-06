@@ -1,0 +1,27 @@
+name: build-kalm-benchmark
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - *
+    tags:
+      - v*
+
+env:
+  IMAGE: ghcr.io/dynatrace/kalm-benchmark 
+
+jobs:
+  pre-commit-hooks:
+    runs-on: ubuntu-latest
+    container:
+      image: nikolaik/python-nodejs:python3.10-nodejs18
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - uses: Gr1N/setup-poetry@v7
+      - run: poetry --version
