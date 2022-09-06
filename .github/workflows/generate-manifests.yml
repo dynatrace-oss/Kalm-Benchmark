@@ -6,23 +6,26 @@ env:
   binary_name: 'kalm-benchmark.whl'
   
 jobs:
-  call-workflow:
-    uses: dynatrace/kalm-benchmark/.github/workflows/build.yml
-  steps:
-    - uses: actions/download-artifact@v3
-      name: Download Kalm-Benchmark
-      with:
-        name: ${{binary_name}}
-    - name: Display structure of downloaded files
-      run: ls -la
-    - name: Install NodeJS
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: 'npm'
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-    - name: Install Kalm-Benchmark
-      run: pip install ${{binary_name}}
+  build-kalm-benchmark:
+    uses: dynatrace/kalm-benchmark/.github/workflows/build.yml@main
+  gen-manifests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v3
+        name: Download Kalm-Benchmark
+        with:
+          name: ${{binary_name}}
+      - name: Display structure of downloaded files
+        run: ls -la
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Kalm-Benchmark
+        run: pip install ${{binary_name}}
