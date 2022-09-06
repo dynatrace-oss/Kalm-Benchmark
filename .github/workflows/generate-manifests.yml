@@ -8,7 +8,7 @@ on:
       - '**/manifest_generator/**/*.py'  
 
 env:
-  binary_name: 'kalm-benchmark.whl'
+  BIN_NAME: 'kalm-benchmark.whl'
   
 jobs:
   build-kalm-benchmark:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/download-artifact@v3
         name: Download Kalm-Benchmark
         with:
-          name: ${{binary_name}}
+          name: ${{ env.BIN_NAME }}
       - name: Display structure of downloaded files
         run: ls -la
       - name: Install NodeJS
@@ -33,4 +33,4 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install Kalm-Benchmark
-        run: pip install ${{binary_name}}
+        run: pip install ${{ env.BIN_NAME }}
