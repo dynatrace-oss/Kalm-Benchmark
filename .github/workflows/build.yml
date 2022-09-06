@@ -18,15 +18,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install poetry  # has to be installed before python to use caching
+      uses: abatilo/actions-poetry@v2.0.0
+      with:
+        poetry-version: "1.2"
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
         cache: 'poetry'
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2.0.0
-      with:
-        poetry-version: "1.2"
     - name: Install dependencies
       run: poetry install
     - name: Run Pre-Commit hooks
