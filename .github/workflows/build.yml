@@ -4,8 +4,8 @@
 name: build
 
 on:
-  push:
-    branches: [ "main" ]
+#   push:
+#     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   workflow_call:
@@ -83,26 +83,26 @@ jobs:
           manifests:
             - '**/manifest_generator/**/*.py'
   
-  gen-manifests:
-    needs: ["build", "changes"]
-    # generate manifests only if files in the manifests module were changed
-    if: ${{ needs.changes.outputs.manifests == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v3
-        name: Download Kalm-Benchmark
-        with:
-          name: ${{ env.BIN_NAME }}
-      - name: Display structure of downloaded files
-        run: ls -la
-      - name: Install NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: 'npm'
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - name: Install Kalm-Benchmark
-        run: pip install ${{ env.BIN_NAME }}
+#   gen-manifests:
+#     needs: ["build", "changes"]
+#     # generate manifests only if files in the manifests module were changed
+#     if: ${{ needs.changes.outputs.manifests == 'true' }}
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/download-artifact@v3
+#         name: Download Kalm-Benchmark
+#         with:
+#           name: ${{ env.BIN_NAME }}
+#       - name: Display structure of downloaded files
+#         run: ls -la
+#       - name: Install NodeJS
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 18
+#           cache: 'npm'
+#       - name: Set up Python 3.10
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: "3.10"
+#       - name: Install Kalm-Benchmark
+#         run: pip install ${{ env.BIN_NAME }}
