@@ -2,11 +2,12 @@ name: Generate Benchmark manifests
 
 on: 
   workflow_dispatch:
-  push:
-    branches: ["main"]
-    paths:
-      #regenerate manifests whenever the IaC was modified
-      - '**/manifest_generator/**/*.py'  
+  # make it only a manual workflow for now
+  # push:
+  #   branches: ["main"]
+  #   paths:
+  #     #regenerate manifests whenever the IaC was modified
+  #     - '**/manifest_generator/**/*.py'  
 
 env:
   BIN_NAME: 'kalm-benchmark.whl'
