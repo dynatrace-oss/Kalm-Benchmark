@@ -4,15 +4,15 @@
 name: build
 
 on:
-#   push:
-#     branches: [ "main" ]
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   workflow_call:
-  
+
 env:
   BIN_NAME: 'kalm-benchmark.whl'
-  
+
 permissions:
   contents: read
 

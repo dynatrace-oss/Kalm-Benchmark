@@ -7,7 +7,6 @@ Directory Structure
 ```
 .
 ├── data                                # directory with scanner results
-├── dist                                # (generated) the target directory for generated manifests
 │
 ├── kalm_benchmark                      # source code of the package
 │   ├── cli.py                          # Command line interface
@@ -24,6 +23,7 @@ Directory Structure
 │   │   └── workload                    # definition of workload related manifests
 │   └── ui                              # module for the visualization of the evaluation
 │
+├── manifests                                # (generated) the target directory for generated manifests
 ├── notebooks                           # folder containing all notebooks used for the analysis
 │── tests                               # all unit-tests mirroring source code structure
 └── tox.ini                             # tox file with settings for flake8 and running tox

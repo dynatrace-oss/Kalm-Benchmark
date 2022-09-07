@@ -35,7 +35,7 @@ ASSIGNED_VALUE_PATTERN = re.compile(r"=[\w-]*")
 QUOTED_PATH_PATTERN = re.compile(r".*'(.*?)'.*")
 
 
-MANIFESTS_DIR = Path("dist/")
+MANIFESTS_DIR = Path("manifests/")
 
 
 class Scanner(ScannerBase):

@@ -262,22 +262,22 @@ class TestFixPathToCurrentEnvironment:
     def test_paths_are_absolute(self):
         cwd = os.getcwd()
         file_name = "just-a-file.yaml"
-        file_path = Path(f"{cwd}/dist/{file_name}")
+        file_path = Path(f"{cwd}/manifests/{file_name}")
         res = fix_path_to_current_environment(file_path)
-        assert res == str(Path(f"dist/{file_name}"))
+        assert res == str(Path(f"manifests/{file_name}"))
 
     def test_paths_not_relative_to_cwd(self, fake_fs):
         file_name = "just-a-file.yaml"
-        file_path = f"/usr/src/app/dist/{file_name}"
-        real_file_path = Path(f"{fake_fs.CWD}/dist/bla/{file_name}")
+        file_path = f"/usr/src/app/manifests/{file_name}"
+        real_file_path = Path(f"{fake_fs.CWD}/manifests/bla/{file_name}")
         fake_fs.create_file(real_file_path)
         res = fix_path_to_current_environment(file_path)
         assert res == str(real_file_path)
 
     def test_file_is_absolute_ref_is_relative(self, fake_fs):
         file_name = "just-a-file.yaml"
-        file_path = f"/usr/src/app/dist/{file_name}"
-        real_file_path = Path(f"{fake_fs.CWD}/dist/bla/{file_name}")
+        file_path = f"/usr/src/app/manifests/{file_name}"
+        real_file_path = Path(f"{fake_fs.CWD}/manifests/bla/{file_name}")
         fake_fs.create_file(real_file_path)
         res = fix_path_to_current_environment(file_path)
         assert res == str(real_file_path)
@@ -285,19 +285,19 @@ class TestFixPathToCurrentEnvironment:
 
 class TestGetDifferenceInParentPath:
     def test_paths_have_overlapping_subfolder(self):
-        p1 = "/usr/src/app/dist/file.yaml"
-        p2 = "/home/user/dist/file.yaml"
+        p1 = "/usr/src/app/manifests/file.yaml"
+        p2 = "/home/user/manifests/file.yaml"
         old, new = get_difference_in_parent_path(p1, p2)
         assert old == str(Path("/usr/src/app"))
         assert new == str(Path("/home/user"))
 
     def test_same_paths_yields_none(self):
-        p = "/usr/src/app/dist/file.yaml"
+        p = "/usr/src/app/manifests/file.yaml"
         res = get_difference_in_parent_path(p, p)
         assert res is None
 
     def test_paths_have_no_overlap(self):
-        p1 = "/usr/src/app/dist/file.yaml"
+        p1 = "/usr/src/app/manifests/file.yaml"
         p2 = "/home/user/totally/different/thingy.json"
         old, new = get_difference_in_parent_path(p1, p2)
         assert old == str(Path(p1))

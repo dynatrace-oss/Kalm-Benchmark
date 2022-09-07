@@ -16,7 +16,7 @@ app = typer.Typer(name="kalm-benchmark", no_args_is_help=True)
 @app.command()
 def generate(
     out_dir: Path = typer.Option(
-        "dist", "--out", "-o", help="The output folder of the generated manifests. Defaults to 'dist'"
+        "manifests", "--out", "-o", help="The output folder of the generated manifests. Defaults to 'manifests'"
     ),
     file_per_check: bool = typer.Option(
         True,
@@ -34,7 +34,7 @@ def generate(
     ),
 ) -> None:
     """
-    Generate a pre-configured set of manifests and place them in the `dist` folder.
+    Generate a pre-configured set of manifests and place them in the specified folder.
     """
 
     if overview:
