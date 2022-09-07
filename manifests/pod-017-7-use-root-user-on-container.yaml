@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: false
+metadata:
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: POD-017-7
+  name: pod-017-7-use-root-user-on-container-dedicated-sa
+  namespace: kalm-benchmark
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    check_path: .spec.securityContext.runAsNonRoot|.spec.securityContext.runAsUser|.spec.containers[].securityContext.runAsNonRoot|.spec.containers[].securityContext.runAsUser
+    description: Having neither runAsNonRoot nor `runAsUser>1000` means a user has elevated privileges
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: POD-017-7
+  name: pod-017-7-use-root-user-on-container
+  namespace: kalm-benchmark
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: kalm-benchmark
+      check: POD-017-7
+  template:
+    metadata:
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
+      labels:
+        app.kubernetes.io/part-of: kalm-benchmark
+        check: POD-017-7
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 1
+      automountServiceAccountToken: false
+      containers:
+        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+          name: app
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+          resources:
+            limits:
+              cpu: 1m
+              ephemeral-storage: 1Mi
+              memory: 1Mi
+            requests:
+              cpu: 1m
+              ephemeral-storage: 1Mi
+              memory: 1Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 31337
+            runAsNonRoot: false
+            seLinuxOptions:
+              level: s0:c123,c456
+            seccompProfile:
+              type: RuntimeDefault
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      priorityClassName: default-priority
+      securityContext:
+        runAsGroup: 31337
+        seLinuxOptions:
+          level: s0:c123,c456
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: pod-017-7-use-root-user-on-container-dedicated-sa

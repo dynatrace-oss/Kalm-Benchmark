@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].resources|Role.rules[].resources|.rules[].resources
+    description: Attackers can run malicious commands in containers in the cluster using exec command
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-006-1
+  name: rbac-006-1-pod-exec
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create

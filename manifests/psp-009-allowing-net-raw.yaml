@@ -1,0 +1,40 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
+    check_path: .spec.allowedCapabilities
+    description: container group should not have elevated privileges
+    expected: alert
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: PSP-009
+  name: psp-009-allowing-net-raw
+  namespace: kalm-benchmark
+spec:
+  allowPrivilegeEscalation: false
+  allowedCapabilities:
+    - NET_RAW
+  allowedHostPaths:
+    - pathPrefix: /foo/none/allowed
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  requiredDropCapabilities:
+    - ALL
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: MustRunAs
+    seLinuxOptions:
+      level: s0:c123,c456
+  supplementalGroups:
+    rule: RunAsAny

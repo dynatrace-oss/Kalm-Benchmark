@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].resources|Role.rules[].resources|.rules[].resources
+    description: Allowing wildcards violates principle of least privilege
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-003-2
+  name: rbac-003-2-cluster-all-resource-reader
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - "*"
+    verbs:
+      - get

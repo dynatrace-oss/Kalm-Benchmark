@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
+    description: Attackers can use disclosed information to plan their next steps
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-012-5
+  name: rbac-012-5-cluster-role-disclose-info
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - pods
+      - services
+      - deployments
+      - replicasets
+      - daemonsets
+      - statefulsets
+      - jobs
+      - cronjobs
+    verbs:
+      - list

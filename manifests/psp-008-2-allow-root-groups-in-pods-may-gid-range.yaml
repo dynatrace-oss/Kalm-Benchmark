@@ -1,0 +1,43 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
+    check_path: .spec.runAsGroup
+    description: container group should not have elevated privileges
+    expected: alert
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: PSP-008-2
+  name: psp-008-2-allow-root-groups-in-pods-may-gid-range
+  namespace: kalm-benchmark
+spec:
+  allowPrivilegeEscalation: false
+  allowedHostPaths:
+    - pathPrefix: /foo/none/allowed
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  requiredDropCapabilities:
+    - ALL
+  runAsGroup:
+    ranges:
+      - max: 65535
+        min: 0
+    rule: MayRunAs
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: MustRunAs
+    seLinuxOptions:
+      level: s0:c123,c456
+  supplementalGroups:
+    rule: RunAsAny

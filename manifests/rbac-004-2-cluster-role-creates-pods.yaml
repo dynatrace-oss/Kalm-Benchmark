@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources
+    description: The ability to create pods in a cluster opens up possibilities for privilege escalation
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-004-2
+  name: rbac-004-2-cluster-pod-creator
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pod
+    verbs:
+      - create

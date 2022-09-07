@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].resources|Role.rules[].resources|.rules[].resources
+    description: Attackers can open a backdoor communication channel directly to the sockets inside target container bypassing network security restrictions
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-008-5
+  name: rbac-008-5-cluster-pod-forward
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods/portforward
+    verbs:
+      - create

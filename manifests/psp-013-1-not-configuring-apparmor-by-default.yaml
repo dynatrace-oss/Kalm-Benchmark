@@ -1,0 +1,37 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    check_path: .metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName.metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]
+    description: Not hardening a linux system can increase the impact of a compromise
+    expected: alert
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: PSP-013-1
+  name: psp-013-1-not-configuring-apparmor-by-default
+  namespace: kalm-benchmark
+spec:
+  allowPrivilegeEscalation: false
+  allowedHostPaths:
+    - pathPrefix: /foo/none/allowed
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  requiredDropCapabilities:
+    - ALL
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: MustRunAs
+    seLinuxOptions:
+      level: s0:c123,c456
+  supplementalGroups:
+    rule: RunAsAny

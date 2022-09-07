@@ -1,0 +1,38 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
+    check_path: .spec.allowPrivilegeEscalation
+    description: Allowing admission of privileged containers is a risk as they can performa almost every action that can be performed directly on the host
+    expected: alert
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: PSP-002-1
+  name: psp-002-1-allow-privilege-escalation-in-containers
+  namespace: kalm-benchmark
+spec:
+  allowPrivilegeEscalation: true
+  allowedHostPaths:
+    - pathPrefix: /foo/none/allowed
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  requiredDropCapabilities:
+    - ALL
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: MustRunAs
+    seLinuxOptions:
+      level: s0:c123,c456
+  supplementalGroups:
+    rule: RunAsAny

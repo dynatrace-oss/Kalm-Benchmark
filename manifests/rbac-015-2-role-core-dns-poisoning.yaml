@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].verbs|Role.rules[].verbs|.rules[].verbs
+    description: "an attacker can poison the DNS server if he can modify configuration of the coreDNS server "
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-015-2
+  name: rbac-015-2-role-poison-dns
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - patch

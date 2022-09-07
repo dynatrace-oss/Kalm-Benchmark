@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].verbs|Role.rules[].verbs|.rules[].verbs
+    description: The impersonate privilege allows a subject to impersonate other users gaining their rights to the cluster
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-009-1
+  name: rbac-009-1-role-bind-default-sa
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - users
+      - groups
+      - serviceaccounts
+    verbs:
+      - impersonate

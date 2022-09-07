@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+data:
+  aws_access_key_id: PRIVATE KEY eyJhbGciO JWT Bearer
+  aws_secret_access_key: PRIVATE KEY eyJhbGciO JWT Bearer
+  azure_batch_account: PRIVATE KEY eyJhbGciO JWT Bearer
+  azure_batch_key: PRIVATE KEY eyJhbGciO JWT Bearer
+  azure_batchai_storage_account: PRIVATE KEY eyJhbGciO JWT Bearer
+  azure_batchai_storage_key: PRIVATE KEY eyJhbGciO JWT Bearer
+  bearer: PRIVATE KEY eyJhbGciO JWT Bearer
+  credential: PRIVATE KEY eyJhbGciO JWT Bearer
+  jwt: PRIVATE KEY eyJhbGciO JWT Bearer
+  key: PRIVATE KEY eyJhbGciO JWT Bearer
+  password: PRIVATE KEY eyJhbGciO JWT Bearer
+  pwd: PRIVATE KEY eyJhbGciO JWT Bearer
+  secret: PRIVATE KEY eyJhbGciO JWT Bearer
+  token: PRIVATE KEY eyJhbGciO JWT Bearer
+metadata:
+  annotations:
+    check_path: .data.aws_access_key_id|.data.aws_secret_access_key|.data.azure_batchai_storage_account|.data.azure_batchai_storage_key|.data.azure_batch_account|.data.azure_batch_key|.data.secret|.data.key|.data.password|.data.pwd|.data.token|.data.jwt|.data.bearer|.data.credential
+    description: Attackers can retrieve and use sensitive information provided via config maps
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: CM-001
+  name: cm-001-sensitive-key-referenced-in-configmap
+  namespace: kalm-benchmark

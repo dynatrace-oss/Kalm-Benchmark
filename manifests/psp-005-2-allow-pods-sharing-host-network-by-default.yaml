@@ -1,0 +1,37 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  annotations:
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
+    check_path: .spec.hostNetwork
+    description: Containers should be isolated from the host machine as much as possible
+    expected: alert
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default,runtime/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: PSP-005-2
+  name: psp-005-2-allow-pods-sharing-host-network-by-default
+  namespace: kalm-benchmark
+spec:
+  allowPrivilegeEscalation: false
+  allowedHostPaths:
+    - pathPrefix: /foo/none/allowed
+      readOnly: true
+  fsGroup:
+    rule: RunAsAny
+  hostIPC: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  requiredDropCapabilities:
+    - ALL
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: MustRunAs
+    seLinuxOptions:
+      level: s0:c123,c456
+  supplementalGroups:
+    rule: RunAsAny

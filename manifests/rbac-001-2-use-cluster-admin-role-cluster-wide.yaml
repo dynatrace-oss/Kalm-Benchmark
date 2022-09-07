@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    check_path: RoleBinding.roleRef.name|ClusterRoleBinding.roleRef.name|.roleRef.name
+    description: The role cluster-admin provides wide-ranging powers over the environment and should be used only where and when needed
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-001-2
+  name: rbac-001-2-use-cluster-admin-role-cluster-wide-rb-cluster-admin
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - apiGroup: ""
+    kind: Group
+    name: rbac-001-2-use-cluster-admin-role-cluster-wide-sa

@@ -1,0 +1,10 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+description: Default priority class for all pods
+globalDefault: true
+metadata:
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+  name: default-priority
+preemptionPolicy: Never
+value: 1000

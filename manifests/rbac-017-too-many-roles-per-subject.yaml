@@ -1,0 +1,409 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-0-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-0-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-0-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-1-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-1-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-1-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-2-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-2-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-2-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-3-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-3-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-3-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-4-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-4-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-4-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-5-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-5-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-5-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-6-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-6-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-6-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-7-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-7-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-7-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-8-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-8-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-8-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-too-many-roles-per-subject-rb-rbac-017-role-9-too-much
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rbac-017-role-9-too-much
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: poly-role-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: None
+    description: ""
+    expected: alert
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-017
+  name: rbac-017-role-9-too-much
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
