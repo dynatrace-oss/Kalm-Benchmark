@@ -21,7 +21,7 @@ def show_scan_buttons(tool: ScannerBase) -> None:
             gen = tool.scan_cluster()
             source = "cluster"
         if tool.can_scan_manifests:
-            path = Path(st.text_input("Path to manifest(s):", "dist"))
+            path = Path(st.text_input("Path to manifest(s):", "manifests"))
             if not path.exists():
                 st.error(
                     "Invalid path!\n\nPlease ensure the manifests have been generated and are located in this folder!"

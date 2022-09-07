@@ -60,14 +60,14 @@ def generate_manifests(app: App) -> list[Chart]:
     return app.charts
 
 
-def create_manifests(out_dir: Path | str | None = None, file_per_check: bool = True) -> int:
+def create_manifests(out_dir: Path | str | None = "manifests", file_per_check: bool = True) -> int:
     """
     Generates all preconfigured manifests and places them in the output directory.
     In total, one file per check and several auxiliary manifests will be created.
     The name of the generated files is made up of the check id, name provided in the check
     and the general output file extension.
     :param out_dir: the folder where the generated manifests will be written to.
-    Defaults to cdk8s default which is the `dist` folder in the working directory.
+    Defaults to the `manifests` folder in the working directory.
     :param file_per_check: flag specifying if a dedicated file will be created per check.
         If false, all checks will be written to a single file.
     :return: the number of generated files

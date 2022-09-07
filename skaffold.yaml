@@ -12,15 +12,15 @@ deploy:
   kubectl:
     manifests:
     # the files starting with '_' are prequisites for other resources
-    - dist/_*.yaml
-    - dist/cm-*.yaml
-    - dist/np-*.yaml
-    - dist/ns-*.yaml
-    - dist/pod-*.yaml
-    - dist/rbac-*.yaml
-    - dist/rel-*.yaml
-    - dist/res-*.yaml
-    - dist/sc-*.yaml
-    - dist/wl-*.yaml
+    - manifests/_*.yaml
+    - manifests/cm-*.yaml
+    - manifests/np-*.yaml
+    - manifests/ns-*.yaml
+    - manifests/pod-*.yaml
+    - manifests/rbac-*.yaml
+    - manifests/rel-*.yaml
+    - manifests/res-*.yaml
+    - manifests/sc-*.yaml
+    - manifests/wl-*.yaml
     # deploy PSPs last so they have no effect on the misconfigured pods which are part of the benchmark
-    - dist/psp-*.yaml
+    - manifests/psp-*.yaml

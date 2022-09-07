@@ -90,7 +90,7 @@ To generate manifests use the `generate` command:
 poetry run cli generate [--out <target directory>]
 ```
 
-These manifests form the basis for the benchmark and will be placed in the directory specified with the `--out` argument. The location defaults to the `dist` folder in the working directory.
+These manifests form the basis for the benchmark and will be placed in the directory specified with the `--out` argument. The location defaults to the `manifests` folder in the working directory.
 
 
 
@@ -113,10 +113,10 @@ poetry run cli scan <tool> [-c | -f <target file or folder>]
 
 ❗️ **Important** executing a scan requires the respective tool to be installed on the system!
 
-E.g., to scan manifests with the tool `dummy` located in the `dist` folder execute:
+E.g., to scan manifests with the tool `dummy` located in the `manifests` folder execute:
 
 ```shell
-poetry run cli scan dummy -f dist
+poetry run cli scan dummy -f manifests
 ```
 
 In order to save the results, add the `-o` flag with the name of the destination folder:

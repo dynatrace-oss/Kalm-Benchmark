@@ -8,7 +8,7 @@ However, for more comfort [Skaffold](https://skaffold.dev) is supported to deplo
 
 ## 🐣 Setup
 
-1. Make sure that all manifests have been generated and placed in the `dist` folder
+1. Make sure that all manifests have been generated and placed in the `manifests` folder
 2. Create a cluster
    - for [kind](https://kind.sigs.k8s.io) the following command can be used:
      ```sh
