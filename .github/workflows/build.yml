@@ -5,7 +5,6 @@ name: build
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   workflow_call:
@@ -52,9 +51,9 @@ jobs:
       run: poetry run pre-commit
     - name: Test with pytest
       run: poetry run pytest
-    - name: build artifact
+    - name: Build artifact
       run: poetry build -f wheel
-    - name: story binary
+    - name: Store binary
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.BIN_NAME }}

@@ -1,0 +1,137 @@
+
+                   `-/osso/-`                    
+                `-/osssssssssso/-`                
+            .:+ssssssssssssssssssss+:.            
+        .:+ssssssssssssssssssssssssssss+:.        
+     :osssssssssssssssssssssssssssssssssssso:     
+    /sssssssssssss+::osssssso::+sssssssssssss+    
+   `sssssssssso:--..-`+ssss+ -..--:ossssssssss`   
+   /sssssssss:.+ssss/ /ssss/ /ssss+.:sssssssss/   
+  `ssssssss:.+sssssss./ssss/`sssssss+.:ssssssss`  
+  :ssssss/`-///+oss+/`-////-`/+sso+///-`/ssssss/  
+  sssss+.`.-:-:-..:/`-++++++-`/:..-:-:-.`.+sssss` 
+ :ssso..://:-`:://:.. osssso ..://::`-://:..osss: 
+ osss`-/-.`-- :.`.-/. /ssss/ ./-.`-: --`.-/-`osso 
+-sss:`//..-`` .`-`-//`.----. //-`-`. ``-..//.:sss-
+osss:.::`...`- ..`.:/`+ssss+`/:``.. -`...`::.:ssso
++ssso`:/:`--`:`--`/:-`ssssss`-//`--`:`--`:/:`osss+
+ :sss+`-//.`...`-//..osssssso..//-`...`.//-`+sss: 
+  `+sss/...::/::..-+ssssssssss+-..::/::.../sss+`  
+    -ossss+/:::/+ssssssssssssssss+/:::/+sssso-    
+      :ssssssssssssssssssssssssssssssssssss/      
+       `+ssssssssssssssssssssssssssssssss+`       
+         -osssssssssssssssssssssssssssss-         
+          `/ssssssssssssssssssssssssss/`       
+    
+               KubiScan version 1.5
+               Author: Eviatar Gerzi
+    
++----------------------------+
+|Risky Roles and ClusterRoles|
++----------+-------------+----------------+---------------------------------------------+-----------------------------------+
+| Priority | Kind        | Namespace      | Name                                        | Creation Time                     |
++----------+-------------+----------------+---------------------------------------------+-----------------------------------+
+| [0;31;49mCRITICAL[0;47;49m | Role        | kalm-benchmark | rbac-002-1-secret-read-get                  | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kalm-benchmark | rbac-002-2-secret-read-list                 | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kalm-benchmark | rbac-003-1-all-resource-reader              | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kalm-benchmark | rbac-009-1-role-bind-default-sa             | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kalm-benchmark | rbac-012-1-role-disclose-info               | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kalm-benchmark | rbac-012-2-role-disclose-info               | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kube-system    | system:controller:bootstrap-signer          | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | Role        | kube-system    | system:controller:token-cleaner             | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | admin                                       | Tue Aug 16 12:55:28 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | cluster-admin                               | Tue Aug 16 12:55:28 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | edit                                        | Tue Aug 16 12:55:28 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | local-path-provisioner-role                 | Tue Aug 16 12:55:33 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | rbac-002-4-secret-read-get                  | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | rbac-002-5-secret-read-list                 | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | rbac-003-2-cluster-all-resource-reader      | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | rbac-009-2-cluster-role-bind-default-sa     | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | rbac-012-4-cluster-role-disclose-info       | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | rbac-012-5-cluster-role-disclose-info       | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;47;49mLOW[0;47;49m      | ClusterRole | None           | system:aggregate-to-admin                   | Tue Aug 16 12:55:28 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:aggregate-to-edit                    | Tue Aug 16 12:55:28 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:cronjob-controller        | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:daemon-set-controller     | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:deployment-controller     | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:controller:expand-controller         | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:controller:generic-garbage-collector | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:controller:horizontal-pod-autoscaler | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:job-controller            | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:controller:namespace-controller      | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:controller:persistent-volume-binder  | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:replicaset-controller     | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:replication-controller    | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:controller:resourcequota-controller  | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRole | None           | system:controller:statefulset-controller    | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:kube-controller-manager              | Tue Aug 16 12:55:28 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRole | None           | system:node                                 | Tue Aug 16 12:55:28 2022 (0 days) |
++----------+-------------+----------------+---------------------------------------------+-----------------------------------+
+
+
++------------------------------------------+
+|Risky RoleBindings and ClusterRoleBindings|
++----------+--------------------+----------------+-----------------------------------------------------------------+-----------------------------------+
+| Priority | Kind               | Namespace      | Name                                                            | Creation Time                     |
++----------+--------------------+----------------+-----------------------------------------------------------------+-----------------------------------+
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | cluster-admin                                                   | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | local-path-provisioner-bind                                     | Tue Aug 16 12:55:33 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | rbac-001-2-use-cluster-admin-role-cluster-wide-rb-cluster-admin | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:cronjob-controller                            | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:daemon-set-controller                         | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:deployment-controller                         | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:controller:expand-controller                             | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:controller:generic-garbage-collector                     | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:controller:horizontal-pod-autoscaler                     | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:job-controller                                | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:controller:namespace-controller                          | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:controller:persistent-volume-binder                      | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:replicaset-controller                         | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:replication-controller                        | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:controller:resourcequota-controller                      | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;93;49mHIGH[0;47;49m     | ClusterRoleBinding | None           | system:controller:statefulset-controller                        | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:kube-controller-manager                                  | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | ClusterRoleBinding | None           | system:node                                                     | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | RoleBinding        | kalm-benchmark | rbac-001-1-use-cluster-admin-role-rb-cluster-admin              | Tue Aug 16 12:56:06 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | RoleBinding        | kube-public    | system:controller:bootstrap-signer                              | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | RoleBinding        | kube-system    | system:controller:bootstrap-signer                              | Tue Aug 16 12:55:29 2022 (0 days) |
+| [0;31;49mCRITICAL[0;47;49m | RoleBinding        | kube-system    | system:controller:token-cleaner                                 | Tue Aug 16 12:55:29 2022 (0 days) |
++----------+--------------------+----------------+-----------------------------------------------------------------+-----------------------------------+
+
+
++-----------+
+|Risky Users|
++----------+----------------+--------------------+---------------------------------------------------+
+| Priority | Kind           | Namespace          | Name                                              |
++----------+----------------+--------------------+---------------------------------------------------+
+| [0;31;49mCRITICAL[0;47;49m | Group          | None               | system:masters                                    |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | local-path-storage | local-path-provisioner-service-account            |
+| [0;31;49mCRITICAL[0;47;49m | Group          | None               | rbac-001-2-use-cluster-admin-role-cluster-wide-sa |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | cronjob-controller                                |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | daemon-set-controller                             |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | deployment-controller                             |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | expand-controller                                 |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | generic-garbage-collector                         |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | horizontal-pod-autoscaler                         |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | job-controller                                    |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | namespace-controller                              |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | persistent-volume-binder                          |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | replicaset-controller                             |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | replication-controller                            |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | resourcequota-controller                          |
+| [0;93;49mHIGH[0;47;49m     | ServiceAccount | kube-system        | statefulset-controller                            |
+| [0;31;49mCRITICAL[0;47;49m | User           | None               | system:kube-controller-manager                    |
+| [0;31;49mCRITICAL[0;47;49m | Group          | None               | rbac-001-1-use-cluster-admin-role-sa              |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | bootstrap-signer                                  |
+| [0;31;49mCRITICAL[0;47;49m | ServiceAccount | kube-system        | token-cleaner                                     |
++----------+----------------+--------------------+---------------------------------------------------+
+
+
++----------------+
+|Risky Containers|
++----------+---------+-----------+---------------+-------------------------+--------------------+
+| Priority | PodName | Namespace | ContainerName | ServiceAccountNamespace | ServiceAccountName |
++----------+---------+-----------+---------------+-------------------------+--------------------+
++----------+---------+-----------+---------------+-------------------------+--------------------+
+
+
