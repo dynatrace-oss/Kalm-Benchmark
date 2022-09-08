@@ -9,7 +9,7 @@ warnings.filterwarnings(
 )
 
 from kalm_benchmark.ui.constants import Page, QueryParam, SessionKeys
-from kalm_benchmark.ui.pages import overview, scanner_details
+from kalm_benchmark.ui._pages import overview, scanner_details
 from kalm_benchmark.ui.utils import get_query_param, init
 
 PageType = TypeVar("PageType")
