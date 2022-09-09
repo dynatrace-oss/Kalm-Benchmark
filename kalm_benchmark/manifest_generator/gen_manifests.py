@@ -3,6 +3,8 @@ from pathlib import Path
 from cdk8s import App, Chart, YamlOutputType
 from constructs import Construct
 
+from kalm_benchmark.manifest_generator.check import Meta
+
 from .cdk8s_imports import k8s
 from .constants import MAIN_NS, UNRESTRICTED_NS
 from .gen_namespaces import (
@@ -10,7 +12,7 @@ from .gen_namespaces import (
     gen_namespace_resource_checks,
     gen_network_policy_checks,
 )
-from .pod_security_policy import gen_psps
+from .pod_security_policy import gen_psps, gen_pod_security_admission_checks
 from .rbac import gen_rbac
 from .workload.gen_workloads import gen_workloads
 
@@ -29,7 +31,7 @@ class DefaultLowPriorityClass(Chart):
         """
         super().__init__(scope, f"_{name}")
 
-        metadata = k8s.ObjectMeta(name=name, labels={"app.kubernetes.io/part-of": "kalm-benchmark"})
+        metadata = Meta(name=name)
 
         k8s.KubePriorityClass(
             self,
@@ -53,6 +55,7 @@ def generate_manifests(app: App) -> list[Chart]:
     SetupBenchmarkNamespace(app, UNRESTRICTED_NS, with_resource_restrictions=False)
     gen_namespace_resource_checks(app)
     gen_psps(app)
+    gen_pod_security_admission_checks(app)
     gen_rbac(app)
     gen_network_policy_checks(app)
     gen_workloads(app, MAIN_NS, UNRESTRICTED_NS)
