@@ -357,7 +357,7 @@ def style_results(df: pd.DataFrame) -> "pd.Styler":
 
     # make ID's bold
     df_styled = (
-        df.style.apply(format_color_groups, axis=None)
+        df.fillna('-').style.apply(format_color_groups, axis=None)
         .applymap(_bold_id, subset=[Col.CheckId, Col.ScannerCheckId])
         .applymap(_colorize_status, subset=[Col.Expected, Col.Got])
         .applymap(_colorize_result_type, subset=[Col.ResultType])
