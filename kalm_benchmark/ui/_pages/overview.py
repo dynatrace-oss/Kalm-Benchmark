@@ -19,18 +19,19 @@ from kalm_benchmark.ui.utils import (
 
 @dataclass
 class ScannerInfo:
+    # note: the order of the fields dictates the initial order of the columns in the UI
     name: str
     image: str | None = None
     score: float = 0.0
     coverage: float = 0.0
-    cat_misc: str = "0/0"
-    cat_network: str = "0/0"
     cat_pod_security: str = "0/0"
-    cat_PSP: str = "0/0"
     cat_RBAC: str = "0/0"
-    cat_secret_management: str = "0/0"
+    cat_network: str = "0/0"
+    cat_PSP: str = "0/0"
     cat_supply_chain: str = "0/0"
+    cat_secret_management: str = "0/0"
     cat_workload: str = "0/0"
+    cat_misc: str = "0/0"
     can_scan_manifests: bool = False
     can_scan_cluster: bool = False
     ci_mode: bool = False
