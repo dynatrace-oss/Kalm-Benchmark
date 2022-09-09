@@ -1,3 +1,4 @@
+from typing import Optional
 from cdk8s import Chart
 from constructs import Construct
 
@@ -22,6 +23,7 @@ class Check(Chart):
         check_path: str | list[str] | None = None,
         forwarded_kwargs: dict | None = None,  # don't process other kwargs for the resources
         namespace: str = MAIN_NS,
+        annotations: Optional[dict | bool] = True,
     ):
         """
         Initialize a new check with the specified meta information
@@ -40,25 +42,46 @@ class Check(Chart):
         # avoid duplicate check id prefix, if name already is constructed outside
         _name = f"{check_id}-{name}" if not name.startswith(check_id.lower()) else name
         self.name = sanitize_name(_name)
-        labels = {CheckKey.CheckId: check_id, "app.kubernetes.io/part-of": "kalm-benchmark"}
+        labels = {CheckKey.CheckId: check_id}
 
         if check_path is None:
             check_path = determine_check_path(forwarded_kwargs)
         elif isinstance(check_path, list):
             check_path = "|".join(check_path)
-        annotations = {CheckKey.Expect: expect, CheckKey.CheckPath: check_path}
-        if descr is not None:
-            annotations[CheckKey.Description] = descr
 
-        self.meta = k8s.ObjectMeta(
+        if annotations is not None:
+            annotations = {CheckKey.Expect: expect, CheckKey.CheckPath: check_path}
+            if descr is not None:
+                annotations[CheckKey.Description] = descr
+
+            # ensure annotations are only strings as expected by cdk8s
+            annotations = {str(k): str(v) for k, v in annotations.items()}
+
+        self.meta = Meta(
             name=self.name,
             labels=labels,
-            annotations={str(k): str(v) for k, v in annotations.items()},
+            annotations=annotations,
         )
 
-        super().__init__(scope, self.name, namespace=namespace, labels=labels)
+        super().__init__(scope, self.name, namespace=namespace, labels=self.meta.labels)
+
+
+class Meta(k8s.ObjectMeta):
+    def __init__(
+        self,
+        *,
+        annotations: Optional[dict] = None,
+        name: Optional[str] = None,
+        labels: Optional[dict] = None,
+        namespace: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        if labels is None:
+            labels = {}
+        labels = {"app.kubernetes.io/part-of": "kalm-benchmark", **labels}
+
+        super().__init__(name=name, annotations=annotations, labels=labels, namespace=namespace, **kwargs)
 
 
 def determine_check_path(kwargs: dict) -> str:
     return None
-

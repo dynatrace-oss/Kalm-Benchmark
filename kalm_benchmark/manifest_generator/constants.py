@@ -69,6 +69,18 @@ INSECURE_CAPABILITIES = [
 ]
 
 
+class PodSecurityLevel(StrEnum):
+    Privileged = "privileged"
+    Baseline = "baseline"
+    Restricted = "restricted"
+
+
+class PodSecurityAdmissionMode(StrEnum):
+    Enforce = "enforce"
+    Audit = "audit"
+    Warn = "warn"
+
+
 class AppArmorProfile(StrEnum):
     # https://kubernetes.io/docs/tutorials/security/apparmor/#podsecuritypolicy-annotations
     Unconfined = "unconfined"  # disables AppArmor

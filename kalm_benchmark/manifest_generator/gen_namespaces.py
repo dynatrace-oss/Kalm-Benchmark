@@ -1,12 +1,87 @@
+from typing import Optional
 from cdk8s import App, Chart
 from constructs import Construct
 
 from .cdk8s_imports import k8s
-from .check import Check
-from .constants import CheckStatus
+from .check import Check, Meta
+from .constants import CheckStatus, PodSecurityAdmissionMode, PodSecurityLevel
 from .network_policy import NetworkPolicy
 from .utils import sanitize_name
 from .workload.pod_base import Workload
+
+
+class Namespace(Construct):
+    def __init__(
+        self, scope: Construct, name: str, meta: k8s.ObjectMeta | None = None, labels: dict | None = None, **kwargs
+    ) -> None:
+        super().__init__(scope, name)
+        if labels is not None:
+            other_meta_values = {k: v for k, v in meta._values.items() if k != "labels"}
+            # TODO need to construct a special metadata object with new labels just for the namespace
+            meta = k8s.ObjectMeta(**other_meta_values, labels={**meta.labels, **labels})
+        k8s.KubeNamespace(self, name, metadata=meta, **kwargs)
+
+
+class ConfiguredNamespace(Construct):
+    def __init__(
+        self,
+        scope: Construct,
+        name: str,
+        meta: k8s.ObjectMeta | None = None,
+        quota_kwargs: Optional[dict | bool] = True,
+        limit_range_kwargs: Optional[dict | bool] = True,
+        use_default_deny_all_network_policy: bool = False,
+        network_policy_kwargs: Optional[dict | bool] = True,
+        has_filler_workload: bool = True,
+        **kwargs,
+    ) -> None:
+        """
+        Instantiates a new Namespace with all relevant kubernetes resources.
+        :param quota_kwargs: keyword arguments forwarded to the ResourceQuota created for the namespace
+            Can be either dict or boolean. If boolean is True then the default arguments will be used.
+        :param limit_range_kwargs: keyword arguments forwarded to the LimitRange created for the namespace.
+            Can be either dict or boolean. If boolean is True then the default arguments will be used.
+        :param use_default_deny_all_network_policy: a flag indicating if an additional
+            'default_deny_all' network policy will be generated.
+        :param network_policy_kwargs: keywoard arguments forwarded to the NetworkPolicy created for the namespace.
+            Can be either dict or boolean. If boolean is True then the default arguments will be used.
+        :param has_filler_workload: boolean flag if a dummy workload will be created so the Namespace is not empty
+        """
+
+        super().__init__(scope, name)
+        if meta is None:
+            meta = Meta(name=name)
+
+        # TODO make the PSA mode and level configurable
+        psa_mode = PodSecurityAdmissionMode.Warn
+        ps_level = PodSecurityLevel.Restricted
+        Namespace(self, name, meta, {f"pod-security.kubernetes.io/{psa_mode}": ps_level})
+
+        if quota_kwargs:
+            # True means use defautl arguments
+            if quota_kwargs == True:
+                quota_kwargs = {}
+            _resource_quota_base(self, meta, **quota_kwargs)
+
+        if limit_range_kwargs:
+            if limit_range_kwargs == True:
+                limit_range_kwargs = {}
+            _limit_range_base(self, meta, **limit_range_kwargs)
+
+        # network policies are additive. If the flag is set,
+        # then use the "deny all" netpol as the default
+        # and then configure allowed exceptions with the additional network policy
+        if use_default_deny_all_network_policy:
+            NetworkPolicy(self, "default-deny-all", meta)
+
+        if network_policy_kwargs:
+            if network_policy_kwargs == True:
+                network_policy_kwargs = {}
+            NetworkPolicy(self, name, meta, **network_policy_kwargs)
+
+        if has_filler_workload:
+            # add an empty workload to avoid alerts regarding empty namespaces, resources, etc.
+            Workload(scope, name + "-filler", meta)
 
 
 class SetupBenchmarkNamespace(Chart):
@@ -32,12 +107,15 @@ class SetupBenchmarkNamespace(Chart):
         """
         super().__init__(scope, f"_{name}")
 
-        meta = k8s.ObjectMeta(name=name, labels={"app.kubernetes.io/part-of": "kalm-benchmark"})
-        k8s.KubeNamespace(self, name, metadata=meta)
-        if with_resource_restrictions:
-            _resource_quota_base(self, meta)
-            _limit_range_base(self, meta)
-        NetworkPolicy(self, "default-deny-all", meta)
+        meta = Meta(name=name)
+        ConfiguredNamespace(
+            self,
+            name=name,
+            meta=meta,
+            quota_kwargs=with_resource_restrictions,
+            limit_range_kwargs=with_resource_restrictions,
+            has_filler_workload=False,
+        )
 
 
 def _limit_range_base(
@@ -121,6 +199,7 @@ class NamespaceCheck(Check):
         has_network_policy: bool = True,
         use_default_deny_all_network_policy: bool = False,
         network_policy_kwargs: dict = None,
+        has_filler_workload: bool = True,
     ):
         """
         Instantiates a new NamespaceResourceCheck with all relevant kubernetes resources.
@@ -138,37 +217,23 @@ class NamespaceCheck(Check):
         :param use_default_deny_all_network_policy: a flag indicating if an additional
             'default_deny_all' network policy will be generated.
         :param network_policy_kwargs: keywoard arguments forwarded to the generated NetworkPolicy
+        :param has_filler_workload: boolean flag if a dummy workload will be created so the Namespace is not empty
         """
         # label names may at most have 63 characters, thus it restricts the namespace length
         # see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
         ns_name = sanitize_name(f"{check_id}-{name}", max_len=63)
         super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, namespace=ns_name)
 
-        k8s.KubeNamespace(self, ns_name, metadata=self.meta)
-
-        if has_quota:
-            if quota_kwargs is None:
-                quota_kwargs = {}
-            _resource_quota_base(self, self.meta, **quota_kwargs)
-
-        if has_limit_range:
-            if limit_range_kwargs is None:
-                limit_range_kwargs = {}
-            _limit_range_base(self, self.meta, **limit_range_kwargs)
-
-        if has_network_policy:
-            # network policies are additive. If the flag is set,
-            # then use the "deny all" netpol as the default
-            # and the configure allowed exceptions with the additional network policy
-            if use_default_deny_all_network_policy:
-                NetworkPolicy(self, "default-deny-all", self.meta)
-
-            if network_policy_kwargs is None:
-                network_policy_kwargs = {}
-            NetworkPolicy(self, self.name, self.meta, **network_policy_kwargs)
-
-            # add an empty workload to avoid alerts regarding empty namespaces, resources, etc.
-            Workload(self, self.name + "-filler", self.meta)
+        ConfiguredNamespace(
+            self,
+            ns_name,
+            meta=self.meta,
+            quota_kwargs=quota_kwargs or has_quota,
+            limit_range_kwargs=limit_range_kwargs or has_limit_range,
+            network_policy_kwargs=network_policy_kwargs or has_network_policy,
+            use_default_deny_all_network_policy=use_default_deny_all_network_policy,
+            has_filler_workload=has_filler_workload,
+        )
 
 
 def gen_namespace_resource_checks(app: App) -> None:
@@ -271,6 +336,7 @@ def gen_network_policy_checks(app) -> None:
         "NP-001",
         "namespace without network policy",
         has_network_policy=False,
+        use_default_deny_all_network_policy=False,
         check_path=["NetworkPolicy.metadata.namespace", ".metadata.namespace"],
     )
 
