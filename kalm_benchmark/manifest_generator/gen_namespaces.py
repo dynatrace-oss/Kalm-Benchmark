@@ -33,7 +33,8 @@ class ConfiguredNamespace(Construct):
         use_default_deny_all_network_policy: bool = False,
         network_policy_kwargs: Optional[dict | bool] = True,
         has_filler_workload: bool = True,
-        **kwargs,
+        pod_security_admission_mode: Optional[PodSecurityAdmissionMode] = PodSecurityAdmissionMode.Warn,
+        pod_security_level: Optional[PodSecurityLevel] = PodSecurityLevel.Restricted,
     ) -> None:
         """
         Instantiates a new Namespace with all relevant kubernetes resources.
@@ -46,16 +47,23 @@ class ConfiguredNamespace(Construct):
         :param network_policy_kwargs: keywoard arguments forwarded to the NetworkPolicy created for the namespace.
             Can be either dict or boolean. If boolean is True then the default arguments will be used.
         :param has_filler_workload: boolean flag if a dummy workload will be created so the Namespace is not empty
+        :param pod_security_admission_mode: an optional PodSecurityAdmissionMode which will be applied to the namespace as label
+            it will only be applied, if also `pod_security_level` is not None
+        :param pod_security_level: an optional PodSecurityLevel which will be applied to the namespace as label value
+            it will only be applied, if also `pod_security_admission_mode` is not None
         """
 
         super().__init__(scope, name)
+        # this meta object will be applied to all the created resources
         if meta is None:
             meta = Meta(name=name)
 
-        # TODO make the PSA mode and level configurable
-        psa_mode = PodSecurityAdmissionMode.Warn
-        ps_level = PodSecurityLevel.Restricted
-        Namespace(self, name, meta, {f"pod-security.kubernetes.io/{psa_mode}": ps_level})
+        if pod_security_admission_mode is not None and pod_security_level is not None:
+            ns_labels = {f"pod-security.kubernetes.io/{pod_security_admission_mode}": pod_security_level}
+        else:
+            ns_labels = None
+
+        Namespace(self, name, meta, ns_labels)
 
         if quota_kwargs:
             # True means use defautl arguments
@@ -197,9 +205,8 @@ class NamespaceCheck(Check):
         has_limit_range: bool = True,
         limit_range_kwargs: dict = None,
         has_network_policy: bool = True,
-        use_default_deny_all_network_policy: bool = False,
         network_policy_kwargs: dict = None,
-        has_filler_workload: bool = True,
+        **kwargs,
     ):
         """
         Instantiates a new NamespaceResourceCheck with all relevant kubernetes resources.
@@ -214,10 +221,7 @@ class NamespaceCheck(Check):
         :param has_limit_range: : boolean flag if a LimitRange object will be created for the namespace
         :param limit_range_kwargs: keyword arguments forwarded to the generated LimitRange
         :param has_network_policy: boolean flag if a NetworkPolicy object will be created for the namespace
-        :param use_default_deny_all_network_policy: a flag indicating if an additional
-            'default_deny_all' network policy will be generated.
         :param network_policy_kwargs: keywoard arguments forwarded to the generated NetworkPolicy
-        :param has_filler_workload: boolean flag if a dummy workload will be created so the Namespace is not empty
         """
         # label names may at most have 63 characters, thus it restricts the namespace length
         # see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
@@ -231,8 +235,7 @@ class NamespaceCheck(Check):
             quota_kwargs=quota_kwargs or has_quota,
             limit_range_kwargs=limit_range_kwargs or has_limit_range,
             network_policy_kwargs=network_policy_kwargs or has_network_policy,
-            use_default_deny_all_network_policy=use_default_deny_all_network_policy,
-            has_filler_workload=has_filler_workload,
+            **kwargs,
         )
 
 

@@ -2,6 +2,8 @@ from typing import Tuple
 
 from constructs import Construct
 
+from kalm_benchmark.manifest_generator.gen_namespaces import NamespaceCheck
+
 from .cdk8s_imports import k8s
 from .check import Check
 from .constants import (
@@ -9,6 +11,7 @@ from .constants import (
     CheckStatus,
     FsGroupRule,
     GenericPspRule,
+    PodSecurityLevel,
     RunAsUserRule,
     SeccompProfileForPSP,
     SeLinuxRule,
@@ -187,6 +190,31 @@ class PodSecurityPolicy(Construct):
                 supplemental_groups=k8s.SupplementalGroupsStrategyOptionsV1Beta1(rule=supplemental_groups_rule),
             ),
         )
+
+
+def gen_pod_security_admission_checks(app) -> None:
+    NamespaceCheck(
+        app,
+        "PS-001",
+        "no Pod Security Admission label configured",
+        descr="at least the baseline PodSecurity level should be used for the namespace",
+        check_path=[
+            "Namespace.metadata.labels.pod-security.kubernetes.io",
+        ],
+        pod_security_admission_mode=None,
+        pod_security_level=None,
+    )
+
+    NamespaceCheck(
+        app,
+        "PS-002",
+        "Using privilegedPodSecurity level is insecure",
+        descr="Privileged pod security level imposes no restrictions and may allow for known privilege escalations",
+        check_path=[
+            "Namespace.metadata.labels.pod-security.kubernetes.io",
+        ],
+        pod_security_level=PodSecurityLevel.Privileged,
+    )
 
 
 def gen_psps(app) -> None:
