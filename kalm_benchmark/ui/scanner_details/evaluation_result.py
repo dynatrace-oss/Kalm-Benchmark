@@ -196,7 +196,7 @@ def show_detailed_analysis(df_results):
     """
     st.subheader("Detailed Overview")
     if not st.checkbox("Show Debug Columns"):
-        debug_cols = ["expected_2", "compare_name", "compare_expected"]
+        debug_cols = ["expected_2", "compare_name", "compare_expected", Col.CheckedPath, Col.PathToCheck]
         df_results = df_results.drop(debug_cols, axis=1)
 
     show_detailed_check_overview(df_results)

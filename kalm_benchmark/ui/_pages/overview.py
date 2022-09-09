@@ -197,6 +197,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
         ),
         tooltipShowDelay=TOOLTIP_DELAY,
     )
+    builder.configure_column("is_valid_summary", hide=True)
     builder.configure_column("can_scan_manifests", header_name="Scan IaC", valueFormatter=bool_flag_formatter)
     builder.configure_column("can_scan_cluster", header_name="Scan Cluster", valueFormatter=bool_flag_formatter)
     builder.configure_column("formats", header_name="Report Formats", filter=True)
