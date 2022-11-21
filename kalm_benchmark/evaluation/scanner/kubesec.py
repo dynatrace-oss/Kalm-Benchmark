@@ -13,14 +13,6 @@ class Scanner(ScannerBase):
     FORMATS = ["JSON", "Template"]
     VERSION_CMD = ["kubesec", "version"]
 
-    NOTES = [
-        "Kubesec.io is compatible with Kubernetes up to version 1.18. "
-        "Features added after this version are not supported. "
-        "See [Issue on Github](https://github.com/controlplaneio/kubesec/issues/224)."
-        "The use of unsupported features leads to an error message as "
-        "the check result and further checks of the resource are canceled."
-    ]
-
     @classmethod
     def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:
         """
@@ -50,7 +42,7 @@ class Scanner(ScannerBase):
                         # provide the message as id so it can be analyzed in the UI
                         scanner_check_id = resource["message"]
                         checked_path = "kind" if details == "This resource kind is not supported by kubesec" else None
-                    else:
+                    elif ":" in details:
                         checked_path, *_, msg = details.split(":")
                         checked_path = _normalize_path(checked_path)
                         scanner_check_id = msg.strip()
@@ -99,7 +91,7 @@ class Scanner(ScannerBase):
         :return: the version number of the tool
         """
         # version = super().get_version()
-        return "2.11.5"
+        return "2.12.0"
 
 
 def _normalize_path(path: str) -> str:
