@@ -83,9 +83,9 @@ CONTROL_CATEGORY = {
 
 class Scanner(ScannerBase):
     NAME = "Kubescape"
-    IMAGE_URL = "https://github.com/armosec/kubescape/raw/master/docs/kubescape.png"
+    IMAGE_URL = "https://www.armosec.io/wp-content/uploads/2023/01/Group-1000005089.svg"
     FORMATS = ["Plain", "JSON", "JUnit", "Prometheus", "PDF"]
-    SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "json", "-s", "--verbose"]
+    SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "json", "--verbose"]
     RUNS_OFFLINE = "artifacts/frameworks can be downloaded"
     CUSTOM_CHECKS = True
     VERSION_CMD = ["kubescape", "version"]

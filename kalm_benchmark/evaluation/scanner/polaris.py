@@ -15,6 +15,16 @@ CHECK_MAPPING = {
     "hostPIDSet": (CheckCategory.PodSecurity, ".spec.hostPID"),
     "hostPortSet": (CheckCategory.PodSecurity, ".spec.containers[].ports"),
     "insecureCapabilities": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.capabilities"),
+    "linuxHardening": (
+        CheckCategory.PodSecurity,
+        [
+            ".spec.securityContext.seccompProfile.type",
+            ".spec.securityContext.seLinuxOptions",
+            ".spec.containers[].securityContext.seccompProfile.type",
+            ".spec.containers[].securityContext.seLinuxOptions",
+            ".spec.containers[].securityContext.capabilities.drop",
+        ],
+    ),
     "livenessProbeMissing": (CheckCategory.Reliability, ".spec.containers[].livenessProbe"),
     "memoryLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits.memory"),
     "memoryRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.memory"),
@@ -35,8 +45,25 @@ CHECK_MAPPING = {
         CheckCategory.PodSecurity,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
+    "sensitiveContainerEnvVar": (
+        CheckCategory.PodSecurity,
+        [".spec.containers[].env[].valueFrom", ".spec.containers[].env[].value"],
+    ),
+    "sensitiveConfigmapContent": (
+        CheckCategory.SecretManagement,
+        [".data.secret", ".data.bearer", ".data.token", "data.password"],
+    ),
     "tagNotSpecified": (CheckCategory.SupplyChain, ".spec.containers[].image"),
+    "topologySpreadConstraint": (CheckCategory.Reliability, ".spec.topologySpreadConstraints[].topologyKey"),
     "tlsSettingsMissing": (CheckCategory.Network, "Ingress.spec.tls"),
+    "clusterrolePodExecAttach": (CheckCategory.RBAC, "ClusterRole.rules[].resources"),
+    "rolePodExecAttach": (CheckCategory.RBAC, "Role.rules[].resources"),
+    "clusterrolebindingPodExecAttach": (CheckCategory.RBAC, "ClusterRole.rules[].resources"),
+    "rolebindingClusterRolePodExecAttach": (CheckCategory.RBAC, "ClusterRole.rules[].resources"),
+    "rolebindingRolePodExecAttach": (CheckCategory.RBAC, "Role.rules[].resources"),
+    "clusterrolebindingClusterAdmin": (CheckCategory.RBAC, "ClusterRoleBinding.roleRef.name"),
+    "rolebindingClusterAdminClusterRole": (CheckCategory.RBAC, "RoleBinding.roleRef.name"),
+    "rolebindingClusterAdminRole": (CheckCategory.RBAC, ".rules[].resources"),
 }
 
 
@@ -73,7 +100,7 @@ class Scanner(ScannerBase):
             kind = result["Kind"]
 
             res = cls._parse_check_results(result["Results"])
-            res = cls._parse_pod_results(result["PodResult"])
+            res += cls._parse_pod_results(result["PodResult"])
 
             # fill out remaining 'higher level' information and add it to final results
             for r in res:
@@ -102,7 +129,12 @@ class Scanner(ScannerBase):
             status = CheckStatus.Pass if check["Success"] else CheckStatus.Alert
             details = check["Details"] or ""
             scanner_check_id = check["ID"]
-            _cat, checked_path = CHECK_MAPPING[scanner_check_id]
+            _cat, checked_path = CHECK_MAPPING.get(scanner_check_id, (None, None))
+
+            if checked_path is None:
+                print(f"Unknown check {scanner_check_id}!")
+                continue
+
             if isinstance(checked_path, list):
                 checked_path = "|".join(checked_path)
 

@@ -47,8 +47,10 @@ CHECK_MAPPING = {
     ),
     "container-resource-requests-equal-limits": (
         CheckCategory.PodSecurity,
-        ".spec.containers[].resources.limits",
-        ".spec.containers[].resources.requests",
+        [
+            ".spec.containers[].resources.limits",
+            ".spec.containers[].resources.requests",
+        ],
     ),  # not effective?
     "container-seccomp-profile": (
         CheckCategory.PodSecurity,

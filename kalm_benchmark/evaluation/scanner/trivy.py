@@ -293,7 +293,7 @@ class Scanner(ScannerBase):
     FORMATS = ["JSON", "Table", "Sarif", "Template", "CycloneDX", "SPDX", "SPDX-JSON", "GitHub", "Cosign-Vuln"]
     CI_MODE = True
     VERSION_CMD = ["trivy", "--version"]
-    IMAGE_URL = "https://aquasecurity.github.io/trivy/v0.31.2/imgs/logo.png"
+    IMAGE_URL = "https://github.com/aquasecurity/trivy/blob/main/docs/imgs/logo.png?raw=true"
     RUNS_OFFLINE = True
     CUSTOM_CHECKS = "in Rego"
 

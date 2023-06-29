@@ -40,7 +40,7 @@ MANIFESTS_DIR = Path("manifests/")
 
 class Scanner(ScannerBase):
     NAME = "KICS"
-    IMAGE_URL = "https://kics.io/wp-content/uploads/2021/11/kics_hat_white_new.png"
+    IMAGE_URL = "https://docs.kics.io/latest/img/logo/kics_new_logo_2022_dark.png"
     FORMATS = [
         "Plain",
         "JSON",
