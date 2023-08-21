@@ -168,4 +168,4 @@ def is_ephemeral_scan_result(result_name: str | Path | None) -> bool:
     return result_name == LAST_SCAN_OPTION or result_name.endswith(SessionKeys.LatestScanResult)
 
 
-load_scanner_summary = st.experimental_memo(_load_and_cache_scanner_summary, show_spinner=False)
+load_scanner_summary = st.cache_data(_load_and_cache_scanner_summary, show_spinner=False)

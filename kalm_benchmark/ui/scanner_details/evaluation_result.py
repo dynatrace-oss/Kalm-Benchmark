@@ -58,7 +58,7 @@ def show_tool_evaluation_results(tool_name: str) -> None:
         show_results(tool_name, file)
 
 
-@st.experimental_memo
+@st.cache_data
 def get_confusion_matrix(df: pd.DataFrame) -> pd.DataFrame:
     """Load the confusion matrix of the provided dataframe
 
@@ -95,7 +95,7 @@ def create_check_type_chart(df: pd.DataFrame) -> alt.Chart:
     )
 
 
-@st.experimental_memo
+@st.cache_data
 def calculate_coverage(df: pd.DataFrame) -> float:
     """Calculate the check coverage from the results in the provided dataframe
 
@@ -105,7 +105,7 @@ def calculate_coverage(df: pd.DataFrame) -> float:
     return evaluation.calculate_coverage(df)
 
 
-@st.experimental_memo()
+@st.cache_data()
 def calculate_score(df: pd.DataFrame, metric: Metric = Metric.F1) -> float:
     """
     Calculate a score from the confusion matrix of the expected and actual check results.
@@ -120,7 +120,7 @@ def calculate_score(df: pd.DataFrame, metric: Metric = Metric.F1) -> float:
     return evaluation.calculate_score(df, metric)
 
 
-@st.experimental_memo
+@st.cache_data
 def load_scanner_results(
     scanner_name: str, result_source: Path | None = None, keep_redundant_results: bool = False
 ) -> pd.DataFrame:
@@ -141,7 +141,7 @@ def load_scanner_results(
     return df_results
 
 
-@st.experimental_memo
+@st.cache_data
 def load_evaluation_summary(df: pd.DataFrame, metric: Metric) -> EvaluationSummary:
     """Load the evaluation summary of the given dataframe with check results.
 
@@ -203,7 +203,7 @@ def show_detailed_analysis(df_results):
     show_drilldown_per_check(df_results)
 
 
-@st.experimental_memo
+@st.cache_data
 def _create_results_per_scanner_check_histogram(df: pd.DataFrame, id_col: str) -> alt.Chart:
     # use only relevant columns to avoid problems with Streamlit's dataframe serialization
     df = df[[id_col, Col.Category]]
@@ -357,7 +357,8 @@ def style_results(df: pd.DataFrame) -> "pd.Styler":
 
     # make ID's bold
     df_styled = (
-        df.fillna('-').style.apply(format_color_groups, axis=None)
+        df.fillna("-")
+        .style.apply(format_color_groups, axis=None)
         .applymap(_bold_id, subset=[Col.CheckId, Col.ScannerCheckId])
         .applymap(_colorize_status, subset=[Col.Expected, Col.Got])
         .applymap(_colorize_result_type, subset=[Col.ResultType])
