@@ -11,10 +11,12 @@ from kalm_benchmark.evaluation.scanner_manager import SCANNERS, ScannerBase
 from kalm_benchmark.manifest_generator.gen_manifests import create_manifests
 
 app = typer.Typer(name="kalm-benchmark", no_args_is_help=True)
+gen_app = typer.Typer()
+app.add_typer(gen_app, name="generate")
 
 
-@app.command()
-def generate(
+@gen_app.command("manifests")
+def generate_manifests(
     out_dir: Path = typer.Option(
         "manifests", "--out", "-o", help="The output folder of the generated manifests. Defaults to 'manifests'"
     ),
