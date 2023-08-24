@@ -114,7 +114,9 @@ class TestInvokeScan:
         file_path = tmp_path / "results.json"
         res = runner.invoke(app, ["scan", SCANNER_NAME, "-f", file_path])
         mock_scan.assert_not_called()
-        assert " does not exist" in res.stdout
+        # strip multiple whitespaces and drop any words with special characters (from rich) in it
+        filtered_stdout = [w for w in res.stdout.replace("\n", " ").split() if all(c.isascii() for c in w)]
+        assert " does not exist" in " ".join(filtered_stdout)
 
     def test_context_value_is_optional(self, mock_scan):
         runner.invoke(app, ["scan", SCANNER_NAME, "-c"])
