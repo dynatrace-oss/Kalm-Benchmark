@@ -12,7 +12,7 @@ from .gen_namespaces import (
     gen_namespace_resource_checks,
     gen_network_policy_checks,
 )
-from .pod_security_policy import gen_psps, gen_pod_security_admission_checks
+from .pod_security_admission import gen_pod_security_admission_checks
 from .rbac import gen_rbac
 from .workload.gen_workloads import gen_workloads
 
@@ -54,7 +54,7 @@ def generate_manifests(app: App) -> list[Chart]:
     SetupBenchmarkNamespace(app, MAIN_NS)
     SetupBenchmarkNamespace(app, UNRESTRICTED_NS, with_resource_restrictions=False)
     gen_namespace_resource_checks(app)
-    gen_psps(app)
+    # gen_psps(app)  # PSPs have been deprecated; re-enable once Validating Admission Policies should be checked
     gen_pod_security_admission_checks(app)
     gen_rbac(app)
     gen_network_policy_checks(app)

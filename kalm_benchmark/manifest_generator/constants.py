@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import auto
 
-from strenum import SnakeCaseStrEnum, StrEnum  # will be default in python 3.11+
+from strenum import LowercaseStrEnum, SnakeCaseStrEnum, StrEnum  # will be default in python 3.11+
 
 MAIN_NS = "kalm-benchmark"
 UNRESTRICTED_NS = "kalm-benchmark-unrestricted-ns"
@@ -69,16 +69,16 @@ INSECURE_CAPABILITIES = [
 ]
 
 
-class PodSecurityLevel(StrEnum):
-    Privileged = "privileged"
-    Baseline = "baseline"
-    Restricted = "restricted"
+class PodSecurityLevel(LowercaseStrEnum):
+    Privileged = auto()
+    Baseline = auto()
+    Restricted = auto()
 
 
-class PodSecurityAdmissionMode(StrEnum):
-    Enforce = "enforce"
-    Audit = "audit"
-    Warn = "warn"
+class PodSecurityAdmissionMode(LowercaseStrEnum):
+    Warn = auto()
+    Audit = auto()
+    Enforce = auto()
 
 
 class AppArmorProfile(StrEnum):

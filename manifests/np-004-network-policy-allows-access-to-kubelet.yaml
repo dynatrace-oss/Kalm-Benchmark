@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-004
+    pod-security.kubernetes.io/enforce: restricted
   name: np-004-network-policy-allows-access-to-kubelet
   namespace: np-004-network-policy-allows-access-to-kubelet
 ---
@@ -83,14 +84,10 @@ metadata:
   name: np-004-network-policy-allows-access-to-kubelet
   namespace: np-004-network-policy-allows-access-to-kubelet
 spec:
-  egress:
-    - ports:
-        - port: 10250
-      to:
-        - namespaceSelector: {}
   podSelector: {}
   policyTypes:
     - Egress
+    - Ingress
 ---
 apiVersion: v1
 kind: ServiceAccount

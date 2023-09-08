@@ -30,11 +30,11 @@ class ConfiguredNamespace(Construct):
         meta: k8s.ObjectMeta | None = None,
         quota_kwargs: Optional[dict | bool] = True,
         limit_range_kwargs: Optional[dict | bool] = True,
+        pod_security_admission_mode: Optional[PodSecurityAdmissionMode] = PodSecurityAdmissionMode.Enforce,
+        pod_security_level: Optional[PodSecurityLevel] = PodSecurityLevel.Restricted,
         use_default_deny_all_network_policy: bool = False,
         network_policy_kwargs: Optional[dict | bool] = True,
         has_filler_workload: bool = True,
-        pod_security_admission_mode: Optional[PodSecurityAdmissionMode] = PodSecurityAdmissionMode.Warn,
-        pod_security_level: Optional[PodSecurityLevel] = PodSecurityLevel.Restricted,
     ) -> None:
         """
         Instantiates a new Namespace with all relevant kubernetes resources.
@@ -42,15 +42,15 @@ class ConfiguredNamespace(Construct):
             Can be either dict or boolean. If boolean is True then the default arguments will be used.
         :param limit_range_kwargs: keyword arguments forwarded to the LimitRange created for the namespace.
             Can be either dict or boolean. If boolean is True then the default arguments will be used.
+        :param pod_security_admission_mode: an optional PodSecurityAdmissionMode which will be applied
+            to the namespace as label it will only be applied, if also `pod_security_level` is not None
+        :param pod_security_level: an optional PodSecurityLevel which will be applied to the namespace as label value
+            it will only be applied, if also `pod_security_admission_mode` is not None
         :param use_default_deny_all_network_policy: a flag indicating if an additional
             'default_deny_all' network policy will be generated.
         :param network_policy_kwargs: keywoard arguments forwarded to the NetworkPolicy created for the namespace.
             Can be either dict or boolean. If boolean is True then the default arguments will be used.
         :param has_filler_workload: boolean flag if a dummy workload will be created so the Namespace is not empty
-        :param pod_security_admission_mode: an optional PodSecurityAdmissionMode which will be applied to the namespace as label
-            it will only be applied, if also `pod_security_level` is not None
-        :param pod_security_level: an optional PodSecurityLevel which will be applied to the namespace as label value
-            it will only be applied, if also `pod_security_admission_mode` is not None
         """
 
         super().__init__(scope, name)
@@ -67,12 +67,12 @@ class ConfiguredNamespace(Construct):
 
         if quota_kwargs:
             # True means use defautl arguments
-            if quota_kwargs == True:
+            if quota_kwargs:
                 quota_kwargs = {}
             _resource_quota_base(self, meta, **quota_kwargs)
 
         if limit_range_kwargs:
-            if limit_range_kwargs == True:
+            if limit_range_kwargs:
                 limit_range_kwargs = {}
             _limit_range_base(self, meta, **limit_range_kwargs)
 
@@ -83,7 +83,7 @@ class ConfiguredNamespace(Construct):
             NetworkPolicy(self, "default-deny-all", meta)
 
         if network_policy_kwargs:
-            if network_policy_kwargs == True:
+            if network_policy_kwargs:
                 network_policy_kwargs = {}
             NetworkPolicy(self, name, meta, **network_policy_kwargs)
 
@@ -204,6 +204,8 @@ class NamespaceCheck(Check):
         quota_kwargs: dict = None,
         has_limit_range: bool = True,
         limit_range_kwargs: dict = None,
+        pod_security_level: PodSecurityLevel = PodSecurityLevel.Restricted,
+        pod_security_admission_mode: PodSecurityAdmissionMode = PodSecurityAdmissionMode.Enforce,
         has_network_policy: bool = True,
         network_policy_kwargs: dict = None,
         **kwargs,
@@ -220,6 +222,8 @@ class NamespaceCheck(Check):
         :param quota_kwargs: keyword arguments forwarded to the generated ResourceQuota
         :param has_limit_range: : boolean flag if a LimitRange object will be created for the namespace
         :param limit_range_kwargs: keyword arguments forwarded to the generated LimitRange
+        :param pod_security_level: the PSS level for pod security admission in the namespace
+        :param pod_security_admission_mode: the enforcement mode violations against the selected PSS
         :param has_network_policy: boolean flag if a NetworkPolicy object will be created for the namespace
         :param network_policy_kwargs: keywoard arguments forwarded to the generated NetworkPolicy
         """
@@ -235,6 +239,8 @@ class NamespaceCheck(Check):
             quota_kwargs=quota_kwargs or has_quota,
             limit_range_kwargs=limit_range_kwargs or has_limit_range,
             network_policy_kwargs=network_policy_kwargs or has_network_policy,
+            pod_security_level=pod_security_level,
+            pod_security_admission_mode=pod_security_admission_mode,
             **kwargs,
         )
 

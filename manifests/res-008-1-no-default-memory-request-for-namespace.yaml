@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-008-1
+    pod-security.kubernetes.io/enforce: restricted
   name: res-008-1-no-default-memory-request-for-namespace
   namespace: res-008-1-no-default-memory-request-for-namespace
 ---
@@ -45,6 +46,7 @@ spec:
         memory: 1Mi
       defaultRequest:
         cpu: 1m
+        memory: 1Ki
       max:
         cpu: 100m
         memory: 10Mi

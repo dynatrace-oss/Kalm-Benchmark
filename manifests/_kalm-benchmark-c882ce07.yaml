@@ -3,6 +3,7 @@ kind: Namespace
 metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
+    pod-security.kubernetes.io/enforce: restricted
   name: kalm-benchmark
 ---
 apiVersion: v1

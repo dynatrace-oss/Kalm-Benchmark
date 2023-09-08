@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
+    pod-security.kubernetes.io/enforce: restricted
   name: res-007-3-no-cpu-limits-for-namespace
   namespace: res-007-3-no-cpu-limits-for-namespace
 ---
@@ -47,8 +48,10 @@ spec:
         cpu: 1m
         memory: 1Ki
       max:
+        cpu: 100m
         memory: 10Mi
       min:
+        cpu: 1m
         memory: 1Ki
       type: Container
 ---

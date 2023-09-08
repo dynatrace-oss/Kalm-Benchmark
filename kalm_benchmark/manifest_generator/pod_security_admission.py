@@ -11,6 +11,7 @@ from .constants import (
     CheckStatus,
     FsGroupRule,
     GenericPspRule,
+    PodSecurityAdmissionMode,
     PodSecurityLevel,
     RunAsUserRule,
     SeccompProfileForPSP,
@@ -19,7 +20,7 @@ from .constants import (
 )
 
 
-class PodSecurityPolicyCheck(Check):
+class PodSecurityAdmissionCheck(Check):
     """
     A single checks of a PodSecurityPolicies misconfiguration/best practice
     """
@@ -193,9 +194,13 @@ class PodSecurityPolicy(Construct):
 
 
 def gen_pod_security_admission_checks(app) -> None:
+    """Generates manifests to check for use of used Pod Security Standards within a namespace.
+    :param app: the cdk8s app which represent the scope of the checks.
+    :returns nothing, the resources will be created directly in the provided app
+    """
     NamespaceCheck(
         app,
-        "PS-001",
+        "PSA-001",
         "no Pod Security Admission label configured",
         descr="at least the baseline PodSecurity level should be used for the namespace",
         check_path=[
@@ -207,8 +212,8 @@ def gen_pod_security_admission_checks(app) -> None:
 
     NamespaceCheck(
         app,
-        "PS-002",
-        "Using privilegedPodSecurity level is insecure",
+        "PSA-002",
+        "Using privileged privilegedPodSecurity level is insecure",
         descr="Privileged pod security level imposes no restrictions and may allow for known privilege escalations",
         check_path=[
             "Namespace.metadata.labels.pod-security.kubernetes.io",
@@ -216,14 +221,29 @@ def gen_pod_security_admission_checks(app) -> None:
         pod_security_level=PodSecurityLevel.Privileged,
     )
 
+    NamespaceCheck(
+        app,
+        "PSA-003",
+        "Just warning about violations of the pod security standard level is insecure",
+        descr="When only warnings for violations are generated insecure workloads can still be deployed",
+        check_path=[
+            "Namespace.metadata.labels.pod-security.kubernetes.io",
+        ],
+        pod_security_admission_mode=PodSecurityAdmissionMode.Warn,
+    )
+
 
 def gen_psps(app) -> None:
     """
+    Deprecated: These checks should no longer be used.
+    They are kept around in case future checks Validating Admission Policy
+    will be added, which were added in Kubernetes v 1.26.
+
     Generates PodSecurityPolicy manifests for corresponding benchmark checks.
     :param app: the cdk8s app which represent the scope of the checks.
     :returns nothing, the resources will be created directly in the provided app
     """
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-001-1",
         "allow privileged containers",
@@ -232,7 +252,7 @@ def gen_psps(app) -> None:
         privileged=True,  # explicitly allows privileged pods
         check_path=".spec.privileged",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-001-2",
         "allow privileged containers by default",
@@ -242,7 +262,7 @@ def gen_psps(app) -> None:
         check_path=".spec.privileged",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-002-1",
         "allow privilege escalation in containers",
@@ -251,7 +271,7 @@ def gen_psps(app) -> None:
         allow_privilege_escalation=True,
         check_path=".spec.allowPrivilegeEscalation",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-002-2",
         "allow privilege escalation in containers by default",
@@ -261,7 +281,7 @@ def gen_psps(app) -> None:
         check_path=".spec.allowPrivilegeEscalation",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-003-1",
         "allow pods sharing hostPID",
@@ -270,7 +290,7 @@ def gen_psps(app) -> None:
         host_pid=True,
         check_path=".spec.hostPID",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-003-2",
         "allow pods sharing hostPID by default",
@@ -280,7 +300,7 @@ def gen_psps(app) -> None:
         check_path=".spec.hostPID",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-004-1",
         "allow pods sharing hostIPC namespace",
@@ -289,7 +309,7 @@ def gen_psps(app) -> None:
         host_ipc=True,
         check_path=".spec.hostIPC",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-004-2",
         "allow pods sharing hostIPC namespace by default",
@@ -299,7 +319,7 @@ def gen_psps(app) -> None:
         check_path=".spec.hostIPC",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-005-1",
         "allow pods sharing host network",
@@ -307,7 +327,7 @@ def gen_psps(app) -> None:
         host_network=True,
         check_path=".spec.hostNetwork",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-005-2",
         "allow pods sharing host network by default",
@@ -316,7 +336,7 @@ def gen_psps(app) -> None:
         check_path=".spec.hostNetwork",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-006-1",
         "allow all host_paths by default",
@@ -324,7 +344,7 @@ def gen_psps(app) -> None:
         allowed_host_paths=None,
         check_path=".spec.allowedHostPaths",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-006-2",
         "allow all host_paths naive specification",
@@ -333,7 +353,7 @@ def gen_psps(app) -> None:
         check_path=".spec.allowedHostPaths",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-006-3",
         "disallow all host_paths properly",
@@ -343,7 +363,7 @@ def gen_psps(app) -> None:
         check_path=".spec.allowedHostPaths",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-007-1",
         "allow root users in pods",
@@ -352,7 +372,7 @@ def gen_psps(app) -> None:
         check_path=".spec.runAsUser",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-007-2",
         "allow root users in pods uid range",
@@ -361,7 +381,7 @@ def gen_psps(app) -> None:
         uid_range=(0, 65535),  # allowing all UIDs is basically no protection as well
         check_path=".spec.runAsUser",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-007-3",
         "don't allow root users in pods",
@@ -372,7 +392,7 @@ def gen_psps(app) -> None:
         check_path=".spec.runAsUser",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-008-1",
         "allow root groups in pods must gid range",
@@ -381,7 +401,7 @@ def gen_psps(app) -> None:
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-008-2",
         "allow root groups in pods may gid range",
@@ -390,7 +410,7 @@ def gen_psps(app) -> None:
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-008-3",
         "allow root groups in pods may higher gid",
@@ -400,7 +420,7 @@ def gen_psps(app) -> None:
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-008-4",
         "allow root groups in pods must higher gid",
@@ -411,7 +431,7 @@ def gen_psps(app) -> None:
         check_path=".spec.runAsGroup",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-009",
         "allowing NET_RAW",
@@ -421,7 +441,7 @@ def gen_psps(app) -> None:
         check_path=".spec.allowedCapabilities",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-010",
         "not dropping all capabilities",
@@ -430,7 +450,7 @@ def gen_psps(app) -> None:
         check_path=".spec.requiredDropCapabilities",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-011-1",
         "allowing read only root filesystem",
@@ -439,7 +459,7 @@ def gen_psps(app) -> None:
         read_only_root_filesystem=True,
         check_path=".spec.readOnlyRootFilesystem",
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-011-2",
         "allowing read only root filesystem",
@@ -449,7 +469,7 @@ def gen_psps(app) -> None:
         check_path=".spec.readOnlyRootFilesystem",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-012",
         "not configuring SE linux",
@@ -458,7 +478,7 @@ def gen_psps(app) -> None:
         check_path=".spec.seLinux",
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-013-1",
         "not configuring AppArmor by default",
@@ -469,7 +489,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]"
         ],
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-013-2",
         "not confining AppArmor",
@@ -480,7 +500,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]",
         ],
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-013-3",
         "not restricting allowed AppArmor profiles",
@@ -492,7 +512,7 @@ def gen_psps(app) -> None:
         ],
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-014-1",
         "not configuring Seccomp by default",
@@ -506,7 +526,7 @@ def gen_psps(app) -> None:
         ],
     )
 
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-014-2",
         "not confining Seccomp",
@@ -519,7 +539,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",
         ],
     )
-    PodSecurityPolicyCheck(
+    PodSecurityAdmissionCheck(
         app,
         "PSP-014-3",
         "not restricting allowed Seccomp profiles",

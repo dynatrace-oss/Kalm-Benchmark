@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-008-3
+    pod-security.kubernetes.io/enforce: restricted
   name: res-008-3-no-default-memory-limits-for-namespace
   namespace: res-008-3-no-default-memory-limits-for-namespace
 ---
@@ -48,8 +49,10 @@ spec:
         memory: 1Ki
       max:
         cpu: 100m
+        memory: 10Mi
       min:
         cpu: 1m
+        memory: 1Ki
       type: Container
 ---
 apiVersion: networking.k8s.io/v1

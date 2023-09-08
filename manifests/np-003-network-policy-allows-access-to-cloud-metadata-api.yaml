@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-003
+    pod-security.kubernetes.io/enforce: restricted
   name: np-003-network-policy-allows-access-to-cloud-metadata-api
   namespace: np-003-network-policy-allows-access-to-cloud-metadata-api
 ---
@@ -83,13 +84,10 @@ metadata:
   name: np-003-network-policy-allows-access-to-cloud-metadata-api
   namespace: np-003-network-policy-allows-access-to-cloud-metadata-api
 spec:
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 169.254.169.254/32
   podSelector: {}
   policyTypes:
     - Egress
+    - Ingress
 ---
 apiVersion: v1
 kind: ServiceAccount

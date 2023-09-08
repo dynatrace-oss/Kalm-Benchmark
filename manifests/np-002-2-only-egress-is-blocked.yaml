@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-002-2
+    pod-security.kubernetes.io/enforce: restricted
   name: np-002-2-only-egress-is-blocked
   namespace: np-002-2-only-egress-is-blocked
 ---
@@ -69,6 +70,7 @@ spec:
   podSelector: {}
   policyTypes:
     - Egress
+    - Ingress
 ---
 apiVersion: v1
 kind: ServiceAccount

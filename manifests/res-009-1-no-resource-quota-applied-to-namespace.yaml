@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-1
+    pod-security.kubernetes.io/enforce: restricted
   name: res-009-1-no-resource-quota-applied-to-namespace
   namespace: res-009-1-no-resource-quota-applied-to-namespace
 ---

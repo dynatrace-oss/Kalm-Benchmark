@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-2
+    pod-security.kubernetes.io/enforce: restricted
   name: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
   namespace: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
 ---
@@ -22,7 +23,10 @@ metadata:
   name: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
   namespace: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
 spec:
-  hard: {}
+  hard:
+    cpu: 30
+    memory: 20Gi
+    pods: 1000
 ---
 apiVersion: v1
 kind: LimitRange
