@@ -106,7 +106,6 @@ class Scanner(ScannerBase):
             for test in control["tests"]:
                 # a result is an actual check within that sub-section
                 for result in test["results"]:
-
                     scanner_check_id = result["test_number"]
                     scanner_check_name = result["test_desc"]
 

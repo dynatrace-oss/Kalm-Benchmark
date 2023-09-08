@@ -188,7 +188,6 @@ def _parse_rule_reports(reports: list[dict]) -> list[CheckResult]:
 def _parse_rule_responses(responses: list[dict]) -> list[CheckResult]:
     results = []
     for r in responses:
-
         checked_path = _get_check_path(r["failedPaths"], r["fixPaths"])
         status = _normalize_status(r["ruleStatus"])
         details = ", ".join(r["failedPaths"] or [""])

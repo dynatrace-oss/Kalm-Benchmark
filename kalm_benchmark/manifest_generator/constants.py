@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from enum import auto
 
-from strenum import LowercaseStrEnum, SnakeCaseStrEnum, StrEnum  # will be default in python 3.11+
+from strenum import (  # will be default in python 3.11+
+    LowercaseStrEnum,
+    SnakeCaseStrEnum,
+    StrEnum,
+)
 
 MAIN_NS = "kalm-benchmark"
 UNRESTRICTED_NS = "kalm-benchmark-unrestricted-ns"

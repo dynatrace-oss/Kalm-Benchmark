@@ -8,8 +8,8 @@ warnings.filterwarnings(
     message="Passing a dict as an indexer is deprecated and will raise in a future version. Use a list instead.*",
 )
 
-from kalm_benchmark.ui.constants import Page, QueryParam, SessionKeys
 from kalm_benchmark.ui._pages import overview, scanner_details
+from kalm_benchmark.ui.constants import Page, QueryParam, SessionKeys
 from kalm_benchmark.ui.utils import get_query_param, init
 
 PageType = TypeVar("PageType")
