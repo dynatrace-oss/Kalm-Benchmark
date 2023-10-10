@@ -111,21 +111,21 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     :param df: the dataftrame used for the generation of the initial config
     :return: the grid configuration as a dictionary
     """
-    scanner_image_formatter = JsCode(
-        """function (params) {
-        var element = document.createElement("span");
-        element.classList.add("scanner-logo");
-        var imageElement = document.createElement("img");
-        if (params.data.image && params.data.image != "None") {
-            imageElement.src = params.data.image;
-            imageElement.height="20";
-        } else {
-            imageElement.src = "";
-        }
-        element.appendChild(imageElement);
-        return element;
-        }"""
-    )
+    # render_image = JsCode(
+    #     """function (params) {
+    #         var element = document.createElement("span");
+    #         element.classList.add("scanner-logo");
+    #         var imageElement = document.createElement("img");
+    #         if (params.data.image && params.data.image != "None") {
+    #             imageElement.src = params.data.image;
+    #             imageElement.height="20";
+    #         } else {
+    #             imageElement.src = "";
+    #         }
+    #         element.appendChild(imageElement);
+    #         return element;
+    #     }"""
+    # )
     percent_formatter = JsCode("function (params) { return (params.value*100).toFixed(1) + '%'; }")
     bool_flag_formatter = JsCode(
         """
@@ -141,7 +141,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
             }
             else { isTrue = params.value; }
             let symbol = isTrue ? '✅' : '✗';
-            return `${symbol}${sfx}`;r
+            return `${symbol}${sfx}`;
         }
     """
     )
@@ -151,15 +151,18 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     builder.configure_default_column(filterable=False, tooltipShowDelay=50)
     builder.configure_selection(selection_mode="single")
     builder.configure_column("name", header_name="Scanner", pinned="left", lockPinned="true", filter=False)
-    builder.configure_column(
-        "image",
-        header_name="Image",
-        cellRenderer=scanner_image_formatter,
-        filter=False,
-        sortable=False,
-        maxWidth=120,
-        cellClass="img-cell",
-    )
+    # Temporary workaround: hide image column, because with latest Ag-Grid version
+    # a new HTML element to display an image can no longer be injected
+    # builder.configure_column(
+    #     "image",
+    #     header_name="Image",
+    #     cellRenderer=render_image,
+    #     filter=False,
+    #     sortable=False,
+    #     maxWidth=120,
+    #     cellClass="img-cell",
+    # )
+    builder.configure_column("image", hide=True)
     builder.configure_column(
         "ci_mode",
         header_name="CI Mode",
@@ -300,7 +303,7 @@ def show() -> None:
             # wait a bit to ensure the query params are properly updated
             # because the rerun is triggered via an exception that stops everything
             time.sleep(0.2)
-            st.experimental_rerun()
+            st.rerun()
 
 
 if __name__ == "__main__":
