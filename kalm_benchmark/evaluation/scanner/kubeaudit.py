@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Optional
+from loguru import logger
 
 import pandas as pd
 
@@ -19,22 +20,20 @@ CONTROL_MAPPING = {
         [".spec.serviceAccount", ".spec.automountServiceAccountToken"],
     ),
     "Capability": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.capabilities"),
+    "DeprecatedAPIUsed": (CheckCategory.Workload, ".apiVersion"),
     "Image": (CheckCategory.PodSecurity, ".spec.containers[].image"),
     "Limits": (
         CheckCategory.Workload,
         [".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits.memory"],
     ),
+    "NamespaceHost": (CheckCategory.PodSecurity, [".spec.hostIPC", ".spec.hostPID", ".spec.hostNetwork"]),
     "MissingDefaultDeny": (CheckCategory.Network, ".spec.ingress"),
     "AllowAllIngressNetworkPolicyExists": (CheckCategory.Network, ".spec.ingress"),
     "AllowAllEgressNetworkPolicyExists": (CheckCategory.Network, ".spec.egress"),
-    "NamespaceHost": (CheckCategory.PodSecurity, [".spec.hostIPC", ".spec.hostPID", ".spec.hostNetwork"]),
     "Privileged": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.privileged"),
     "ReadOnlyRootFilesystem": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.readOnlyRootFilesystem"),
     "RunAsNonRootCSC": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.runAsNonRoot"),
-    "RunAsNonRootPSC": (
-        CheckCategory.PodSecurity,
-        [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
-    ),
+    "RunAsNonRootPSC": (CheckCategory.PodSecurity, ".spec.securityContext.runAsNonRoot"),
     "RunAsUserCSC": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.runAsUser"),
     "RunAsUserPSC": (CheckCategory.PodSecurity, ".spec.securityContext.runAsUser"),
     "Seccomp": (
@@ -42,6 +41,8 @@ CONTROL_MAPPING = {
         [
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotationscontainer.seccomp.security.alpha.kubernetes.io",
+            ".spec.securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile",
         ],
     ),
     "SensitivePathsMounted": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath.path"),
@@ -50,11 +51,11 @@ CONTROL_MAPPING = {
 
 class Scanner(ScannerBase):
     NAME = "kubeaudit"
-    FORMATS = ["Plain", "JSON", "logrus"]
+    FORMATS = ["Plain", "JSON", "Sarif", "logrus"]
     CI_MODE = True
     CUSTOM_CHECKS = "by implementing custom Auditors"
     SCAN_CLUSTER_CMD = ["kubeaudit", "all", "-p", "json"]
-    SCAN_MANIFESTS_CMD = ["kubeaudit", "all", "-p", "json", "-f"]
+    SCAN_MANIFESTS_CMD = ["kubeaudit", "all", "-p", "sarif", "-f"]
     SCAN_PER_FILE = True
     RUNS_OFFLINE = True
     VERSION_CMD = ["kubeaudit", "version"]
@@ -129,6 +130,7 @@ class Scanner(ScannerBase):
         for cat_prefix, (cat, _) in CONTROL_MAPPING.items():
             if check_id.startswith(cat_prefix):
                 return cat
+        logger.warning(f"No matching control found for check with ID '{check_id}'")
         return None
 
     @classmethod
