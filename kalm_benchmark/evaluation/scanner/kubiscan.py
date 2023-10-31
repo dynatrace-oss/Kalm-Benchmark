@@ -109,7 +109,7 @@ class Scanner(ScannerBase):
         # this tool is all about RBAC and nothing else
         if pd.isnull(check_id) or not check_id:
             return None
-        return CheckCategory.RBAC
+        return CheckCategory.IAM
 
     @classmethod
     def _get_checked_path_from_scan_name(cls, scan_name: str) -> str:

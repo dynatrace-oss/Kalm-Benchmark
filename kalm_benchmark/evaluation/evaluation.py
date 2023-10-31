@@ -415,19 +415,21 @@ def categorize_by_check_id(check_id: str | None) -> str:
     if prefix == "pod":
         return CheckCategory.PodSecurity
     elif prefix == "psp":
-        return CheckCategory.PSP
+        return CheckCategory.AdmissionControl
+    elif prefix == "pss":
+        return CheckCategory.AdmissionControl
     elif prefix == "rbac":
-        return CheckCategory.RBAC
+        return CheckCategory.IAM
     elif prefix in ["wl", "ns", "cj", "srv"]:
         return CheckCategory.Workload
     elif prefix in ["cm"]:  # currently only matches CM-001 but might need more granual distinction -> other prefix
-        return CheckCategory.SecretManagement
+        return CheckCategory.DataSecurity
     elif prefix in ["np", "ing"]:
         return CheckCategory.Network
     elif prefix in ["rel", "res"]:
         return CheckCategory.Reliability
     elif prefix in ["sc"]:
-        return CheckCategory.SupplyChain
+        return CheckCategory.Workload
     elif prefix == "inf":
         return CheckCategory.Infrastructure
     else:

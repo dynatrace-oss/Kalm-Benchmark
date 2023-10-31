@@ -21,8 +21,8 @@ CHECK_MAPPING = {
             ".spec.containers[].resources.requests.ephemeral-storage",
         ],
     ),
-    "container-image-pull-policy": (CheckCategory.SupplyChain, ".spec.containers[].imagePullPolicy"),
-    "container-image-tag": (CheckCategory.SupplyChain, ".spec.containers[].image"),
+    "container-image-pull-policy": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),
+    "container-image-tag": (CheckCategory.Workload, ".spec.containers[].image"),
     "container-memory-requests-equal-limits": (
         CheckCategory.Reliability,
         [".spec.containers[].resources.limits.memory", ".spec.containers[].resources.requests.memory"],

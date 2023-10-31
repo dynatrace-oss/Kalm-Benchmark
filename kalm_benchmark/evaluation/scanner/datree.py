@@ -10,8 +10,8 @@ CHECK_MAPPING = {
         CheckCategory.Misc,
         ".data.allow-snippet-annotation",
     ),
-    "CONTAINERS_MISSING_IMAGE_VALUE_VERSION": (CheckCategory.SupplyChain, ".spec.containers[].image"),
-    "CONTAINERS_MISSING_IMAGE_VALUE_DIGEST": (CheckCategory.SupplyChain, ".spec.containers[].image"),
+    "CONTAINERS_MISSING_IMAGE_VALUE_VERSION": (CheckCategory.Workload, ".spec.containers[].image"),
+    "CONTAINERS_MISSING_IMAGE_VALUE_DIGEST": (CheckCategory.Workload, ".spec.containers[].image"),
     "CONTAINERS_MISSING_MEMORY_REQUEST_KEY": (
         CheckCategory.Reliability,
         ".spec.containers[].resources.requests.memory",

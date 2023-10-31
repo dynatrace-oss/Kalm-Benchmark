@@ -38,7 +38,7 @@ CHECK_MAPPING = {
         ".spec.containers[].securityContext.allowPrivilegeEscalation",
     ),
     "priorityClassNotSet": (CheckCategory.Reliability, ".spec.priorityClassName"),  # ignored by default
-    "pullPolicyNotAlways": (CheckCategory.SupplyChain, ".spec.containers[].imagePullPolicy"),
+    "pullPolicyNotAlways": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),
     "readinessProbeMissing": (CheckCategory.Reliability, ".spec.containers[].readinessProbe"),
     "runAsPrivileged": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.privileged"),
     "runAsRootAllowed": (
@@ -50,20 +50,20 @@ CHECK_MAPPING = {
         [".spec.containers[].env[].valueFrom", ".spec.containers[].env[].value"],
     ),
     "sensitiveConfigmapContent": (
-        CheckCategory.SecretManagement,
+        CheckCategory.DataSecurity,
         [".data.secret", ".data.bearer", ".data.token", "data.password"],
     ),
-    "tagNotSpecified": (CheckCategory.SupplyChain, ".spec.containers[].image"),
+    "tagNotSpecified": (CheckCategory.Workload, ".spec.containers[].image"),
     "topologySpreadConstraint": (CheckCategory.Reliability, ".spec.topologySpreadConstraints[].topologyKey"),
     "tlsSettingsMissing": (CheckCategory.Network, "Ingress.spec.tls"),
-    "clusterrolePodExecAttach": (CheckCategory.RBAC, "ClusterRole.rules[].resources"),
-    "rolePodExecAttach": (CheckCategory.RBAC, "Role.rules[].resources"),
-    "clusterrolebindingPodExecAttach": (CheckCategory.RBAC, "ClusterRole.rules[].resources"),
-    "rolebindingClusterRolePodExecAttach": (CheckCategory.RBAC, "ClusterRole.rules[].resources"),
-    "rolebindingRolePodExecAttach": (CheckCategory.RBAC, "Role.rules[].resources"),
-    "clusterrolebindingClusterAdmin": (CheckCategory.RBAC, "ClusterRoleBinding.roleRef.name"),
-    "rolebindingClusterAdminClusterRole": (CheckCategory.RBAC, "RoleBinding.roleRef.name"),
-    "rolebindingClusterAdminRole": (CheckCategory.RBAC, ".rules[].resources"),
+    "clusterrolePodExecAttach": (CheckCategory.IAM, "ClusterRole.rules[].resources"),
+    "rolePodExecAttach": (CheckCategory.IAM, "Role.rules[].resources"),
+    "clusterrolebindingPodExecAttach": (CheckCategory.IAM, "ClusterRole.rules[].resources"),
+    "rolebindingClusterRolePodExecAttach": (CheckCategory.IAM, "ClusterRole.rules[].resources"),
+    "rolebindingRolePodExecAttach": (CheckCategory.IAM, "Role.rules[].resources"),
+    "clusterrolebindingClusterAdmin": (CheckCategory.IAM, "ClusterRoleBinding.roleRef.name"),
+    "rolebindingClusterAdminClusterRole": (CheckCategory.IAM, "RoleBinding.roleRef.name"),
+    "rolebindingClusterAdminRole": (CheckCategory.IAM, ".rules[].resources"),
 }
 
 

@@ -25,9 +25,9 @@ class ScannerInfo:
     score: float = 0.0
     coverage: float = 0.0
     cat_pod_security: str = "0/0"
-    cat_RBAC: str = "0/0"
+    cat_IAM: str = "0/0"
     cat_network: str = "0/0"
-    cat_PSP: str = "0/0"
+    cat_admission_ctrl: str = "0/0"
     cat_supply_chain: str = "0/0"
     cat_secret_management: str = "0/0"
     cat_workload: str = "0/0"
@@ -69,10 +69,10 @@ def collect_overview_information() -> pd.DataFrame:
             runs_offline=str(scanner.RUNS_OFFLINE),
             cat_network=_get_category_sum(categories.get(CheckCategory.Network, None)),
             cat_pod_security=_get_category_sum(categories.get(CheckCategory.PodSecurity, None)),
-            cat_RBAC=_get_category_sum(categories.get(CheckCategory.RBAC, None)),
-            cat_PSP=_get_category_sum(categories.get(CheckCategory.PSP, None)),
-            cat_secret_management=_get_category_sum(categories.get(CheckCategory.SecretManagement, None)),
-            cat_supply_chain=_get_category_sum(categories.get(CheckCategory.SupplyChain, None)),
+            cat_IAM=_get_category_sum(categories.get(CheckCategory.IAM, None)),
+            cat_admission_ctrl=_get_category_sum(categories.get(CheckCategory.AdmissionControl, None)),
+            # cat_secret_management=_get_category_sum(categories.get(CheckCategory.DataSecurity, None)),
+            # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
             cat_workload=_get_category_sum(categories.get(CheckCategory.Workload, None)),
             cat_misc=_get_category_sum(categories.get(CheckCategory.Misc, None)),
             can_scan_manifests=scanner.can_scan_manifests,

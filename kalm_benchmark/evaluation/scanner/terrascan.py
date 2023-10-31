@@ -77,7 +77,7 @@ CHECK_MAPPING = {
         [".spec.containers[].image"],
     ),
     "netRawCapabilityUsed": (
-        CheckCategory.PSP,
+        CheckCategory.AdmissionControl,
         [".spec.containers[].securityContext.capabilities.drop"],
     ),
     "noOwnerLabel": (
@@ -97,7 +97,7 @@ CHECK_MAPPING = {
         [".metadata.namespace"],
     ),
     "priviledgedContainersEnabled": (
-        CheckCategory.PSP,
+        CheckCategory.AdmissionControl,
         [".spec.privileged"],
     ),
     "privilegeEscalationCheck": (

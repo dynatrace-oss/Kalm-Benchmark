@@ -378,12 +378,12 @@ class TestCheckCategorizationByCheckId:
     @pytest.mark.parametrize("id", ["PSP-1", "psp-2", "PsP-3", " psp--"])
     def test_pod_security_policy(self, id: str):
         cat = categorize_by_check_id(id)
-        assert cat == CheckCategory.PSP
+        assert cat == CheckCategory.AdmissionControl
 
     @pytest.mark.parametrize("id", ["RBAC-1", "rbac-2", "RbAC-3", "rbac---"])
     def test_rbac(self, id: str):
         cat = categorize_by_check_id(id)
-        assert cat == CheckCategory.RBAC
+        assert cat == CheckCategory.IAM
 
     @pytest.mark.parametrize("id", ["NS-1", "ns-2", "SRV-1", "WL-2", "CJ-1"])
     def test_workload_management(self, id: str):

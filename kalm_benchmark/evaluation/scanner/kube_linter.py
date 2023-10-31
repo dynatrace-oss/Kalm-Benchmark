@@ -4,7 +4,7 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 
 CHECK_MAPPING = {
     "access-to-create-pods": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].verbs",
             "ClusterRole.rules[].resources",
@@ -15,7 +15,7 @@ CHECK_MAPPING = {
         ],
     ),
     "access-to-secrets": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].verbs",
             "ClusterRole.rules[].resources",
@@ -26,7 +26,7 @@ CHECK_MAPPING = {
         ],
     ),
     "cluster-admin-role-binding": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         ["RoleBinding.roleRef.name", "ClusterRoleBinding.roleRef.name", ".roleRef.name"],
     ),
     "dangling-horizontalpodautoscaler": (
@@ -71,7 +71,7 @@ CHECK_MAPPING = {
         [".spec.containers[].securityContext.capabilities.drop"],
     ),
     "env-var-secret": (
-        CheckCategory.SecretManagement,
+        CheckCategory.DataSecurity,
         [".spec.containers[].env[].name"],
     ),
     "exposed-services": (
@@ -95,7 +95,7 @@ CHECK_MAPPING = {
         ["HorizontalPodAutoscaler.spec.minReplicas", ".spec.minReplicas"],
     ),
     "latest-tag": (
-        CheckCategory.SupplyChain,
+        CheckCategory.Workload,
         [".spec.containers[].image"],
     ),
     "minimum-three-replicas": (
@@ -135,7 +135,7 @@ CHECK_MAPPING = {
         ["Deployment.spec.strategy.type", ".spec.strategy.type"],
     ),
     "non-existent-service-account": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [".spec.serviceAccountName", "ServiceAccount.metadata.name"],
     ),
     "non-isolated-pod": (
@@ -155,7 +155,7 @@ CHECK_MAPPING = {
         [".spec.containers[].ports[].containerPort"],
     ),
     "read-secret-from-env-var": (
-        CheckCategory.SecretManagement,
+        CheckCategory.DataSecurity,
         [".spec.containers[].env[].valueFrom.SecretKeyRef"],
     ),
     "required-annotation-email": (
@@ -207,7 +207,7 @@ CHECK_MAPPING = {
         [".metadata.namespace"],
     ),
     "wildcard-in-rules": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].verbs",
             "ClusterRole.rules[].resources",

@@ -20,7 +20,7 @@ CHECK_MAPPING = {
     "Pod or Container Without LimitRange": (CheckCategory.Reliability, ".metadata.namespace"),
     "Pod or Container Without ResourceQuota": (CheckCategory.Reliability, ".metadata.namespace"),
     # the provided information of this check is inaccurate (points to rules and not the verbs)
-    "RBAC Roles with Read Secrets Permissions": (CheckCategory.RBAC, ".rules[].verbs"),
+    "RBAC Roles with Read Secrets Permissions": (CheckCategory.IAM, ".rules[].verbs"),
     # search key points only to the requests field, not the cpu
     "CPU Requests Not Set": (CheckCategory.Reliability, ".spec.containers[].resources.requests.cpu"),
     # search key points only to the limits field, not the cpu
