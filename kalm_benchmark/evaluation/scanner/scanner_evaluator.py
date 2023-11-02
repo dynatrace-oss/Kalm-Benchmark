@@ -41,6 +41,7 @@ class CheckCategory(StrEnum):
     Runtime = auto()  # TODO: sure?
     PodSecurity = auto()
     Workload = auto()
+    Vulnerability = auto()
 
 
 class CheckStatus(LowercaseStrEnum):

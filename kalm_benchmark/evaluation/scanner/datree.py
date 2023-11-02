@@ -7,7 +7,7 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 
 CHECK_MAPPING = {
     "CONFIGMAP_CVE2021_25742_INCORRECT_SNIPPET_ANNOTATIONS_VALUE": (
-        CheckCategory.Misc,
+        CheckCategory.Vulnerability,
         ".data.allow-snippet-annotation",
     ),
     "CONTAINERS_MISSING_IMAGE_VALUE_VERSION": (CheckCategory.Workload, ".spec.containers[].image"),
@@ -43,18 +43,17 @@ CHECK_MAPPING = {
     "DEPLOYMENT_MISSING_LABEL_ENV_VALUE": (CheckCategory.Workload, ".metadata.labels.env"),
     "DEPLOYMENT_INCORRECT_REPLICAS_VALUE": (CheckCategory.Workload, "Deployment.spec.replicas"),
     "ENDPOINTSLICE_CVE2021_25373_INCORRECT_ADDRESSES_VALUE": (
-        CheckCategory.Workload,
+        CheckCategory.Vulnerability,
         "EndpointSlice.endpoints[].addresses",
     ),
     "HPA_MISSING_MINREPLICAS_KEY": (CheckCategory.Workload, "HorizontalPodAutoscaler.minReplicas"),
     "HPA_MISSING_MAXREPLICAS_KEY": (CheckCategory.Workload, "HorizontalPodAutoscaler.maxReplicas"),
     "INGRESS_INCORRECT_HOST_VALUE_PERMISSIVE": (CheckCategory.Network, "Ingress.spec.rules[].host"),
     "INGRESS_CVE2021_25742_INCORRECT_SERVER_SNIPPET_KEY": (
-        CheckCategory.Network,
+        CheckCategory.Vulnerability,
         ".metadata.annotations.nginx.ingress.kubernetes.io/server-snippet",
     ),
-    "K8S_DEPRECATED_APIVERSION_1.16": (CheckCategory.Misc, ".apiVersion"),
-    "K8S_DEPRECATED_APIVERSION_1.17": (CheckCategory.Misc, ".apiVersion"),
+    "K8S_DEPRECATED_APIVERSION": (CheckCategory.Misc, ".apiVersion"),
     "K8S_INCORRECT_KIND_VALUE_POD": (CheckCategory.Workload, ".kind"),
     "SERVICE_INCORRECT_TYPE_VALUE_NODEPORT": (CheckCategory.Network, "Service.spec.type"),
     "WORKLOAD_INCORRECT_NAMESPACE_VALUE_DEFAULT": (CheckCategory.Workload, ".metadata.namespace"),

@@ -75,7 +75,7 @@ CONTROL_CATEGORY = {
     "C-0077": CheckCategory.Workload,
     "C-0078": CheckCategory.Workload,  # Images from allowed registry
     "C-0079": CheckCategory.PodSecurity,
-    # "C-0080": CheckCategory.SuplpyChain,  # gone? 
+    # "C-0080": CheckCategory.SupplyChain,  # gone? 
     "C-0081": CheckCategory.Vulnerability,   # CVE-2022-24348-argocddirtraversal
     "C-0082": CheckCategory.Infrastructure,
 }

@@ -74,7 +74,7 @@ def collect_overview_information() -> pd.DataFrame:
             # cat_secret_management=_get_category_sum(categories.get(CheckCategory.DataSecurity, None)),
             # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
             cat_workload=_get_category_sum(categories.get(CheckCategory.Workload, None)),
-            cat_misc=_get_category_sum(categories.get(CheckCategory.Misc, None)),
+            cat_misc=_get_category_sum(categories.get(CheckCategory.Misc, {})| categories.get(CheckCategory.Vulnerability, {})),
             can_scan_manifests=scanner.can_scan_manifests,
             can_scan_cluster=scanner.can_scan_cluster,
             custom_checks=str(scanner.CUSTOM_CHECKS),
