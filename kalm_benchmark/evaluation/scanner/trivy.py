@@ -363,5 +363,6 @@ class Scanner(ScannerBase):
         :return: the version number of the tool
         """
         raw_version = super().get_version()
-        label, version = raw_version.split(" ")
+        version_line, *_ = raw_version.split("\n")
+        label, version = version_line.split(" ")
         return version
