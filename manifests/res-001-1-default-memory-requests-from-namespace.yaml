@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].resources.requests.memory
+    description: not setting default memory requests can lead to problems upon admission
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-001-1

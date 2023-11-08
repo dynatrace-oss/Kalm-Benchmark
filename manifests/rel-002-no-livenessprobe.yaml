@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].livenessProbe
+    description: Configuring a livenessProbe is recommended as it's intended to ensure that workload remains healthy during its entire execution lifecycle, or otherwise restart the container.
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: REL-002

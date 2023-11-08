@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.nodeSelector|.spec.affinity.nodeAffinity
+    description: Pods with high risk workloads can be assigned to specific node to separate them from other workloads
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: REL-004-3

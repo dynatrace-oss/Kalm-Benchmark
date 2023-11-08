@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.securityContext
+    description: not providing a podSecurityContext leads to the use of too permissive settings for the pod
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-016

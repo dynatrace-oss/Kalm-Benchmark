@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .metadata.namespace
+    description: azure should not be used for custom workloads
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NS-002-2

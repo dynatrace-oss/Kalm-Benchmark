@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .metadata.annotations|.metadata.annotations.container.apparmor.security.beta.kubernetes.io|.metadata.annotations[container.apparmor.security.beta.kubernetes.io]|.spec.securityContext.seccompProfile|.spec.securityContext.seLinuxOptions|.spec.containers[].securityContext.seccompProfile|.spec.containers[].securityContext.seLinuxOptions
+    description: Not hardening a linux system can increase the impact of a compromise
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-022-2

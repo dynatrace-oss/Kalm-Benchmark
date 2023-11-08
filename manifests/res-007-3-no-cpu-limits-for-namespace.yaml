@@ -76,6 +76,9 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3

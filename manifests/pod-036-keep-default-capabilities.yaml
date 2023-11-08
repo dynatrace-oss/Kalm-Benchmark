@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].securityContext.capabilities.drop
+    description: When not dropping all capabilities the container gets the capabilities defined by the container runtime, which is often fairly generous and does not adhere to principle of least privilege
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-036

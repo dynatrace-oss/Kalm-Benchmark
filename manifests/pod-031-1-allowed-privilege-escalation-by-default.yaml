@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].securityContext.allowPrivilegeEscalation
+    description: "Avoid using the privileged flag, and if your container does need additional capabilities, add only the ones you need through the capabilities settings. "
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-031-1

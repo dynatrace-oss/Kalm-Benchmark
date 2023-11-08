@@ -41,7 +41,7 @@ class ServiceAccount(Construct):
         k8s.KubeServiceAccount(
             self,
             name,
-            metadata=k8s.ObjectMeta(name=name),
+            metadata=k8s.ObjectMeta(name=name, annotations=meta.annotations),
             automount_service_account_token=automount_sa_token,
         )
 
@@ -546,6 +546,11 @@ def gen_rbac(app) -> None:
         descr="all service accounts should be bound to roles",
         role_name=None,
         subject_type=SubjectType.SA,
+        check_path=[
+            "ClusterRoleBinding.subjects[].name",
+            "RoleBinding.subjects[].name",
+            ".subjects[].name",
+        ],
         subject="rbac-016-ronin-sa",
     )
 
@@ -557,6 +562,11 @@ def gen_rbac(app) -> None:
         descr="",
         role_name=roles,
         subject_type=SubjectType.User,
+        check_path=[
+            "ClusterRoleBinding.subjects[].name",
+            "RoleBinding.subjects[].name",
+            ".subjects[].name",
+        ],
         subject="poly-role-sa",
         resources="services",
         verbs="get",

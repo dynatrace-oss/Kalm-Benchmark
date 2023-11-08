@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.securityContext.runAsNonRoot|.spec.securityContext.runAsUser|.spec.containers[].securityContext.runAsNonRoot|.spec.containers[].securityContext.runAsUser
+    description: Using runAsNonRoot is a viable alternative to `runAsUser>1000`
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-017-3

@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
+    description: disabling automounting at SA level will be the default for pods as well
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-003-3

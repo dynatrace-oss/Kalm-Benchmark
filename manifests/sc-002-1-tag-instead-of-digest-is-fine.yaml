@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].image
+    description: Specify an explicit tag or digest to have full control over the running container image
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: SC-002-1

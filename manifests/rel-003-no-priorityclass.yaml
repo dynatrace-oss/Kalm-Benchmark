@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.priorityClassName
+    description: Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: REL-003

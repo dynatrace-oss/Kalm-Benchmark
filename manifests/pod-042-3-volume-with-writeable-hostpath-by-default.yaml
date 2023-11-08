@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.volumes[]|.spec.volumes[].hostPath|.spec.volumes[].hostPath.path|.spec.containers[].volumeMounts[]
+    description: Attackers can use a writable hostpath to gain persistence on underlying host system
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-042-3

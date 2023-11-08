@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.hostIPC
+    description: Containers should be isolated from the host machine as much as possible. `hostIPC` on pods may allow cross-container influence and may expose the host itself to potentially malicious or destructive actions
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-009-2

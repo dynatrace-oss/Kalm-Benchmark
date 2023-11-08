@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].securityContext.privileged
+    description: Changing the privileged flag is optional as it defaults to False
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-032-1

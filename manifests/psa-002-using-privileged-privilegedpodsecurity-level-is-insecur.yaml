@@ -80,6 +80,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: Namespace.metadata.labels.pod-security.kubernetes.io
+    description: Privileged pod security level imposes no restrictions and may allow for known privilege escalations
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: PSA-002

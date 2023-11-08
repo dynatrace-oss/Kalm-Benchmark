@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].readinessProbe
+    description: Configuring a readinessProbe is recommended as it's intended to ensure that workload is ready to process network traffic
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: REL-001
