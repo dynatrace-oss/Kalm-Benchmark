@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from loguru import logger
 
@@ -157,7 +158,10 @@ CONTROL_CATEGORY = {
         ],
     ),  # Resources CPU limit and request
     "C-0052": (CheckCategory.Infrastructure, ""),  # Instance Metadata API (Run Kubescape with host sensor)
-    "C-0053": (CheckCategory.IAM, ""),  # Access container service account (Is RBAC enabled?)
+    "C-0053": (
+        CheckCategory.IAM,
+        ["ClusterRoleBinding.subjects[].name", "RoleBinding.subjects[].name", ".subjects[].name"],
+    ),  # Access container service account
     "C-0054": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  #  Cluster internal networking
     "C-0055": (
         CheckCategory.PodSecurity,
@@ -178,7 +182,7 @@ CONTROL_CATEGORY = {
         "Ingress.metadata.annotations.nginx",
     ),  # CVE-2021-25742-nginx-ingress-snippet-annotation-vulnerability
     # "C-0060": (CheckCategory.Workload, ""),  # gone?
-    "C-0061": (CheckCategory.Workload, ".spec.metadata.namespace"),  # Pods in default namespace
+    "C-0061": (CheckCategory.Workload, ".metadata.namespace"),  # Pods in default namespace
     "C-0062": (CheckCategory.PodSecurity, ".spec.containers[].command[]"),  # Sudo in container entrypoint
     "C-0063": (
         CheckCategory.IAM,
@@ -222,8 +226,19 @@ class Scanner(ScannerBase):
     NAME = "Kubescape"
     IMAGE_URL = "https://www.armosec.io/wp-content/uploads/2023/01/Group-1000005089.svg"
     FORMATS = ["Plain", "JSON", "JUnit", "Prometheus", "PDF", "HTML", "Sarif"]
-    SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "sarif", "--verbose", "--keep-local"]
-    # SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "json", "--verbose", "--keep-local"]
+    # SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "sarif", "--verbose", "--keep-local"]
+    SCAN_MANIFESTS_CMD = [
+        "kubescape",
+        "scan",
+        "framework",
+        "allcontrols,nsa,mitre",
+        "--format",
+        "json",
+        # "--verbose",
+        # "--keep-local",
+        # "--view",
+        # "resource",
+    ]  # Note: control view contains paths
     RUNS_OFFLINE = "artifacts/frameworks can be downloaded"
     CUSTOM_CHECKS = True
     VERSION_CMD = ["kubescape", "version"]
@@ -264,6 +279,7 @@ class Scanner(ScannerBase):
         for resource_results in scan_result["results"]:
             resource_id = resource_results["resourceID"]
             check_results += parse_resource_result(resource_results, resource_infos[resource_id])
+
         return check_results
 
     @classmethod
@@ -288,43 +304,60 @@ def parse_resource_result(res_result: dict, resource_info: dict) -> list[CheckRe
     results = []
     for ctrl in res_result["controls"]:
         ctrl_id = ctrl["controlID"]
-        res = CheckResult(
-            check_id=obj["check_id"],
-            obj_name=obj["obj_name"],
-            namespace=obj["namespace"],
-            kind=resource_info["kind"],
-            scanner_check_id=ctrl_id,
-            scanner_check_name=ctrl["name"],
-            checked_path=get_checked_path(ctrl_id),
-            got=_normalize_status(ctrl["status"]["status"]),
-            severity=prio.get("serverity", None),
-        )
-        results.append(res)
+        for rule in ctrl["rules"]:
+            checked_path = get_checked_path(ctrl_id, rule.get("paths", None), resource_info)
+            status = _normalize_status(rule["status"])
+
+            res = CheckResult(
+                check_id=obj["check_id"],
+                obj_name=obj["obj_name"],
+                namespace=obj["namespace"],
+                kind=resource_info["kind"],
+                scanner_check_id=ctrl_id,
+                scanner_check_name=ctrl["name"],
+                details=f"Rule '{rule['name']}'",
+                checked_path=checked_path,
+                got=status,
+                severity=prio.get("serverity", None),
+            )
+            results.append(res)
 
     return results
 
 
-def get_checked_path(ctrl_id: str) -> str:
+def get_checked_path(ctrl_id: str, paths: list | None = None, k8s_object: dict | None = None) -> str:
     """Get the path(s) controlled by the check.
 
     :param check_id: the id of the check
     :return: the check(s) as single string or an empty string if no path could be retrieved.
     """
-    _, paths = CONTROL_CATEGORY.get(ctrl_id, (None, None))
-    if isinstance(paths, str):
-        return paths
-    if isinstance(paths, list):
-        return "|".join(paths)
+    checked_paths = []
+    if paths is not None:
+        for p in paths:
+            if (failed_path := p.get("failedPath", None)) is not None:
+                # keys in data are treated as array index -> convert them to valid JSON Path
+                failed_path = re.sub(r"data\[(.*)\]", r"data.\1", failed_path)
+                normalized_path = normalize_path(failed_path, k8s_object)
+                checked_paths.append(normalized_path)
+
+    # fallback: derive checked path from control mapping, which may be less accurate
+    if len(checked_paths) == 0:
+        _, checked_paths = CONTROL_CATEGORY.get(ctrl_id, (None, None))
+
+    if isinstance(checked_paths, str):
+        return checked_paths
+    if isinstance(checked_paths, list):
+        return "|".join(checked_paths)
 
 
 def _normalize_status(status: str) -> str:
     if status == "failed":
         return CheckStatus.Alert
-    elif status == "passed":
+    elif status in ["passed", "skipped"]:
         return CheckStatus.Pass
     else:
         logger.warning(f"Unknown status while parsing kubescape: '{status}'. Expected either 'failed' or 'success")
-        return ""
+        return CheckStatus.Pass
 
 
 def _parse_api_object(obj: dict) -> dict:
@@ -350,6 +383,39 @@ def _parse_api_object(obj: dict) -> dict:
 
     res = _consolidate_objects(check_infos)
     return res
+
+
+# def _parse_rule_responses(responses: list[dict]) -> list[CheckResult]:
+#     results = []
+#     for r in responses:
+#         checked_path = normalize_paths(r["failedPaths"], r["fixPaths"])
+#         status = _normalize_status(r["ruleStatus"])
+#         details = ", ".join(r["failedPaths"] or [""])
+
+#         api_objs = r["alertObject"]["k8sApiObjects"]
+#         for obj in api_objs:
+#             checked_path = normalize_paths(r["failedPaths"], r["fixPaths"], obj.get("relatedObjects", None))
+#             res = _parse_api_object(obj)
+#             results.append(CheckResult(got=status, details=details, checked_path=checked_path, **res))
+#     return results
+
+
+# def normalize_paths(
+#     failed_paths: list[str] | None = None,
+#     fix_paths: list[dict[str, str]] | None = None,
+#     related_objects: list[dict] | None = None,
+# ) -> str:
+#     if failed_paths is None and fix_paths is None:
+#         return None
+
+#     paths = []
+#     if failed_paths is not None:
+#         paths += failed_paths
+#     if fix_paths is not None:
+#         paths += [fix_path["path"] for fix_path in fix_paths]
+
+#     normalized_paths = [normalize_path(p, related_objects) for p in paths]
+#     return "|".join(set(normalized_paths))
 
 
 def _consolidate_objects(check_infos: list[dict]) -> dict:
