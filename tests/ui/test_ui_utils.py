@@ -1,5 +1,8 @@
 import json
+from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
+
+import pytest
 
 from kalm_benchmark.evaluation.evaluation import EvaluationSummary
 from kalm_benchmark.evaluation.scanner_manager import ScannerManager
@@ -64,14 +67,16 @@ class TestSummaryLoading:
     def test_load_existing_summary(self, mocker, tmp_path):
         # df_cats = pd.DataFrame({"cat1": [15], "cat2": [0]})
         cats = {"cat1": [15], "cat2": [0]}
+        version = "1.3.3-7"
         expected_summary = EvaluationSummary(
-            checks_per_category=cats, score=0.73, coverage=0.42, extra_checks=1, missing_checks=2
+            version=version, checks_per_category=cats, score=0.73, coverage=0.42, extra_checks=1, missing_checks=2
         )
         data = expected_summary.to_dict()
         data = json.dumps(data)
 
         tool = "my-tool"
-        file_name = f"{tool}.json"
+        date = "2024-01-01"
+        file_name = f"{tool}_v{version}_{date}.json"
         summary_file = tmp_path / utils.SUMMARIES_DIR_NAME / file_name
         summary_file.parent.mkdir()
         with open(summary_file, "w") as f:
@@ -113,3 +118,19 @@ class TestSummaryLoading:
         with patch.object(utils, "evaluation") as m, patch.object(utils, "_save_summary"):
             utils._load_and_cache_scanner_summary("anything", tmp_path / file_name)
             m.create_summary.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "file_name,expected_version",
+    [
+        ("tool1_v3.0.19_2023-11-02.json", "3.0.19"),
+        ("data/tool2_v1.6.6_2023-08-31.json", "1.6.6"),
+        ("data/summary/tool3_v1.980.0_2024-01-01", "1.980.0"),
+        ("/tool4/_v1.5_2024-01-01", "1.5"),
+        ("_v0.4.0-0-gc37b7551f6_2024-01-01", "0.4.0-0-gc37b7551f6"),
+        (Path("/home/user/tool6_v1.3.3-7_2024-01-01"), "1.3.3-7"),
+    ],
+)
+def test_get_version_from_file_name(file_name: str | Path, expected_version: str):
+    vers = utils.get_version_from_result_file(file_name=file_name)
+    assert vers == expected_version

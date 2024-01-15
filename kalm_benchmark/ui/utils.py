@@ -124,7 +124,8 @@ def _load_and_cache_scanner_summary(
         try:
             results = load_scan_result(scanner, result_file)
             df = evaluation.evaluate_scanner(scanner, results)
-            summary = evaluation.create_summary(df)
+            summary = evaluation.create_summary(df, version=get_version_from_result_file(result_file))
+
             # save summary in a file, so it needn't be calculated again
             if save_created_summary:
                 _save_summary(summary, summary_file)
@@ -139,6 +140,8 @@ def _load_summary_from_fs(file_path: Path) -> EvaluationSummary | None:
     try:
         with open(file_path, "r") as f:
             data = json.loads(f.read())
+            if "version" not in data:  # for backward compatibility
+                data["version"] = get_version_from_result_file(file_name=f.name)
             summary = EvaluationSummary.from_dict(data)
     except json.JSONDecodeError:
         # if an error occurs, no summary will be loaded
@@ -151,6 +154,13 @@ def _save_summary(summary: EvaluationSummary, dest_path: Path) -> None:
         d = summary.to_dict()
         j = json.dumps(d)
         f.write(j)
+
+
+def get_version_from_result_file(file_name: str | Path) -> str | None:
+    *_, version, date = str(file_name).split("_")
+    if version.startswith("v"):
+        return version[1:]  # drop leading 'v' which would just denote the version anyways
+    return version
 
 
 def is_ephemeral_scan_result(result_name: str | Path | None) -> bool:

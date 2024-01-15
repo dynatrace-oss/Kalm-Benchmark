@@ -16,6 +16,7 @@ from kalm_benchmark.evaluation.evaluation import (
     evaluate_scanner,
 )
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS
+from kalm_benchmark.ui import utils
 from kalm_benchmark.ui.constants import SELECTED_RESULT_FILE, Color
 from kalm_benchmark.ui.utils import get_result_files_of_scanner, load_scan_result
 
@@ -142,14 +143,15 @@ def load_scanner_results(
 
 
 @st.cache_data
-def load_evaluation_summary(df: pd.DataFrame, metric: Metric) -> EvaluationSummary:
+def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: str | None = None) -> EvaluationSummary:
     """Load the evaluation summary of the given dataframe with check results.
 
     :param df: the dataframe which will be summarized
     :param metric: the metric used for the calculation of the score
+    :param version: the version of the tool when the results were created
     :return: an object with several summary artifacts and metrics
     """
-    return evaluation.create_summary(df, metric)
+    return evaluation.create_summary(df, metric, version=version)
 
 
 def show_results(scanner_name: str, result_file: Path | None = None) -> None:
@@ -170,7 +172,8 @@ def show_results(scanner_name: str, result_file: Path | None = None) -> None:
     df_results = df_results[~df_results[Col.ScannerCheckId].isin(excluded_checks)]
 
     metric = Metric.F1
-    summary = load_evaluation_summary(df_results, metric)
+    version = utils.get_version_from_result_file(result_file)
+    summary = load_evaluation_summary(df_results, metric, version=version)
     col1, col2 = st.columns(2)
 
     with col1:

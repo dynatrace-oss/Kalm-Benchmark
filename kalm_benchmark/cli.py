@@ -9,6 +9,7 @@ from kalm_benchmark.constants import UpdateType
 from kalm_benchmark.evaluation import evaluation
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS, ScannerBase
 from kalm_benchmark.manifest_generator.gen_manifests import create_manifests
+from kalm_benchmark.ui.utils import get_version_from_result_file
 
 app = typer.Typer(name="kalm-benchmark", no_args_is_help=True)
 
@@ -79,7 +80,7 @@ def evaluate(
 
         results = evaluation.load_scanner_results_from_file(scanner, file)
         df = evaluation.evaluate_scanner(scanner, results)
-        summary = evaluation.create_summary(df)
+        summary = evaluation.create_summary(df, version=get_version_from_result_file(file_name=file))
         typer.echo(f"Here are the results of the evaluation of {tool}:")
         typer.echo(summary)
 

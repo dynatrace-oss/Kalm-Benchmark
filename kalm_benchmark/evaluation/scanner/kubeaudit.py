@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 from typing import Optional
-from loguru import logger
 
 import pandas as pd
+from loguru import logger
 
 from kalm_benchmark.constants import RunUpdateGenerator, UpdateType
 

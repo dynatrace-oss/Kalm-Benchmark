@@ -22,6 +22,7 @@ class ScannerInfo:
     # note: the order of the fields dictates the initial order of the columns in the UI
     name: str
     image: str | None = None
+    version: str | None = None
     score: float = 0.0
     coverage: float = 0.0
     cat_IAM: str = "0/0"
@@ -55,12 +56,13 @@ def collect_overview_information() -> pd.DataFrame:
         is_valid_summary = True
         if summary is None:
             is_valid_summary = False
-            summary = evaluation.EvaluationSummary({}, 0, 0, 0, 0)
+            summary = evaluation.EvaluationSummary(None, {}, 0, 0, 0, 0)
         categories = summary.checks_per_category
 
         scanner_info = ScannerInfo(
             name,
             image=scanner.IMAGE_URL,
+            version=summary.version,
             score=summary.score,
             coverage=summary.coverage,
             ci_mode=scanner.CI_MODE,
@@ -162,6 +164,14 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     #     cellClass="img-cell",
     # )
     builder.configure_column("image", hide=True)
+    builder.configure_column(
+        "version",
+        header_name="Version",
+        # valueFormatter=percent_formatter,
+        headerTooltip="The version the tool had when creating the results",
+        width=130,
+        tooltipShowDelay=TOOLTIP_DELAY,
+    )
     builder.configure_column(
         "ci_mode",
         header_name="CI Mode",

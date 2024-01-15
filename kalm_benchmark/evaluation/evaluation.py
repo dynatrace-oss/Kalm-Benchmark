@@ -497,6 +497,7 @@ def load_benchmark() -> pd.DataFrame:
 
 @dataclass
 class EvaluationSummary:
+    version: str | None
     checks_per_category: dict
     score: float
     coverage: float
@@ -511,11 +512,12 @@ class EvaluationSummary:
         return EvaluationSummary(**data)
 
 
-def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1) -> EvaluationSummary:
+def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | None = None) -> EvaluationSummary:
     """
     Create a summary of the evaluation results.
     :param df: the dataframe containing the execution results
     :param metric: the metrics used for the calculation of the score
+    :param version: the version of the tool when the results were created
     :returns: a summary of the evaluation
     """
     # note the only information from the scanner is the 'got' column which is required for the score calculation
@@ -537,6 +539,7 @@ def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1) -> EvaluationSu
     df_no_extra = df_unique_checks[df_unique_checks[Col.ResultType] != ResultType.Extra]
 
     return EvaluationSummary(
+        version,
         check_summary_per_category(df_unique_checks),
         calculate_score(df_no_extra, metric),
         calculate_coverage(df_no_extra),
