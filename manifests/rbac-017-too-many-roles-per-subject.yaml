@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -23,7 +23,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -43,7 +43,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -64,7 +64,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -84,7 +84,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -105,7 +105,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -125,7 +125,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -146,7 +146,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -166,7 +166,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -187,7 +187,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -207,7 +207,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -228,7 +228,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -248,7 +248,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -269,7 +269,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -289,7 +289,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -310,7 +310,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -330,7 +330,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -351,7 +351,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -371,7 +371,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:
@@ -392,7 +392,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: None
+    check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
   labels:

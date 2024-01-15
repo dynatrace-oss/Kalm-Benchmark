@@ -1,6 +1,5 @@
 from kalm_benchmark.evaluation.scanner.kubescape import (
     _consolidate_objects,
-    _get_check_path,
     _parse_api_object,
 )
 from kalm_benchmark.manifest_generator.constants import CheckStatus
@@ -335,52 +334,3 @@ class TestObjectsConsolidation:
         }
 
         assert res == expect
-
-
-class TestCheckPathExtraction:
-    def test_only_failed_paths(self):
-        failed_paths = ["spec.template.metadata.labels"]
-
-        res = _get_check_path(failed_paths)
-        assert res == ".metadata.labels"
-
-    def test_multiple_paths_are_concatinated(self):
-        paths = [
-            "relatedObjects[1].rules[2].resources[0]",
-            "relatedObjects[1].rules[2].verbs[2]",
-            "relatedObjects[0].roleRef.name",
-        ]
-        res = _get_check_path(paths)
-        assert "|" in res
-        resulting_paths = res.split("|")
-        # note: implicit deduplication does not preserve order, so a set comparison will be done instead
-        expect = set(
-            [
-                ".relatedObjects[].rules[].resources[]",
-                ".relatedObjects[].rules[].verbs[]",
-                ".relatedObjects[].roleRef.name",
-            ]
-        )
-        assert len(set(resulting_paths) - expect) == 0
-
-    def test_results_are_deduplicated(self):
-        failed_paths = ["spec.template.metadata.labels", "metadata.labels"]
-        res = _get_check_path(failed_paths)
-        assert res == ".metadata.labels"
-
-    def test_only_fix_paths(self):
-        paths = [
-            "spec.template.spec.containers[0].resources.limits.memory",
-            "spec.template.spec.containers[0].resources.requests.memory",
-        ]
-        fix_paths = [{"path": p, "value": "-"} for p in paths]
-        res = _get_check_path(None, fix_paths)
-        assert "|" in res
-        resulting_paths = res.split("|")
-        expected_paths = set(
-            [".spec.containers[].resources.limits.memory", ".spec.containers[].resources.requests.memory"]
-        )
-        assert len(set(resulting_paths) - expected_paths) == 0
-
-    def test_no_paths_result_in_none(self):
-        assert _get_check_path(None, None) is None

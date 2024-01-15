@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .metadata.annotations|.metadata.annotations.container.apparmor.security.beta.kubernetes.io.metadata.annotations[container.apparmor.security.beta.kubernetes.io]
+    description: AppArmor can be configured for any application to reduce its potential attack surface and provide greater in-depth defense.
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-014

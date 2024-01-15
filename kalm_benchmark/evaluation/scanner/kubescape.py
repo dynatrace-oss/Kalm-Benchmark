@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from loguru import logger
 
@@ -8,84 +9,236 @@ from ..utils import normalize_path
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 CONTROL_CATEGORY = {
-    "C-0001": CheckCategory.SupplyChain,
-    "C-0002": CheckCategory.RBAC,
-    "C-0004": CheckCategory.Workload,
-    "C-0005": CheckCategory.Infrastructure,
-    "C-0006": CheckCategory.PodSecurity,
-    "C-0007": CheckCategory.RBAC,
-    "C-0009": CheckCategory.Workload,
-    "C-0011": CheckCategory.Network,
-    "C-0012": CheckCategory.SecretManagement,
-    "C-0013": CheckCategory.PodSecurity,
-    "C-0014": CheckCategory.RBAC,
-    "C-0015": CheckCategory.RBAC,
-    "C-0016": CheckCategory.PodSecurity,
-    "C-0017": CheckCategory.PodSecurity,
-    "C-0018": CheckCategory.PodSecurity,
-    "C-0019": CheckCategory.PodSecurity,
-    "C-0020": CheckCategory.PodSecurity,
-    "C-0021": CheckCategory.Workload,
-    "C-0024": CheckCategory.PodSecurity,
-    "C-0025": CheckCategory.PodSecurity,
-    "C-0026": CheckCategory.Workload,
-    "C-0028": CheckCategory.PodSecurity,
-    "C-0030": CheckCategory.Network,
-    "C-0031": CheckCategory.RBAC,
-    "C-0033": CheckCategory.Workload,
-    "C-0034": CheckCategory.PodSecurity,
-    "C-0035": CheckCategory.RBAC,
-    "C-0036": CheckCategory.Infrastructure,
-    "C-0037": CheckCategory.RBAC,
-    "C-0038": CheckCategory.PodSecurity,
-    "C-0039": CheckCategory.Infrastructure,
-    "C-0041": CheckCategory.PodSecurity,
-    "C-0042": CheckCategory.PodSecurity,
-    "C-0044": CheckCategory.PodSecurity,
-    "C-0045": CheckCategory.PodSecurity,
-    "C-0046": CheckCategory.PodSecurity,
-    "C-0047": CheckCategory.Workload,
-    "C-0048": CheckCategory.PodSecurity,
-    "C-0049": CheckCategory.Network,
-    "C-0050": CheckCategory.PodSecurity,
-    "C-0052": CheckCategory.Infrastructure,
-    "C-0053": CheckCategory.RBAC,
-    "C-0054": CheckCategory.Network,
-    "C-0055": CheckCategory.PodSecurity,
-    "C-0056": CheckCategory.PodSecurity,
-    "C-0057": CheckCategory.PodSecurity,
-    "C-0058": CheckCategory.PodSecurity,
-    "C-0059": CheckCategory.Workload,
-    "C-0060": CheckCategory.Workload,
-    "C-0061": CheckCategory.Workload,
-    "C-0062": CheckCategory.PodSecurity,
-    "C-0063": CheckCategory.RBAC,
-    "C-0064": CheckCategory.PodSecurity,
-    "C-0065": CheckCategory.RBAC,
-    "C-0066": CheckCategory.Infrastructure,
-    "C-0067": CheckCategory.Infrastructure,
-    "C-0068": CheckCategory.PSP,
-    "C-0069": CheckCategory.Infrastructure,
-    "C-0070": CheckCategory.Infrastructure,
-    "C-0071": CheckCategory.Infrastructure,
-    "C-0073": CheckCategory.Workload,
-    "C-0074": CheckCategory.PodSecurity,
-    "C-0075": CheckCategory.PodSecurity,
-    "C-0076": CheckCategory.Workload,
-    "C-0077": CheckCategory.Workload,
-    "C-0078": CheckCategory.SupplyChain,
-    "C-0079": CheckCategory.PodSecurity,
-    "C-0080": CheckCategory.SupplyChain,  # as the official docu says "bla bla"
-    "C-0081": CheckCategory.SupplyChain,
-    "C-0082": CheckCategory.Infrastructure,
+    "C-0001": (CheckCategory.Workload, ".spec.containers[].image"),  # Forbidden Container Registries
+    "C-0002": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),  # Exec into container
+    "C-0004": (
+        CheckCategory.Workload,
+        [
+            ".spec.containers[].resources.limits.memory",
+            ".spec.containers[].resources.requests.memory",
+        ],
+    ),  # Resource memory limit and request
+    "C-0005": (CheckCategory.Infrastructure, "kube-api.insecure-port"),  # API server insecure port is enabled
+    # "C-0006": (CheckCategory.PodSecurity, ""),  # gone?
+    "C-0007": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),  # Data Destruction
+    "C-0009": (
+        CheckCategory.Workload,  # Resource limits
+        [
+            ".spec.containers[].resources.limits.memory",
+            ".spec.containers[].resources.requests.memory",
+        ],
+    ),
+    # "C-0011": (CheckCategory.Network, ""),  # gone?
+    "C-0012": (
+        CheckCategory.DataSecurity,
+        [
+            ".data.secret",
+            ".data.bearer",
+            ".data.token",
+            "data.password",
+            ".spec.containers[].env[].valueFrom",
+            ".spec.containers[].env[].value",
+        ],
+    ),  # Applications credentials in configuration files
+    "C-0013": (
+        CheckCategory.Workload,
+        [
+            ".spec.securityContext.runAsUser",
+            ".spec.securityContext.runAsGroup",
+            ".spec.containers[].securityContext.runAsUser",
+            ".spec.containers[].securityContext.runAsGroup",
+            ".spec.containers[].securityContext.allowPrivilegeEscalation",
+        ],
+    ),  # Non-root containers
+    "C-0014": (
+        CheckCategory.IAM,
+        [
+            "RoleBinding.roleRef.name",
+            "ClusterRoleBinding.roleRef.name",
+            ".roleRef.name",
+        ],
+    ),  # Access Kubernetes dashboard
+    "C-0015": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),  # List Kubernetes secrets
+    "C-0016": (
+        CheckCategory.Workload,
+        ".spec.containers[].securityContext.allowPrivilegeEscalation",
+    ),  # Allow privilege escalation
+    "C-0017": (
+        CheckCategory.Workload,
+        ".spec.containers[].securityContext.readOnlyRootFilesystem",
+    ),  # Immutable container filesystem
+    "C-0018": (CheckCategory.Reliability, ".spec.containers[].readinessProbe"),  # Configured readiness probe
+    # "C-0019": (CheckCategory.PodSecurity, ""),  # gone?
+    "C-0020": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Mount service principal
+    "C-0021": (
+        CheckCategory.Workload,
+        ["Service.spec.type", ".spec.containers[].ports[]"],
+    ),  # Exposed sensitive interfaces
+    # "C-0024": (CheckCategory.PodSecurity, ""),  # gone?
+    # "C-0025": (CheckCategory.PodSecurity, ""),  # gone?
+    "C-0026": (CheckCategory.Workload, "Cronjob"),  # Kubernetes CronJob
+    # "C-0028": (CheckCategory.PodSecurity, ""),  # gone?
+    "C-0030": (
+        CheckCategory.Network,
+        ["NetworkPolicy.spec.podSelector.matchLabels", "NetworkPolicy.spec.ingress", "NetworkPolicy.spec.egress"],
+    ),  # Ingress and Egress blocked
+    "C-0031": (
+        CheckCategory.IAM,  # Delete Kubernetes events
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    # "C-0033": (CheckCategory.Workload, ""),  # gone?
+    "C-0034": (
+        CheckCategory.Workload,
+        [".automountServiceAccountToken", ".spec.automountServiceAccountToken"],
+    ),  # Automatic mapping of service account
+    "C-0035": (
+        CheckCategory.IAM,
+        ["RoleBinding.roleRef.name", "ClusterRoleBinding.roleRef.name", ".roleRef.name"],
+    ),  # Cluster-admin binding
+    "C-0036": (
+        CheckCategory.Infrastructure,
+        "ValidatingWebhookConfiguration",
+    ),  # Validate admission controller (validating)
+    "C-0037": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),  # CoreDNS poisoning
+    "C-0038": (CheckCategory.Workload, [".spec.hostIPC", ".spec.hostPID"]),  # Host PID/IPC privileges
+    "C-0039": (
+        CheckCategory.Infrastructure,
+        "MutatingWebhookConfiguration",
+    ),  # Validate admission controller (mutating)
+    "C-0041": (CheckCategory.Workload, ".spec.hostNetwork"),  # HostNetwork access
+    "C-0042": (CheckCategory.Workload, ".spec.containers[].ports[]"),  # SSH server running inside container
+    "C-0044": (CheckCategory.Workload, ".spec.containers[].ports[].hostPort"),  # Container hostPort
+    "C-0045": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Writable hostPath mount
+    "C-0046": (CheckCategory.Workload, ".spec.securityContext.capabilities"),  # Insecure capabilities
+    # "C-0047": (CheckCategory.Workload, ""),  # gone?
+    "C-0048": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # HostPath mount
+    "C-0049": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  # Network mapping
+    "C-0050": (
+        CheckCategory.Reliability,
+        [
+            ".spec.containers[].resources.limits.memory",
+            ".spec.containers[].resources.requests.memory",
+        ],
+    ),  # Resources CPU limit and request
+    "C-0052": (CheckCategory.Infrastructure, ""),  # Instance Metadata API (Run Kubescape with host sensor)
+    "C-0053": (
+        CheckCategory.IAM,
+        ["ClusterRoleBinding.subjects[].name", "RoleBinding.subjects[].name", ".subjects[].name"],
+    ),  # Access container service account
+    "C-0054": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  #  Cluster internal networking
+    "C-0055": (
+        CheckCategory.Workload,
+        [
+            ".spec.securityContext.seccompProfile",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
+            ".spec.securityContext.seLinuxOptions",
+        ],
+    ),  # Linux hardening
+    "C-0056": (CheckCategory.Reliability, ".spec.livenessProbe"),  # Configured liveness probe
+    "C-0057": (CheckCategory.Workload, ".spec.containers[].securityContext.privileged"),  # Privileged container
+    "C-0058": (
+        CheckCategory.Vulnerability,
+        "kubelet",
+    ),  # CVE-2021-25741 - Using symlink for arbitrary host file system access.
+    "C-0059": (
+        CheckCategory.Workload,
+        "Ingress.metadata.annotations.nginx",
+    ),  # CVE-2021-25742-nginx-ingress-snippet-annotation-vulnerability
+    # "C-0060": (CheckCategory.Workload, ""),  # gone?
+    "C-0061": (CheckCategory.Workload, ".metadata.namespace"),  # Pods in default namespace
+    "C-0062": (CheckCategory.Workload, ".spec.containers[].command[]"),  # Sudo in container entrypoint
+    "C-0063": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),  # Portforwarding privileges
+    # "C-0064": (CheckCategory.PodSecurity, ""),  # gone?
+    "C-0065": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),  # No impersonation
+    "C-0066": (CheckCategory.Infrastructure, "etcd"),  #  Secret/etcd encryption enabled
+    "C-0067": (CheckCategory.Infrastructure, ""),  # Audit logs enabled
+    "C-0068": (CheckCategory.AdmissionControl, ""),  # PSP enabled?
+    "C-0069": (CheckCategory.Infrastructure, "kubelet"),  # Disable anonymous access to Kubelet service
+    "C-0070": (CheckCategory.Infrastructure, "kubelet"),  # Enforce Kubelet client TLS authentication
+    # "C-0071": (CheckCategory.Infrastructure, ""),  # gone?
+    "C-0073": (CheckCategory.Workload, ".metadata.ownerReferences"),  # Naked pods
+    "C-0074": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Container runtime socket mounted
+    "C-0075": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),  #  Image pull policy on latest tag
+    "C-0076": (CheckCategory.Workload, ".metadata.labels"),  # Label usage for resources
+    "C-0077": (CheckCategory.Workload, ".metadata.labels"),  # K8s common labels usage
+    "C-0078": (CheckCategory.Workload, ".spec.containers[].image"),  # Images from allowed registry
+    "C-0079": (CheckCategory.Infrastructure, "Node"),  #  CVE-2022-0185-linux-kernel-container-escape
+    # "C-0080"(: CheckCategory.SupplyChain,""),  # gone?
+    "C-0081": (CheckCategory.Infrastructure, "Node"),  # CVE-2022-24348-argocddirtraversal
+    # "C-0082": (CheckCategory.Infrastructure, ""), # gone?
 }
 
 
 class Scanner(ScannerBase):
     NAME = "Kubescape"
     IMAGE_URL = "https://www.armosec.io/wp-content/uploads/2023/01/Group-1000005089.svg"
-    FORMATS = ["Plain", "JSON", "JUnit", "Prometheus", "PDF"]
-    SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "json", "--verbose"]
+    FORMATS = ["Plain", "JSON", "JUnit", "Prometheus", "PDF", "HTML", "Sarif"]
+    # SCAN_MANIFESTS_CMD = ["kubescape", "scan", "--format", "sarif", "--verbose", "--keep-local"]
+    SCAN_MANIFESTS_CMD = [
+        "kubescape",
+        "scan",
+        "framework",
+        "allcontrols,nsa,mitre",
+        "--format",
+        "json",
+        # "--verbose",
+        # "--keep-local",
+        # "--view",
+        # "resource",
+    ]  # Note: control view contains paths
     RUNS_OFFLINE = "artifacts/frameworks can be downloaded"
     CUSTOM_CHECKS = True
     VERSION_CMD = ["kubescape", "version"]
@@ -113,20 +266,26 @@ class Scanner(ScannerBase):
         return results
 
     @classmethod
-    def parse_results(cls, results: dict) -> list[CheckResult]:
+    def parse_results(cls, scan_result: dict) -> list[CheckResult]:
         """
         Parses the raw results and turns them into a flat list of check results.
-        :param results: the results which will be parsed
+        :param scan_result: the results which will be parsed
         :returns: the list of check results
         """
-        ctrls = []
-        for fw_result in results:
-            ctrls += _parse_control_reports(fw_result["controlReports"])
-        return ctrls
+        check_results = []
+
+        resource_infos = {r["resourceID"]: r["object"] for r in scan_result["resources"]}
+
+        for resource_results in scan_result["results"]:
+            resource_id = resource_results["resourceID"]
+            check_results += parse_resource_result(resource_results, resource_infos[resource_id])
+
+        return check_results
 
     @classmethod
     def categorize_check(cls, check_id: str) -> str:
-        return CONTROL_CATEGORY.get(check_id, None)
+        cat, _ = CONTROL_CATEGORY.get(check_id, (None, None))
+        return cat
 
     def get_version(self) -> str:
         """Retrieve the version number of the tool by executing the corresponding command.
@@ -138,84 +297,67 @@ class Scanner(ScannerBase):
         return version.strip()
 
 
-def _parse_control_reports(reports: list[dict]) -> list[CheckResult]:
+def parse_resource_result(res_result: dict, resource_info: dict) -> list[CheckResult]:
+    prio = res_result.get("prioritizedResource", {})
+
+    obj = _parse_api_object(resource_info)
     results = []
-    for ctrl in reports:
-        ctrl_id = ctrl["id"]
-        name = ctrl["name"]
+    for ctrl in res_result["controls"]:
+        ctrl_id = ctrl["controlID"]
+        for rule in ctrl["rules"]:
+            checked_path = get_checked_path(ctrl_id, rule.get("paths", None), resource_info)
+            status = _normalize_status(rule["status"])
 
-        rule_reports = _parse_rule_reports(ctrl["ruleReports"])
-        if len(ctrl["ruleReports"]) == 0:
-            rule_reports = [CheckResult(details="empty list of ruleReports")]
-
-        # set correct scanner check id for all parsed check results
-        for res in rule_reports:
-            res.scanner_check_id = ctrl_id
-            res.scanner_check_name = name
-            res.severity = ctrl["baseScore"]
-        results += rule_reports
+            res = CheckResult(
+                check_id=obj["check_id"],
+                obj_name=obj["obj_name"],
+                namespace=obj["namespace"],
+                kind=resource_info["kind"],
+                scanner_check_id=ctrl_id,
+                scanner_check_name=ctrl["name"],
+                details=f"Rule '{rule['name']}'",
+                checked_path=checked_path,
+                got=status,
+                severity=prio.get("serverity", None),
+            )
+            results.append(res)
 
     return results
+
+
+def get_checked_path(ctrl_id: str, paths: list | None = None, k8s_object: dict | None = None) -> str:
+    """Get the path(s) controlled by the check.
+
+    :param check_id: the id of the check
+    :return: the check(s) as single string or an empty string if no path could be retrieved.
+    """
+    checked_paths = []
+    if paths is not None:
+        for p in paths:
+            if (failed_path := p.get("failedPath", None)) is not None:
+                # keys in data are treated as array index -> convert them to valid JSON Path
+                failed_path = re.sub(r"data\[(.*)\]", r"data.\1", failed_path)
+                normalized_path = normalize_path(failed_path, k8s_object)
+                checked_paths.append(normalized_path)
+
+    # fallback: derive checked path from control mapping, which may be less accurate
+    if len(checked_paths) == 0:
+        _, checked_paths = CONTROL_CATEGORY.get(ctrl_id, (None, None))
+
+    if isinstance(checked_paths, str):
+        return checked_paths
+    if isinstance(checked_paths, list):
+        return "|".join(checked_paths)
 
 
 def _normalize_status(status: str) -> str:
     if status == "failed":
         return CheckStatus.Alert
-    elif status == "success":
+    elif status in ["passed", "skipped"]:
         return CheckStatus.Pass
     else:
         logger.warning(f"Unknown status while parsing kubescape: '{status}'. Expected either 'failed' or 'success")
-        return ""
-
-
-def _parse_rule_reports(reports: list[dict]) -> list[CheckResult]:
-    results = []
-    for rule in reports:
-        if rule["ruleResponses"] is not None:
-            responses = _parse_rule_responses(rule["ruleResponses"])
-            results += responses
-        else:
-            return [
-                CheckResult(
-                    check_id=None,
-                    got=_normalize_status(rule["ruleStatus"]["status"]),
-                    details="no ruleResponses present",
-                )
-            ]
-    return results
-
-
-def _parse_rule_responses(responses: list[dict]) -> list[CheckResult]:
-    results = []
-    for r in responses:
-        checked_path = _get_check_path(r["failedPaths"], r["fixPaths"])
-        status = _normalize_status(r["ruleStatus"])
-        details = ", ".join(r["failedPaths"] or [""])
-
-        api_objs = r["alertObject"]["k8sApiObjects"]
-        for obj in api_objs:
-            checked_path = _get_check_path(r["failedPaths"], r["fixPaths"], obj.get("relatedObjects", None))
-            res = _parse_api_object(obj)
-            results.append(CheckResult(got=status, details=details, checked_path=checked_path, **res))
-    return results
-
-
-def _get_check_path(
-    failed_paths: list[str] | None = None,
-    fix_paths: list[dict[str, str]] | None = None,
-    related_objects: list[dict] | None = None,
-) -> str:
-    if failed_paths is None and fix_paths is None:
-        return None
-
-    paths = []
-    if failed_paths is not None:
-        paths += failed_paths
-    if fix_paths is not None:
-        paths += [fix_path["path"] for fix_path in fix_paths]
-
-    normalized_paths = [normalize_path(p, related_objects) for p in paths]
-    return "|".join(set(normalized_paths))
+        return CheckStatus.Pass
 
 
 def _parse_api_object(obj: dict) -> dict:
@@ -243,10 +385,43 @@ def _parse_api_object(obj: dict) -> dict:
     return res
 
 
+# def _parse_rule_responses(responses: list[dict]) -> list[CheckResult]:
+#     results = []
+#     for r in responses:
+#         checked_path = normalize_paths(r["failedPaths"], r["fixPaths"])
+#         status = _normalize_status(r["ruleStatus"])
+#         details = ", ".join(r["failedPaths"] or [""])
+
+#         api_objs = r["alertObject"]["k8sApiObjects"]
+#         for obj in api_objs:
+#             checked_path = normalize_paths(r["failedPaths"], r["fixPaths"], obj.get("relatedObjects", None))
+#             res = _parse_api_object(obj)
+#             results.append(CheckResult(got=status, details=details, checked_path=checked_path, **res))
+#     return results
+
+
+# def normalize_paths(
+#     failed_paths: list[str] | None = None,
+#     fix_paths: list[dict[str, str]] | None = None,
+#     related_objects: list[dict] | None = None,
+# ) -> str:
+#     if failed_paths is None and fix_paths is None:
+#         return None
+
+#     paths = []
+#     if failed_paths is not None:
+#         paths += failed_paths
+#     if fix_paths is not None:
+#         paths += [fix_path["path"] for fix_path in fix_paths]
+
+#     normalized_paths = [normalize_path(p, related_objects) for p in paths]
+#     return "|".join(set(normalized_paths))
+
+
 def _consolidate_objects(check_infos: list[dict]) -> dict:
     """
     Consolidate/pick check infos from multiple objects with the following preferences:
-    1) if there is a single object with a valid check_id, use all  the information of that object
+    1) if there is a single object with a valid check_id, use all the information of that object
     2) if multiple objects have a valid check_id: use the single object where the id is part of it's name
     3) if none ore more than 1 object have a valid name, merge the check informations
     :param check_infos: the list of check_informations extracted from objects

@@ -6,53 +6,53 @@ from loguru import logger
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 CHECK_MAPPING = {
-    "KSV001": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
+    "KSV001": (CheckCategory.Workload, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
     "KSV002": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io"
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
         ],
     ),
-    "KSV003": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.drop"]),
-    "KSV004": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.drop"]),
-    "KSV005": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.add"]),
-    "KSV006": (CheckCategory.PodSecurity, [".spec.volumes[].hostPath.path"]),
-    "KSV007": (CheckCategory.PodSecurity, [".spec.hostAliases"]),
-    "KSV008": (CheckCategory.PodSecurity, [".spec.hostIPC"]),
-    "KSV009": (CheckCategory.PodSecurity, [".spec.hostNetwork"]),
-    "KSV010": (CheckCategory.PodSecurity, [".spec.hostPID"]),
+    "KSV003": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.drop"]),
+    "KSV004": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.drop"]),
+    "KSV005": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),
+    "KSV006": (CheckCategory.Workload, [".spec.volumes[].hostPath.path"]),
+    "KSV007": (CheckCategory.Workload, [".spec.hostAliases"]),
+    "KSV008": (CheckCategory.Workload, [".spec.hostIPC"]),
+    "KSV009": (CheckCategory.Workload, [".spec.hostNetwork"]),
+    "KSV010": (CheckCategory.Workload, [".spec.hostPID"]),
     "KSV011": (CheckCategory.Reliability, [".spec.containers[].resources.limits.cpu"]),
     "KSV012": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
-    "KSV013": (CheckCategory.SupplyChain, [".spec.containers[].image"]),
-    "KSV014": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.readOnlyRootFilesystem"]),
+    "KSV013": (CheckCategory.Workload, [".spec.containers[].image"]),
+    "KSV014": (CheckCategory.Workload, [".spec.containers[].securityContext.readOnlyRootFilesystem"]),
     "KSV015": (CheckCategory.Reliability, [".spec.containers[].resources.requests.cpu"]),
     "KSV016": (CheckCategory.Reliability, [".spec.containers[].resources.requests.memory"]),
-    "KSV017": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.privileged"]),
+    "KSV017": (CheckCategory.Workload, [".spec.containers[].securityContext.privileged"]),
     "KSV018": (CheckCategory.Reliability, [".spec.containers[].resources.limits.memory"]),
-    "KSV020": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.runAsUser"]),
-    "KSV021": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.runAsGroup"]),
-    "KSV022": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.add"]),
-    "KSV023": (CheckCategory.PodSecurity, [".spec.volumes[].hostPath"]),
+    "KSV020": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsUser"]),
+    "KSV021": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsGroup"]),
+    "KSV022": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),
+    "KSV023": (CheckCategory.Workload, [".spec.volumes[].hostPath"]),
     "KSV024": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].ports[].hostPort", ".spec.initContainers[].ports[].hostPort"],
     ),
     "KSV025": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.seLinuxOptions", ".spec.containers[].securityContext.seLinuxOptions"],
     ),
-    "KSV026": (CheckCategory.PodSecurity, [".spec.securityContext.sysctls[]"]),
+    "KSV026": (CheckCategory.Workload, [".spec.securityContext.sysctls[]"]),
     "KSV027": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.procMount", ".spec.initContainers[].securityContext.procMount"],
     ),
-    "KSV028": (CheckCategory.PodSecurity, [".spec.volumes[]"]),
+    "KSV028": (CheckCategory.Workload, [".spec.volumes[]"]),
     "KSV029": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.fsGRoup",
             ".spec.securityContext.supplementalGroups",
@@ -61,19 +61,19 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV030": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.seccompProfile.type",
             ".spec.containers[].securityContext.seccompProfile.type",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod",
         ],
     ),
-    "KSV032": (CheckCategory.SupplyChain, [".spec.containers[].image", ".spec.containers[].name"]),
-    "KSV033": (CheckCategory.SupplyChain, [".spec.containers[].image", ".spec.containers[].name"]),
-    "KSV034": (CheckCategory.SupplyChain, [".spec.containers[].image"]),
-    "KSV035": (CheckCategory.SupplyChain, [".spec.containers[].image", ".spec.containers[].name"]),
+    "KSV032": (CheckCategory.Workload, [".spec.containers[].image", ".spec.containers[].name"]),
+    "KSV033": (CheckCategory.Workload, [".spec.containers[].image", ".spec.containers[].name"]),
+    "KSV034": (CheckCategory.Workload, [".spec.containers[].image"]),
+    "KSV035": (CheckCategory.Workload, [".spec.containers[].image", ".spec.containers[].name"]),
     "KSV036": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.automountServiceAccountToken",
             ".automountServiceAccountToken",
@@ -117,7 +117,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV041": (  # Do not allow management of secrets
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -126,7 +126,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV042": (  # Do not allow deletion of pod logs
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -137,7 +137,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV043": (  # Do not allow impersonation of privileged groups
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -148,7 +148,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV044": (  # No wildcard verb roles
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -157,7 +157,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV045": (  # No wildcard verb roles
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -166,7 +166,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV046": (  # No wildcard resource roles
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -175,7 +175,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV047": (  # Do not allow privilege escalation from node proxy
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -184,7 +184,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV048": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -193,7 +193,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV049": (
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -202,7 +202,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV050": (  # Do not allow management of RBAC resources
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -211,7 +211,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV051": (  # Do not allow role binding creation and association with privileged role/clusterrole
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -224,7 +224,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV052": (  # Do not allow role to create ClusterRoleBindings and association with privileged role
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -237,7 +237,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV053": (  # Do not allow getting shell on pods  ('pods/exec')
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -248,7 +248,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV054": (  # Do not allow attaching to shell on pods (pods/attach)
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -259,7 +259,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV055": (  # Do not allow users in a rolebinding to add other users to their rolebindings
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].apiGroups",
             "ClusterRole.rules[].resources",
@@ -270,7 +270,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV056": (  # Do not allow management of networking resources
-        CheckCategory.RBAC,
+        CheckCategory.IAM,
         [
             "ClusterRole.rules[].resources",
             "ClusterRole.rules[].verbs",
@@ -279,9 +279,12 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV102": (CheckCategory.Workload, [".metadata.name", ".spec.containers[].image"]),
-    "KSV105": (CheckCategory.PSS, [".spec.securityContext.runAsUser", ".spec.containers[].securityContext.runAsUser"]),
+    "KSV105": (
+        CheckCategory.AdmissionControl,
+        [".spec.securityContext.runAsUser", ".spec.containers[].securityContext.runAsUser"],
+    ),
     "KSV106": (
-        CheckCategory.PSS,
+        CheckCategory.AdmissionControl,
         [".spec.containers[].securityContext.capabilities.drop", ".spec.containers[].securityContext.capabilities.add"],
     ),
 }
@@ -360,5 +363,6 @@ class Scanner(ScannerBase):
         :return: the version number of the tool
         """
         raw_version = super().get_version()
-        label, version = raw_version.split(" ")
+        version_line, *_ = raw_version.split("\n")
+        label, version = version_line.split(" ")
         return version

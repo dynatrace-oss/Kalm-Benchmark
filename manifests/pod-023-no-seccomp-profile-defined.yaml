@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .metadata.annotations|.metadata.annotations.seccomp.security.alpha.kubernetes.io/pod|.metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]|.spec.securityContext.seccompProfile|.spec.containers[].securityContext.seccompProfile
+    description: not providing a seccomp profile allows a process more capabilities than necessary
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-023

@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.hostAliases
+    description: Managing /etc/hosts aliases can prevent Docker from modifying the file after a pod's containers have already been started
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-012

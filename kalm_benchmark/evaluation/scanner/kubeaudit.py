@@ -11,33 +11,33 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 
 CONTROL_MAPPING = {
     "AllowPrivilegeEscalation": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.allowPrivilegeEscalation",
     ),
-    "AppArmor": (CheckCategory.PodSecurity, ".metadata.annotations.container.apparmor.security.beta.kubernetes.io"),
+    "AppArmor": (CheckCategory.Workload, ".metadata.annotations.container.apparmor.security.beta.kubernetes.io"),
     "AutomountServiceAccountToken": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.serviceAccount", ".spec.automountServiceAccountToken"],
     ),
-    "Capability": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.capabilities"),
+    "Capability": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
     "DeprecatedAPIUsed": (CheckCategory.Workload, ".apiVersion"),
-    "Image": (CheckCategory.PodSecurity, ".spec.containers[].image"),
+    "Image": (CheckCategory.Workload, ".spec.containers[].image"),
     "Limits": (
         CheckCategory.Workload,
         [".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits.memory"],
     ),
-    "NamespaceHost": (CheckCategory.PodSecurity, [".spec.hostIPC", ".spec.hostPID", ".spec.hostNetwork"]),
+    "NamespaceHost": (CheckCategory.Workload, [".spec.hostIPC", ".spec.hostPID", ".spec.hostNetwork"]),
     "MissingDefaultDeny": (CheckCategory.Network, ".spec.ingress"),
     "AllowAllIngressNetworkPolicyExists": (CheckCategory.Network, ".spec.ingress"),
     "AllowAllEgressNetworkPolicyExists": (CheckCategory.Network, ".spec.egress"),
-    "Privileged": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.privileged"),
-    "ReadOnlyRootFilesystem": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.readOnlyRootFilesystem"),
-    "RunAsNonRootCSC": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.runAsNonRoot"),
-    "RunAsNonRootPSC": (CheckCategory.PodSecurity, ".spec.securityContext.runAsNonRoot"),
-    "RunAsUserCSC": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.runAsUser"),
-    "RunAsUserPSC": (CheckCategory.PodSecurity, ".spec.securityContext.runAsUser"),
+    "Privileged": (CheckCategory.Workload, ".spec.containers[].securityContext.privileged"),
+    "ReadOnlyRootFilesystem": (CheckCategory.Workload, ".spec.containers[].securityContext.readOnlyRootFilesystem"),
+    "RunAsNonRootCSC": (CheckCategory.Workload, ".spec.containers[].securityContext.runAsNonRoot"),
+    "RunAsNonRootPSC": (CheckCategory.Workload, ".spec.securityContext.runAsNonRoot"),
+    "RunAsUserCSC": (CheckCategory.Workload, ".spec.containers[].securityContext.runAsUser"),
+    "RunAsUserPSC": (CheckCategory.Workload, ".spec.securityContext.runAsUser"),
     "Seccomp": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotationscontainer.seccomp.security.alpha.kubernetes.io",
@@ -45,7 +45,7 @@ CONTROL_MAPPING = {
             ".spec.containers[].securityContext.seccompProfile",
         ],
     ),
-    "SensitivePathsMounted": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath.path"),
+    "SensitivePathsMounted": (CheckCategory.Workload, ".spec.volumes[].hostPath.path"),
 }
 
 

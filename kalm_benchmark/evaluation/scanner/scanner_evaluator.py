@@ -34,14 +34,13 @@ class CheckCategory(StrEnum):
     Infrastructure = auto()
     Misc = auto()
     Network = auto()
-    PodSecurity = auto()
-    PSP = auto()
-    PSS = auto()
+    AdmissionControl = auto()
     Reliability = auto()
-    RBAC = auto()
-    SecretManagement = auto()
-    SupplyChain = auto()
+    IAM = auto()
+    DataSecurity = auto()
+    Runtime = auto()  # TODO: sure?
     Workload = auto()
+    Vulnerability = auto()
 
 
 class CheckStatus(LowercaseStrEnum):

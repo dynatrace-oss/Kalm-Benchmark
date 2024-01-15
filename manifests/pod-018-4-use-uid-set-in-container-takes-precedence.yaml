@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.securityContext.runAsUser|.spec.securityContext.runAsNonRoot|.spec.containers[].securityContext.runAsUser|.spec.containers[].securityContext.runAsNonRoot
+    description: in case of conflicting settings, the value on the container takes precedence
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-018-4

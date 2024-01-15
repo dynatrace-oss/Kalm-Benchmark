@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.containers[].ports[].hostPort
+    description: When you bind a Pod to a hostPort, it limits the number of places the  Pod can be scheduled, because each <hostIP, hostPort, protocol> combination must be unique.
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-011

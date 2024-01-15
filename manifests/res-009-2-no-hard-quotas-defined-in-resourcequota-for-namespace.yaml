@@ -76,6 +76,9 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-2

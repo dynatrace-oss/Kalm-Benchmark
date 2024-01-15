@@ -93,6 +93,9 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: NetworkPolicy.egress[].to[].ipBlock|.egress[].to[].ipBlock
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-003

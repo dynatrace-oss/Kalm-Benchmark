@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.securityContext.runAsUser|.spec.securityContext.runAsNonRoot|.spec.containers[].securityContext.runAsUser|.spec.containers[].securityContext.runAsNonRoot
+    description: An UID above 1000 is enough to avoid running as a system user
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-018-3

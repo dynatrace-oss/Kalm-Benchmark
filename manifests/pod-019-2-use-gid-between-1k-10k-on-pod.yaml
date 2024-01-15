@@ -2,6 +2,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: .spec.securityContext.runAsGroup|.spec.containers[].securityContext.runAsGroup
+    description: An GID above 1000 is enough to avoid running as a system user
+    expected: pass
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-019-2

@@ -76,6 +76,9 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: NetworkPolicy.spec.policyTypes[]|.spec.policyTypes[]
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-002-1

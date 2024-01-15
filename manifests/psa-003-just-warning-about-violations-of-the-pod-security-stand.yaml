@@ -80,6 +80,10 @@ apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
+  annotations:
+    check_path: Namespace.metadata.labels.pod-security.kubernetes.io
+    description: When only warnings for violations are generated insecure workloads can still be deployed
+    expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: PSA-003

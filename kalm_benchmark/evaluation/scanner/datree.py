@@ -7,11 +7,11 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 
 CHECK_MAPPING = {
     "CONFIGMAP_CVE2021_25742_INCORRECT_SNIPPET_ANNOTATIONS_VALUE": (
-        CheckCategory.Misc,
+        CheckCategory.Vulnerability,
         ".data.allow-snippet-annotation",
     ),
-    "CONTAINERS_MISSING_IMAGE_VALUE_VERSION": (CheckCategory.SupplyChain, ".spec.containers[].image"),
-    "CONTAINERS_MISSING_IMAGE_VALUE_DIGEST": (CheckCategory.SupplyChain, ".spec.containers[].image"),
+    "CONTAINERS_MISSING_IMAGE_VALUE_VERSION": (CheckCategory.Workload, ".spec.containers[].image"),
+    "CONTAINERS_MISSING_IMAGE_VALUE_DIGEST": (CheckCategory.Workload, ".spec.containers[].image"),
     "CONTAINERS_MISSING_MEMORY_REQUEST_KEY": (
         CheckCategory.Reliability,
         ".spec.containers[].resources.requests.memory",
@@ -22,19 +22,19 @@ CHECK_MAPPING = {
     "CONTAINERS_MISSING_LIVENESSPROBE_KEY": (CheckCategory.Reliability, ".spec.containers[].livenessProbe"),
     "CONTAINERS_MISSING_READINESSPROBE_KEY": (CheckCategory.Reliability, ".spec.containers[].readinessProbe"),
     "CONTAINERS_INCORRECT_PRIVILEGED_VALUE_TRUE": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.privileged",
     ),
     "CONTAINER_CVE2021_25741_INCORRECT_SUBPATH_KEY": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].volumeMounts[].subPath",
     ),
-    "CONTAINERS_INCORRECT_HOSTPID_VALUE_TRUE": (CheckCategory.PodSecurity, ".spec.hostPID"),
-    "CONTAINERS_INCORRECT_HOSTIPC_VALUE_TRUE": (CheckCategory.PodSecurity, ".spec.hostIPC"),
-    "CONTAINERS_INCORRECT_HOSTNETWORK_VALUE_TRUE": (CheckCategory.PodSecurity, ".spec.hostNetwork"),
-    "CONTAINERS_INCORRECT_PATH_VALUE_DOCKERSOCKET": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath.path"),
+    "CONTAINERS_INCORRECT_HOSTPID_VALUE_TRUE": (CheckCategory.Workload, ".spec.hostPID"),
+    "CONTAINERS_INCORRECT_HOSTIPC_VALUE_TRUE": (CheckCategory.Workload, ".spec.hostIPC"),
+    "CONTAINERS_INCORRECT_HOSTNETWORK_VALUE_TRUE": (CheckCategory.Workload, ".spec.hostNetwork"),
+    "CONTAINERS_INCORRECT_PATH_VALUE_DOCKERSOCKET": (CheckCategory.Workload, ".spec.volumes[].hostPath.path"),
     "CONTAINERS_INCORRECT_RUNASUSER_VALUE_LOWUID": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.runAsUser",
     ),
     "CRONJOB_INVALID_SCHEDULE_VALUE": (CheckCategory.Misc, ".spec.schedule"),
@@ -43,18 +43,17 @@ CHECK_MAPPING = {
     "DEPLOYMENT_MISSING_LABEL_ENV_VALUE": (CheckCategory.Workload, ".metadata.labels.env"),
     "DEPLOYMENT_INCORRECT_REPLICAS_VALUE": (CheckCategory.Workload, "Deployment.spec.replicas"),
     "ENDPOINTSLICE_CVE2021_25373_INCORRECT_ADDRESSES_VALUE": (
-        CheckCategory.Workload,
+        CheckCategory.Vulnerability,
         "EndpointSlice.endpoints[].addresses",
     ),
     "HPA_MISSING_MINREPLICAS_KEY": (CheckCategory.Workload, "HorizontalPodAutoscaler.minReplicas"),
     "HPA_MISSING_MAXREPLICAS_KEY": (CheckCategory.Workload, "HorizontalPodAutoscaler.maxReplicas"),
     "INGRESS_INCORRECT_HOST_VALUE_PERMISSIVE": (CheckCategory.Network, "Ingress.spec.rules[].host"),
     "INGRESS_CVE2021_25742_INCORRECT_SERVER_SNIPPET_KEY": (
-        CheckCategory.Network,
+        CheckCategory.Vulnerability,
         ".metadata.annotations.nginx.ingress.kubernetes.io/server-snippet",
     ),
-    "K8S_DEPRECATED_APIVERSION_1.16": (CheckCategory.Misc, ".apiVersion"),
-    "K8S_DEPRECATED_APIVERSION_1.17": (CheckCategory.Misc, ".apiVersion"),
+    "K8S_DEPRECATED_APIVERSION": (CheckCategory.Misc, ".apiVersion"),
     "K8S_INCORRECT_KIND_VALUE_POD": (CheckCategory.Workload, ".kind"),
     "SERVICE_INCORRECT_TYPE_VALUE_NODEPORT": (CheckCategory.Network, "Service.spec.type"),
     "WORKLOAD_INCORRECT_NAMESPACE_VALUE_DEFAULT": (CheckCategory.Workload, ".metadata.namespace"),

@@ -335,7 +335,9 @@ def filter_out_of_scope_alerts(df: pd.DataFrame) -> pd.DataFrame:
             logger.error(f"The column '{col}' is required to filter out of scope alerts. No filter was applied!")
             return df
 
-    special_namespaces = ["kube-system", "kube-public", "kube-node-lease", "local-path-storage"]
+    # kube-system and kube-public are actually used for 2 checks, so keep them in the results
+    special_namespaces = ["kube-node-lease", "local-path-storage"]
+    # special_namespaces = ["kube-system", "kube-public", "kube-node-lease", "local-path-storage"]
     # all namespaces and its objects except for the special ones are in the scope of the benchmark
     managing_ns_in_scope = ~df["namespace"].isin(special_namespaces)
     is_infra_check = df["category"] == CheckCategory.Infrastructure
@@ -413,21 +415,23 @@ def categorize_by_check_id(check_id: str | None) -> str:
         prefix = check_id.split("-")[0].lower().strip()
 
     if prefix == "pod":
-        return CheckCategory.PodSecurity
+        return CheckCategory.Workload
     elif prefix == "psp":
-        return CheckCategory.PSP
+        return CheckCategory.AdmissionControl
+    elif prefix == "pss":
+        return CheckCategory.AdmissionControl
     elif prefix == "rbac":
-        return CheckCategory.RBAC
+        return CheckCategory.IAM
     elif prefix in ["wl", "ns", "cj", "srv"]:
         return CheckCategory.Workload
     elif prefix in ["cm"]:  # currently only matches CM-001 but might need more granual distinction -> other prefix
-        return CheckCategory.SecretManagement
+        return CheckCategory.DataSecurity
     elif prefix in ["np", "ing"]:
         return CheckCategory.Network
     elif prefix in ["rel", "res"]:
         return CheckCategory.Reliability
     elif prefix in ["sc"]:
-        return CheckCategory.SupplyChain
+        return CheckCategory.Workload
     elif prefix == "inf":
         return CheckCategory.Infrastructure
     else:
