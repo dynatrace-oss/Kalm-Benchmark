@@ -373,7 +373,7 @@ class TestCheckCategorizationByCheckId:
     @pytest.mark.parametrize("id", ["POD-1", "pod-2", "PoD-3", " pod-bla", "pod"])
     def test_pod_security(self, id: str):
         cat = categorize_by_check_id(id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize("id", ["PSP-1", "psp-2", "PsP-3", " psp--"])
     def test_pod_security_policy(self, id: str):

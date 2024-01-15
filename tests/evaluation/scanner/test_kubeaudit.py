@@ -16,7 +16,7 @@ class TestCheckCategorization:
     )
     def test_apparmor_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -27,7 +27,7 @@ class TestCheckCategorization:
     )
     def test_automount_sa_token_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -35,7 +35,7 @@ class TestCheckCategorization:
     )
     def test_capabilities_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -47,7 +47,7 @@ class TestCheckCategorization:
     )
     def test_hostns_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -59,7 +59,7 @@ class TestCheckCategorization:
     )
     def test_image_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -83,7 +83,7 @@ class TestCheckCategorization:
     )
     def test_mounts_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -111,7 +111,7 @@ class TestCheckCategorization:
     )
     def test_nonroot_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -122,7 +122,7 @@ class TestCheckCategorization:
     )
     def test_privilege_escalation_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -133,7 +133,7 @@ class TestCheckCategorization:
     )
     def test_privileged_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -144,7 +144,7 @@ class TestCheckCategorization:
     )
     def test_root_fs_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",
@@ -158,7 +158,7 @@ class TestCheckCategorization:
     )
     def test_seccomp_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.PodSecurity
+        assert cat == CheckCategory.Workload
 
     @pytest.mark.parametrize(
         "check_id",

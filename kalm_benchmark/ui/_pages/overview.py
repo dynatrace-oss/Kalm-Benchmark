@@ -24,7 +24,6 @@ class ScannerInfo:
     image: str | None = None
     score: float = 0.0
     coverage: float = 0.0
-    cat_pod_security: str = "0/0"
     cat_IAM: str = "0/0"
     cat_network: str = "0/0"
     cat_admission_ctrl: str = "0/0"
@@ -68,7 +67,6 @@ def collect_overview_information() -> pd.DataFrame:
             ci_mode=scanner.CI_MODE,
             runs_offline=str(scanner.RUNS_OFFLINE),
             cat_network=_get_category_sum(categories.get(CheckCategory.Network, None)),
-            cat_pod_security=_get_category_sum(categories.get(CheckCategory.PodSecurity, None)),
             cat_IAM=_get_category_sum(categories.get(CheckCategory.IAM, None)),
             cat_admission_ctrl=_get_category_sum(categories.get(CheckCategory.AdmissionControl, None)),
             # cat_secret_management=_get_category_sum(categories.get(CheckCategory.DataSecurity, None)),

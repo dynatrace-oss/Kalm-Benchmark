@@ -39,7 +39,6 @@ class CheckCategory(StrEnum):
     IAM = auto()
     DataSecurity = auto()
     Runtime = auto()  # TODO: sure?
-    PodSecurity = auto()
     Workload = auto()
     Vulnerability = auto()
 

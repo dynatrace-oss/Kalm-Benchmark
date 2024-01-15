@@ -28,7 +28,7 @@ CHECK_MAPPING = {
         [".spec.containers[].resources.limits.memory", ".spec.containers[].resources.requests.memory"],
     ),
     "container-ports-check": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].ports[].containerPort", ".spec.containers[].ports[].name"],
     ),
     "container-resources": (
@@ -46,14 +46,14 @@ CHECK_MAPPING = {
         ],
     ),
     "container-resource-requests-equal-limits": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.containers[].resources.limits",
             ".spec.containers[].resources.requests",
         ],
     ),  # not effective?
     "container-seccomp-profile": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/defaultProfileName",
             ".spec.containers[].securityContext.seccompProfile",
@@ -61,11 +61,11 @@ CHECK_MAPPING = {
         ],
     ),
     "container-security-context-privileged": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.privileged",
     ),
     "container-security-context-readonlyrootfilesystem": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.readOnlyRootFilesystem",
     ),
     "container-security-context-user-group-id": (

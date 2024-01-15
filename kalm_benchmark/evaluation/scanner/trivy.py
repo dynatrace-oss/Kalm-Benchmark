@@ -6,53 +6,53 @@ from loguru import logger
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 CHECK_MAPPING = {
-    "KSV001": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
+    "KSV001": (CheckCategory.Workload, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
     "KSV002": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io"
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
         ],
     ),
-    "KSV003": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.drop"]),
-    "KSV004": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.drop"]),
-    "KSV005": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.add"]),
-    "KSV006": (CheckCategory.PodSecurity, [".spec.volumes[].hostPath.path"]),
-    "KSV007": (CheckCategory.PodSecurity, [".spec.hostAliases"]),
-    "KSV008": (CheckCategory.PodSecurity, [".spec.hostIPC"]),
-    "KSV009": (CheckCategory.PodSecurity, [".spec.hostNetwork"]),
-    "KSV010": (CheckCategory.PodSecurity, [".spec.hostPID"]),
+    "KSV003": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.drop"]),
+    "KSV004": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.drop"]),
+    "KSV005": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),
+    "KSV006": (CheckCategory.Workload, [".spec.volumes[].hostPath.path"]),
+    "KSV007": (CheckCategory.Workload, [".spec.hostAliases"]),
+    "KSV008": (CheckCategory.Workload, [".spec.hostIPC"]),
+    "KSV009": (CheckCategory.Workload, [".spec.hostNetwork"]),
+    "KSV010": (CheckCategory.Workload, [".spec.hostPID"]),
     "KSV011": (CheckCategory.Reliability, [".spec.containers[].resources.limits.cpu"]),
     "KSV012": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
     "KSV013": (CheckCategory.Workload, [".spec.containers[].image"]),
-    "KSV014": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.readOnlyRootFilesystem"]),
+    "KSV014": (CheckCategory.Workload, [".spec.containers[].securityContext.readOnlyRootFilesystem"]),
     "KSV015": (CheckCategory.Reliability, [".spec.containers[].resources.requests.cpu"]),
     "KSV016": (CheckCategory.Reliability, [".spec.containers[].resources.requests.memory"]),
-    "KSV017": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.privileged"]),
+    "KSV017": (CheckCategory.Workload, [".spec.containers[].securityContext.privileged"]),
     "KSV018": (CheckCategory.Reliability, [".spec.containers[].resources.limits.memory"]),
-    "KSV020": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.runAsUser"]),
-    "KSV021": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.runAsGroup"]),
-    "KSV022": (CheckCategory.PodSecurity, [".spec.containers[].securityContext.capabilities.add"]),
-    "KSV023": (CheckCategory.PodSecurity, [".spec.volumes[].hostPath"]),
+    "KSV020": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsUser"]),
+    "KSV021": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsGroup"]),
+    "KSV022": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),
+    "KSV023": (CheckCategory.Workload, [".spec.volumes[].hostPath"]),
     "KSV024": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].ports[].hostPort", ".spec.initContainers[].ports[].hostPort"],
     ),
     "KSV025": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.seLinuxOptions", ".spec.containers[].securityContext.seLinuxOptions"],
     ),
-    "KSV026": (CheckCategory.PodSecurity, [".spec.securityContext.sysctls[]"]),
+    "KSV026": (CheckCategory.Workload, [".spec.securityContext.sysctls[]"]),
     "KSV027": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.procMount", ".spec.initContainers[].securityContext.procMount"],
     ),
-    "KSV028": (CheckCategory.PodSecurity, [".spec.volumes[]"]),
+    "KSV028": (CheckCategory.Workload, [".spec.volumes[]"]),
     "KSV029": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.fsGRoup",
             ".spec.securityContext.supplementalGroups",
@@ -61,7 +61,7 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV030": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.seccompProfile.type",
             ".spec.containers[].securityContext.seccompProfile.type",
@@ -73,7 +73,7 @@ CHECK_MAPPING = {
     "KSV034": (CheckCategory.Workload, [".spec.containers[].image"]),
     "KSV035": (CheckCategory.Workload, [".spec.containers[].image", ".spec.containers[].name"]),
     "KSV036": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.automountServiceAccountToken",
             ".automountServiceAccountToken",

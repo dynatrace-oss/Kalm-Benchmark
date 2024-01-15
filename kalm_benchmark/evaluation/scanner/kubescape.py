@@ -57,7 +57,7 @@ CONTROL_CATEGORY = {
         ],
     ),  # Applications credentials in configuration files
     "C-0013": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.runAsUser",
             ".spec.securityContext.runAsGroup",
@@ -84,16 +84,16 @@ CONTROL_CATEGORY = {
         ],
     ),  # List Kubernetes secrets
     "C-0016": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.allowPrivilegeEscalation",
     ),  # Allow privilege escalation
     "C-0017": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.readOnlyRootFilesystem",
     ),  # Immutable container filesystem
     "C-0018": (CheckCategory.Reliability, ".spec.containers[].readinessProbe"),  # Configured readiness probe
     # "C-0019": (CheckCategory.PodSecurity, ""),  # gone?
-    "C-0020": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath"),  # Mount service principal
+    "C-0020": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Mount service principal
     "C-0021": (
         CheckCategory.Workload,
         ["Service.spec.type", ".spec.containers[].ports[]"],
@@ -117,7 +117,7 @@ CONTROL_CATEGORY = {
     ),
     # "C-0033": (CheckCategory.Workload, ""),  # gone?
     "C-0034": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".automountServiceAccountToken", ".spec.automountServiceAccountToken"],
     ),  # Automatic mapping of service account
     "C-0035": (
@@ -137,18 +137,18 @@ CONTROL_CATEGORY = {
             "Role.rules[].verbs",
         ],
     ),  # CoreDNS poisoning
-    "C-0038": (CheckCategory.PodSecurity, [".spec.hostIPC", ".spec.hostPID"]),  # Host PID/IPC privileges
+    "C-0038": (CheckCategory.Workload, [".spec.hostIPC", ".spec.hostPID"]),  # Host PID/IPC privileges
     "C-0039": (
         CheckCategory.Infrastructure,
         "MutatingWebhookConfiguration",
     ),  # Validate admission controller (mutating)
-    "C-0041": (CheckCategory.PodSecurity, ".spec.hostNetwork"),  # HostNetwork access
-    "C-0042": (CheckCategory.PodSecurity, ".spec.containers[].ports[]"),  # SSH server running inside container
-    "C-0044": (CheckCategory.PodSecurity, ".spec.containers[].ports[].hostPort"),  # Container hostPort
-    "C-0045": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath"),  # Writable hostPath mount
-    "C-0046": (CheckCategory.PodSecurity, ".spec.securityContext.capabilities"),  # Insecure capabilities
+    "C-0041": (CheckCategory.Workload, ".spec.hostNetwork"),  # HostNetwork access
+    "C-0042": (CheckCategory.Workload, ".spec.containers[].ports[]"),  # SSH server running inside container
+    "C-0044": (CheckCategory.Workload, ".spec.containers[].ports[].hostPort"),  # Container hostPort
+    "C-0045": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Writable hostPath mount
+    "C-0046": (CheckCategory.Workload, ".spec.securityContext.capabilities"),  # Insecure capabilities
     # "C-0047": (CheckCategory.Workload, ""),  # gone?
-    "C-0048": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath"),  # HostPath mount
+    "C-0048": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # HostPath mount
     "C-0049": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  # Network mapping
     "C-0050": (
         CheckCategory.Reliability,
@@ -164,7 +164,7 @@ CONTROL_CATEGORY = {
     ),  # Access container service account
     "C-0054": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  #  Cluster internal networking
     "C-0055": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.seccompProfile",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
@@ -172,7 +172,7 @@ CONTROL_CATEGORY = {
         ],
     ),  # Linux hardening
     "C-0056": (CheckCategory.Reliability, ".spec.livenessProbe"),  # Configured liveness probe
-    "C-0057": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.privileged"),  # Privileged container
+    "C-0057": (CheckCategory.Workload, ".spec.containers[].securityContext.privileged"),  # Privileged container
     "C-0058": (
         CheckCategory.Vulnerability,
         "kubelet",
@@ -183,7 +183,7 @@ CONTROL_CATEGORY = {
     ),  # CVE-2021-25742-nginx-ingress-snippet-annotation-vulnerability
     # "C-0060": (CheckCategory.Workload, ""),  # gone?
     "C-0061": (CheckCategory.Workload, ".metadata.namespace"),  # Pods in default namespace
-    "C-0062": (CheckCategory.PodSecurity, ".spec.containers[].command[]"),  # Sudo in container entrypoint
+    "C-0062": (CheckCategory.Workload, ".spec.containers[].command[]"),  # Sudo in container entrypoint
     "C-0063": (
         CheckCategory.IAM,
         [
@@ -210,8 +210,8 @@ CONTROL_CATEGORY = {
     "C-0070": (CheckCategory.Infrastructure, "kubelet"),  # Enforce Kubelet client TLS authentication
     # "C-0071": (CheckCategory.Infrastructure, ""),  # gone?
     "C-0073": (CheckCategory.Workload, ".metadata.ownerReferences"),  # Naked pods
-    "C-0074": (CheckCategory.PodSecurity, ".spec.volumes[].hostPath"),  # Container runtime socket mounted
-    "C-0075": (CheckCategory.PodSecurity, ".spec.containers[].imagePullPolicy"),  #  Image pull policy on latest tag
+    "C-0074": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Container runtime socket mounted
+    "C-0075": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),  #  Image pull policy on latest tag
     "C-0076": (CheckCategory.Workload, ".metadata.labels"),  # Label usage for resources
     "C-0077": (CheckCategory.Workload, ".metadata.labels"),  # K8s common labels usage
     "C-0078": (CheckCategory.Workload, ".spec.containers[].image"),  # Images from allowed registry

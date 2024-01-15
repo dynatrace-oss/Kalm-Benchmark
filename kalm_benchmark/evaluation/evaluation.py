@@ -415,7 +415,7 @@ def categorize_by_check_id(check_id: str | None) -> str:
         prefix = check_id.split("-")[0].lower().strip()
 
     if prefix == "pod":
-        return CheckCategory.PodSecurity
+        return CheckCategory.Workload
     elif prefix == "psp":
         return CheckCategory.AdmissionControl
     elif prefix == "pss":

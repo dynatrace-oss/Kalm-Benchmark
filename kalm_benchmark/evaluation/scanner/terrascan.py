@@ -6,50 +6,50 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 
 CHECK_MAPPING = {
     "CpuRequestsCheck": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].resources.requests.cpu"],
     ),
     "CpulimitsCheck": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].resources.limits.cpu"],
     ),
     "MemoryRequestsCheck": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].resources.requests.memory"],
     ),
     "MemorylimitsCheck": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].resources.limits.memory"],
     ),
     "allowedHostPath": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].volumesMounts[].mountPath", ".spec.volumes[].hostPath"],
     ),
     "allowedVolumes": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.volumes[]", ".spec.containers[].volumeMounts[]"],
     ),
     "alwaysPullImages": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].imagePullPolicy"],
     ),
     "appArmorProfile": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             "container.apparmor.security.beta.kubernetes.io/app",
         ],
     ),
     "autoMountTokenEnabled": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.automountServiceAccountToken"],
     ),
     "containersAsHighUID": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.runAsUser", ".spec.containers[].securityContext.runAsUser", ".spec.runAsUser"],
     ),
     "dontConnectDockerSock": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.volumes[].hostPath",
             ".spec.volumes[].hostPath.path",
@@ -57,23 +57,23 @@ CHECK_MAPPING = {
         ],
     ),
     "falseHostIPC": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.hostIPC"],
     ),
     "falseHostNetwork": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.hostNetwork"],
     ),
     "falseHostPID": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.hostPID"],
     ),
     "imageWithLatestTag": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].image"],
     ),
     "imageWithoutDigest": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].image"],
     ),
     "netRawCapabilityUsed": (
@@ -81,19 +81,19 @@ CHECK_MAPPING = {
         [".spec.containers[].securityContext.capabilities.drop"],
     ),
     "noOwnerLabel": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".metadata.annotations.owner"],
     ),
     "noReadinessProbe": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].readinessProbe"],
     ),
     "nolivenessProbe": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].livenessProbe"],
     ),
     "otherNamespace": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".metadata.namespace"],
     ),
     "priviledgedContainersEnabled": (
@@ -101,19 +101,19 @@ CHECK_MAPPING = {
         [".spec.privileged"],
     ),
     "privilegeEscalationCheck": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.allowPrivilegeEscalation"],
     ),
     "readOnlyFileSystem": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.readOnlyRootFilesystem"],
     ),
     "runAsNonRootCheck": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
     "secCompProfile": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io",
             ".spec.securityContext.seccompProfile.type",
@@ -121,7 +121,7 @@ CHECK_MAPPING = {
         ],
     ),
     "securityContextUsed": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext", ".spec.containers[].securityContext"],
     ),
 }

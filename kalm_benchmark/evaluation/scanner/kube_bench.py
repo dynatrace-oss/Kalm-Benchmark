@@ -21,8 +21,8 @@ CHECK_MAPPING = {
     "5.1.2": ("RBAC-002", CheckCategory.IAM),
     "5.1.3": ("RBAC-003", CheckCategory.IAM),
     "5.1.4": ("RBAC-004", CheckCategory.IAM),
-    "5.1.5": ("POD-002", CheckCategory.PodSecurity),
-    "5.1.6": ("POD-003", CheckCategory.PodSecurity),
+    "5.1.5": ("POD-002", CheckCategory.Workload),
+    "5.1.6": ("POD-003", CheckCategory.Workload),
     "5.1.7": ("RBAC-019", CheckCategory.IAM),
     "5.1.8": ("RBAC-020", CheckCategory.IAM),
     "5.2.1": ("PSS-001", CheckCategory.AdmissionControl),
@@ -44,8 +44,8 @@ CHECK_MAPPING = {
     "5.4.2": ("SM-003", CheckCategory.DataSecurity),
     "5.5.1": ("SC-003", CheckCategory.Workload),
     "5.7.1": ("NS-003", CheckCategory.Workload),
-    "5.7.2": ("POD-022", CheckCategory.PodSecurity),
-    "5.7.3": ("POD-016", CheckCategory.PodSecurity),
+    "5.7.2": ("POD-022", CheckCategory.Workload),
+    "5.7.3": ("POD-016", CheckCategory.Workload),
     "5.7.4": ("NS-001", CheckCategory.Workload),
 }
 

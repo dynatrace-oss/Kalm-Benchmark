@@ -51,15 +51,15 @@ CHECK_MAPPING = {
         [".spec.selector", ".metadata.labels"],
     ),
     "default-service-account": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.serviceAccountName"],
     ),
     "deprecated-service-account-field": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.serviceAccount"],
     ),
     "docker-sock": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.volumes[].hostPath",
             ".spec.volumes[].hostPath.path",
@@ -79,15 +79,15 @@ CHECK_MAPPING = {
         ["Service.spec.type", "Service.spec.ports[].nodePort", ".spec.type", ".spec.ports[].nodePort"],
     ),
     "host-ipc": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.hostIPC"],
     ),
     "host-network": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.hostNetwork"],
     ),
     "host-pid": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.hostPID"],
     ),
     "hpa-minimum-three-replicas": (
@@ -123,7 +123,7 @@ CHECK_MAPPING = {
         [".spec.affinity.nodeAffinity"],
     ),
     "no-read-only-root-fs": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.readOnlyRootFilesystem"],
     ),
     "no-readiness-probe": (
@@ -143,15 +143,15 @@ CHECK_MAPPING = {
         ["NetworkPolicy.spec.podSelector", ".spec.podSelector"],
     ),
     "privilege-escalation-container": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.allowPrivilegeEscalation"],
     ),
     "privileged-container": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].securityContext.privileged"],
     ),
     "privileged-ports": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].ports[].containerPort"],
     ),
     "read-secret-from-env-var": (
@@ -167,11 +167,11 @@ CHECK_MAPPING = {
         [".metadata.annotations.owner"],
     ),
     "run-as-non-root": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
     "sensitive-host-mounts": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.volumes[].hostPath",
             ".spec.volumes[].hostPath.path",
@@ -179,11 +179,11 @@ CHECK_MAPPING = {
         ],
     ),
     "ssh-port": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].ports[].containerPort"],
     ),
     "unsafe-proc-mount": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             "spec.containers[].securityContext.procMount",
             "spec.initContainers[].securityContext.procMount",
@@ -191,7 +191,7 @@ CHECK_MAPPING = {
         ],
     ),
     "unsafe-sysctls": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.sysctls[].name"],
     ),
     "unset-cpu-requirements": (
@@ -218,7 +218,7 @@ CHECK_MAPPING = {
         ],
     ),
     "writable-host-mount": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].volumesMounts[].readOnly", ".spec.volumes[].hostPath"],
     ),
 }

@@ -8,15 +8,15 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 CHECK_MAPPING = {
     "cpuLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits.cpu"),
     "cpuRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.cpu"),
-    "dangerousCapabilities": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.capabilities"),
+    "dangerousCapabilities": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
     "deploymentMissingReplicas": (CheckCategory.Reliability, "Deployment.spec.replicas"),
-    "hostIPCSet": (CheckCategory.PodSecurity, ".spec.hostIPC"),
-    "hostNetworkSet": (CheckCategory.PodSecurity, ".spec.hostNetwork"),
-    "hostPIDSet": (CheckCategory.PodSecurity, ".spec.hostPID"),
-    "hostPortSet": (CheckCategory.PodSecurity, ".spec.containers[].ports"),
-    "insecureCapabilities": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.capabilities"),
+    "hostIPCSet": (CheckCategory.Workload, ".spec.hostIPC"),
+    "hostNetworkSet": (CheckCategory.Workload, ".spec.hostNetwork"),
+    "hostPIDSet": (CheckCategory.Workload, ".spec.hostPID"),
+    "hostPortSet": (CheckCategory.Workload, ".spec.containers[].ports"),
+    "insecureCapabilities": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
     "linuxHardening": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [
             ".spec.securityContext.seccompProfile.type",
             ".spec.securityContext.seLinuxOptions",
@@ -30,23 +30,23 @@ CHECK_MAPPING = {
     "memoryRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.memory"),
     "missingPodDisruptionBudget": (CheckCategory.Reliability, "PodDisruptionBudget"),  # ignored by default
     "notReadOnlyRootFilesystem": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.readOnlyRootFilesystem",
     ),
     "privilegeEscalationAllowed": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         ".spec.containers[].securityContext.allowPrivilegeEscalation",
     ),
     "priorityClassNotSet": (CheckCategory.Reliability, ".spec.priorityClassName"),  # ignored by default
     "pullPolicyNotAlways": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),
     "readinessProbeMissing": (CheckCategory.Reliability, ".spec.containers[].readinessProbe"),
-    "runAsPrivileged": (CheckCategory.PodSecurity, ".spec.containers[].securityContext.privileged"),
+    "runAsPrivileged": (CheckCategory.Workload, ".spec.containers[].securityContext.privileged"),
     "runAsRootAllowed": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
     "sensitiveContainerEnvVar": (
-        CheckCategory.PodSecurity,
+        CheckCategory.Workload,
         [".spec.containers[].env[].valueFrom", ".spec.containers[].env[].value"],
     ),
     "sensitiveConfigmapContent": (
