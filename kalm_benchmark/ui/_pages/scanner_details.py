@@ -15,9 +15,7 @@ def show() -> None:
     key = "scanner"
 
     def _on_change():
-        params = st.experimental_get_query_params()
-        params[QueryParam.SelectedScanner] = st.session_state[key]
-        st.experimental_set_query_params(**params)
+        st.query_params[QueryParam.SelectedScanner] = st.session_state[key]
 
     scanners = list(SCANNERS.keys())
     # if specified, use tool from query parameter as default selection

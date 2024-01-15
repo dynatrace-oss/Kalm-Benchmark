@@ -25,12 +25,10 @@ def get_query_param(param: str, default: str | None = None) -> str | None:
     :param default: the default value if the parameter is not set, defaults to None
     :return: the value of the specified query parameter or the default value if parameter is not set
     """
-    query_params = st.experimental_get_query_params()
-    param_values = query_params.get(param, {})
-    if len(param_values) > 0:
-        return param_values[0]
-    else:
+    param_values = st.query_params.get(param, None)
+    if param_values is None:
         return default
+    return param_values
 
 
 def get_selected_result_file(tool_name: str) -> str:
