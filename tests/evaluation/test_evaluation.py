@@ -432,6 +432,8 @@ class TestOutOfScopeFilter:
 
     def test_is_special_namespace(self):
         num_ns = len(self.NAMESPACES)
+        special_ns = ["kube-node-lease", "local-path-storage"]
+        valid_ns = [n for n in self.NAMESPACES if n not in special_ns]
         df = pd.DataFrame(
             {
                 "category": ["cat"] * num_ns,
@@ -440,12 +442,16 @@ class TestOutOfScopeFilter:
             }
         )
         df_res = filter_out_of_scope_alerts(df)
-        assert len(df_res) == 1
-        df_expect = df[df["name"] == "kalm-benchmark"]
+        # ie.e kalm-benchmark, kube-public, kube-system
+        assert len(df_res) == len(valid_ns)
+
+        df_expect = df[df["name"].isin(valid_ns)]
         np.testing.assert_array_equal(df_expect.values, df_res.values)
 
     def test_contained_in_special_namespace(self):
         num_ns = len(self.NAMESPACES)
+        special_ns = ["kube-node-lease", "local-path-storage"]
+        valid_ns = [n for n in self.NAMESPACES if n not in special_ns]
         df = pd.DataFrame(
             {
                 "category": ["cat"] * num_ns,
@@ -454,8 +460,8 @@ class TestOutOfScopeFilter:
             }
         )
         df_res = filter_out_of_scope_alerts(df)
-        assert len(df_res) == 1
-        df_expect = df[df["namespace"] == "kalm-benchmark"]
+        assert len(df_res) == len(valid_ns)
+        df_expect = df[df["namespace"].isin(valid_ns)]
         np.testing.assert_array_equal(df_expect.values, df_res.values)
 
     def test_infra_checks_are_always_in_scope(self):

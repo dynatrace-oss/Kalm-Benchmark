@@ -335,7 +335,7 @@ def filter_out_of_scope_alerts(df: pd.DataFrame) -> pd.DataFrame:
             logger.error(f"The column '{col}' is required to filter out of scope alerts. No filter was applied!")
             return df
 
-    # kube-system and kube-public are actually used for 2 checks, so keep them in the resuts
+    # kube-system and kube-public are actually used for 2 checks, so keep them in the results
     special_namespaces = ["kube-node-lease", "local-path-storage"]
     # special_namespaces = ["kube-system", "kube-public", "kube-node-lease", "local-path-storage"]
     # all namespaces and its objects except for the special ones are in the scope of the benchmark
