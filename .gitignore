@@ -1,6 +1,6 @@
 /BenchmarkManifests/**/*.yaml
 scanners_example outputs/
-data/
+data/summaries
 manifests/
 
 # Editors
