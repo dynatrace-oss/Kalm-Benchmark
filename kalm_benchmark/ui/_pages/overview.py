@@ -298,8 +298,7 @@ def show() -> None:
         tool_name = selection["name"]
         if st.button(f"Show Details for {tool_name}"):
             # trigger navigation by setting page query parameter and reloading the page
-            params = {QueryParam.Page: Page.Scanner, QueryParam.SelectedScanner: tool_name}
-            st.experimental_set_query_params(**params)
+            st.query_params = {QueryParam.Page: Page.Scanner, QueryParam.SelectedScanner: tool_name}
             # wait a bit to ensure the query params are properly updated
             # because the rerun is triggered via an exception that stops everything
             time.sleep(0.2)

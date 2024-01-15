@@ -34,9 +34,7 @@ def show_page_navigation() -> Page:
     key = "navigation"
 
     def _on_page_change():
-        params = st.experimental_get_query_params()
-        params[QueryParam.Page] = st.session_state[key]
-        st.experimental_set_query_params(**params)
+        st.query_params[QueryParam.Page] = st.session_state[key]
 
     # if specified, use page query parameter as initial selection
     initial_page = get_query_param(QueryParam.Page, pages[0])
