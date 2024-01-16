@@ -1,7 +1,10 @@
+from functools import lru_cache
 import re
 from typing import Optional
 
 import pandas as pd
+
+from kalm_benchmark.evaluation import utils
 
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
@@ -65,7 +68,7 @@ CHECK_MAPPING = {
 
 class Scanner(ScannerBase):
     NAME = "Datree"
-    SCAN_MANIFESTS_CMD = ["datree", "test", "-o", "json"]
+    SCAN_MANIFESTS_CMD = ["datree", "test", "--policy-config", "datree-policies.yaml", "-o", "json"]
     VERSION_CMD = ["datree", "version"]
     # according to their documentation they support glob patterns, but when trying the run never finishes
     SCAN_PER_FILE = True
@@ -98,6 +101,7 @@ class Scanner(ScannerBase):
             for policy_result in policy_results:
                 for result in policy_result["ruleResults"]:
                     occ_details = result["occurrencesDetails"]
+                    scanner_check_id = result["identifier"]
                     if len(occ_details) > 1:
                         print(f"having {len(occ_details)} policy occurence details")
 
@@ -105,16 +109,24 @@ class Scanner(ScannerBase):
                         obj_name = detail["metadataName"]
                         m = check_id_pattern.search(obj_name)
                         check_id = m.group(1) if m is not None else None
+
+                        checked_paths = [
+                            normalize_path(loc["schemaPath"], check_id) for loc in detail["failureLocations"]
+                        ]
+
+                        if (p := cls.get_checked_path(result["identifier"])) != "":
+                            checked_paths.append(p)
+
                         check_results.append(
                             CheckResult(
                                 check_id=check_id,
                                 obj_name=obj_name,
                                 got=CheckStatus.Alert,
                                 kind=detail["kind"],
-                                scanner_check_id=result["identifier"],
+                                scanner_check_id=scanner_check_id,
                                 scanner_check_name=result["name"],
                                 details=result["messageOnFailure"],
-                                checked_path=cls.get_checked_path(result["identifier"]),
+                                checked_path="|".join(checked_paths),
                             )
                         )
         return check_results
@@ -151,3 +163,15 @@ class Scanner(ScannerBase):
             if check_id == scanner_check_id:
                 return cat
         return None
+
+
+@lru_cache()
+def normalize_path(schema_path: str, check_id: str) -> str:
+    if check_id == "CONTAINERS_INCORRECT_SECCOMP_PROFILE":
+        # this check just points to the spec. and not the spec.securityContext.seccompProfile, as it should do
+        return ".spec.securityContext.seccompProfile|.spec.containers[].securityContext.seccompProfile"
+
+    # convert the index access of a/1/b to a[].b
+    # TODO add wildcard to replaced index expression to be a valid JSONPath
+    schema_path = re.sub(r"(.+?)(\/\d+?)", r"\1[]", schema_path)
+    return utils.normalize_path(schema_path.replace("/", "."))

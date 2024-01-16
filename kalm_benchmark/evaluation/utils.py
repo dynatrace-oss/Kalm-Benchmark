@@ -17,10 +17,13 @@ def normalize_path(path: str, related_objects: list[dict] | None = None, is_rela
     path = re.sub(r"\[[\w-]*\]", "[]", path)
 
     # pod related checks start with pod-spec and not the template in the managing object
-    if path.startswith("spec.template"):
+    if "spec.template" in path:
         path = path.replace("spec.template", "")
     elif is_relative and not path.startswith("."):  # relative paths start with '.';
         path = "." + path
+
+    if path.startswith(".."):
+        path = path[1:]  # drop the first '.' introduced with the previous corrections
 
     # ensure 'containers' is correctly spelled in path (e.g. it's wrong in C-0013)
     if "container[" in path:
