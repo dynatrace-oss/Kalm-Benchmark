@@ -59,7 +59,7 @@ class TestPathNormalization:
             ".data[bearer]",
             ".data[aws_access_key_id]",
             ".data[azure_batchai_storage_account].hostPath",
-            ".spec.template.spec.volumes[docker-mount].hostPath.path",
+            ".spec.volumes[docker-mount].hostPath.path",
         ],
     )
     def test_normalization_removes_text_in_brackets(self, path):
@@ -67,6 +67,17 @@ class TestPathNormalization:
         sfx = path[path.index("]") + 1 :]
 
         assert normalize_path(path) == f"{pfx}[]{sfx}"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            ".spec.template.spec.volumes[docker-mount].hostPath.path",
+            ".spec.template.name",
+            "spec.template.containers",
+        ],
+    )
+    def test_pod_template_is_normalized_away(self, path):
+        assert ".spec.template" not in normalize_path(path)
 
     def test_dont_normalize_annotation_in_brackets(self):
         path = ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]"
