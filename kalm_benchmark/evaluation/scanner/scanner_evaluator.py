@@ -31,16 +31,16 @@ class CheckResult:
 
 
 class CheckCategory(StrEnum):
-    Infrastructure = auto()
+    AdmissionControl = auto()
+    DataSecurity = auto()
+    Detection = auto()  # TODO: sure?
     Misc = auto()
     Network = auto()
-    AdmissionControl = auto()
-    Reliability = auto()
     IAM = auto()
-    DataSecurity = auto()
-    Runtime = auto()  # TODO: sure?
-    Workload = auto()
+    Infrastructure = auto()
+    Reliability = auto()
     Vulnerability = auto()
+    Workload = auto()
 
 
 class CheckStatus(LowercaseStrEnum):
