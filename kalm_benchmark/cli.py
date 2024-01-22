@@ -33,15 +33,23 @@ def generate_manifests(
             "If the flag is set only an overview of checks in the benchmark is created and exported as markdown table."
         ),
     ),
+    overview_format: evaluation.OverviewType = typer.Option(
+        evaluation.OverviewType.Markdown,
+        help="The output format of the generated overview printed to StdOut. `out` argument will be ignored. Only relevant when `overview` flag is set",
+    ),
 ) -> None:
     """
     Generate a pre-configured set of manifests and place them in the specified folder.
     """
 
     if overview:
-        misclassified_checks = evaluation.create_benchmark_overview(out_dir)
-        if len(misclassified_checks) > 0:
-            typer.secho("Misclassified checks: " + ", ".join(misclassified_checks), fg=typer.colors.RED)
+        if overview_format == evaluation.OverviewType.Markdown:
+            misclassified_checks = evaluation.create_benchmark_overview(out_dir, format=overview_format)
+            if len(misclassified_checks) > 0:
+                typer.secho("Misclassified checks: " + ", ".join(misclassified_checks), fg=typer.colors.RED)
+        elif overview_format == evaluation.OverviewType.Latex:
+            tbl = evaluation.create_benchark_overview_latex_table()
+            typer.echo(tbl)
     else:
         num_checks = create_manifests(str(out_dir), file_per_check=file_per_check)
         if num_checks > 0:

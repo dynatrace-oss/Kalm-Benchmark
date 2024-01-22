@@ -156,3 +156,10 @@ class GeneratorWrapper:
 
     def __iter__(self):
         self.value = yield from self._gen
+
+
+def get_version_from_result_file(file_name: str | Path) -> str | None:
+    *_, version, date = str(file_name).split("_")
+    if version.startswith("v"):
+        return version[1:]  # drop leading 'v' which would just denote the version anyways
+    return version

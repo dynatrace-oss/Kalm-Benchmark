@@ -7,6 +7,8 @@ from loguru import logger
 from kalm_benchmark.evaluation import evaluation
 from kalm_benchmark.evaluation.evaluation import EvaluationSummary
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS, ScannerBase
+from kalm_benchmark.evaluation.utils import get_version_from_result_file
+from kalm_benchmark.io import get_scanner_result_file_paths
 from kalm_benchmark.ui.constants import (
     LAST_SCAN_OPTION,
     SELECTED_RESULT_FILE,
@@ -52,7 +54,7 @@ def get_result_files_of_scanner(tool_name: str, data_dir: str | None = None) -> 
     """
     if data_dir is None:
         data_dir = st.session_state[SessionKeys.DataDir]
-    files = [str(p) for p in Path(data_dir).glob(f"{tool_name.lower()}*.*")]
+    files = get_scanner_result_file_paths(tool_name, data_dir)
 
     latest_scan_result_of_all_tools = st.session_state[SessionKeys.LatestScanResult]
     latest_scan_results = latest_scan_result_of_all_tools.get(tool_name, {})
@@ -154,13 +156,6 @@ def _save_summary(summary: EvaluationSummary, dest_path: Path) -> None:
         d = summary.to_dict()
         j = json.dumps(d)
         f.write(j)
-
-
-def get_version_from_result_file(file_name: str | Path) -> str | None:
-    *_, version, date = str(file_name).split("_")
-    if version.startswith("v"):
-        return version[1:]  # drop leading 'v' which would just denote the version anyways
-    return version
 
 
 def is_ephemeral_scan_result(result_name: str | Path | None) -> bool:

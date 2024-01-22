@@ -1,5 +1,4 @@
 import time
-from dataclasses import dataclass, field
 
 import pandas as pd
 import streamlit as st
@@ -15,29 +14,6 @@ from kalm_benchmark.ui.utils import (
     is_ephemeral_scan_result,
     load_scanner_summary,
 )
-
-
-@dataclass
-class ScannerInfo:
-    # note: the order of the fields dictates the initial order of the columns in the UI
-    name: str
-    image: str | None = None
-    version: str | None = None
-    score: float = 0.0
-    coverage: float = 0.0
-    cat_IAM: str = "0/0"
-    cat_network: str = "0/0"
-    cat_admission_ctrl: str = "0/0"
-    cat_data_security: str = "0/0"
-    cat_workload: str = "0/0"
-    cat_misc: str = "0/0"
-    can_scan_manifests: bool = False
-    can_scan_cluster: bool = False
-    ci_mode: bool = False
-    runs_offline: bool | str = False
-    custom_checks: str = False
-    formats: list[str] = field(default_factory=list)
-    is_valid_summary: bool = True
 
 
 def collect_overview_information() -> pd.DataFrame:
@@ -59,7 +35,7 @@ def collect_overview_information() -> pd.DataFrame:
             summary = evaluation.EvaluationSummary(None, {}, 0, 0, 0, 0)
         categories = summary.checks_per_category
 
-        scanner_info = ScannerInfo(
+        scanner_info = evaluation.ScannerInfo(
             name,
             image=scanner.IMAGE_URL,
             version=summary.version,
@@ -67,13 +43,13 @@ def collect_overview_information() -> pd.DataFrame:
             coverage=summary.coverage,
             ci_mode=scanner.CI_MODE,
             runs_offline=str(scanner.RUNS_OFFLINE),
-            cat_network=_get_category_sum(categories.get(CheckCategory.Network, None)),
-            cat_IAM=_get_category_sum(categories.get(CheckCategory.IAM, None)),
-            cat_admission_ctrl=_get_category_sum(categories.get(CheckCategory.AdmissionControl, None)),
-            cat_data_security=_get_category_sum(categories.get(CheckCategory.DataSecurity, None)),
+            cat_network=evaluation.get_category_sum(categories.get(CheckCategory.Network, None)),
+            cat_IAM=evaluation.get_category_sum(categories.get(CheckCategory.IAM, None)),
+            cat_admission_ctrl=evaluation.get_category_sum(categories.get(CheckCategory.AdmissionControl, None)),
+            cat_data_security=evaluation.get_category_sum(categories.get(CheckCategory.DataSecurity, None)),
             # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
-            cat_workload=_get_category_sum(categories.get(CheckCategory.Workload, None)),
-            cat_misc=_get_category_sum(
+            cat_workload=evaluation.get_category_sum(categories.get(CheckCategory.Workload, None)),
+            cat_misc=evaluation.get_category_sum(
                 categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {})
             ),
             can_scan_manifests=scanner.can_scan_manifests,
@@ -86,24 +62,6 @@ def collect_overview_information() -> pd.DataFrame:
 
     df = pd.DataFrame(scanner_infos)
     return df
-
-
-def _get_category_sum(category_summary: pd.Series | None) -> str:
-    """Compress the information of the result types into a single string.
-
-    :param category_summary: a series of all the result types of a particular scanner
-    :return: the summary of the result types formatted as a string
-    """
-    if category_summary is None:
-        covered, missing, extra = 0, 0, 0
-    else:
-        covered = category_summary.get(evaluation.ResultType.Covered, 0)
-        missing = category_summary.get(evaluation.ResultType.Missing, 0)
-        extra = category_summary.get(evaluation.ResultType.Extra, 0)
-    res = f"{covered}/{covered+missing}"
-    if extra > 0:
-        res += f" (+{extra})"
-    return res
 
 
 def _configure_grid(df: pd.DataFrame) -> dict:

@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from enum import auto
 from functools import lru_cache
 from itertools import product
@@ -8,8 +8,11 @@ from typing import Optional
 import cdk8s
 import pandas as pd
 from loguru import logger
-from strenum import SnakeCaseStrEnum, StrEnum
+from strenum import LowercaseStrEnum, SnakeCaseStrEnum, StrEnum
 
+from kalm_benchmark.evaluation.scanner_manager import SCANNERS
+from kalm_benchmark.evaluation.utils import get_version_from_result_file
+from kalm_benchmark.io import get_scanner_result_file_paths
 from kalm_benchmark.manifest_generator.check import Check
 from kalm_benchmark.manifest_generator.constants import (
     MISSING_CHECKS,
@@ -46,6 +49,29 @@ class Col(SnakeCaseStrEnum):
     ScannerCheckId = auto()
     ScannerCheckName = auto()
     ResultType = auto()
+
+
+@dataclass
+class ScannerInfo:
+    # note: the order of the fields dictates the initial order of the columns in the UI
+    name: str
+    image: str | None = None
+    version: str | None = None
+    score: float = 0.0
+    coverage: float = 0.0
+    cat_IAM: str = "0/0"
+    cat_network: str = "0/0"
+    cat_admission_ctrl: str = "0/0"
+    cat_data_security: str = "0/0"
+    cat_workload: str = "0/0"
+    cat_misc: str = "0/0"
+    can_scan_manifests: bool = False
+    can_scan_cluster: bool = False
+    ci_mode: bool = False
+    runs_offline: bool | str = False
+    custom_checks: str = False
+    formats: list[str] = field(default_factory=list)
+    is_valid_summary: bool = True
 
 
 def get_confusion_matrix(df: pd.DataFrame, margins: bool = True) -> pd.DataFrame:
@@ -158,6 +184,8 @@ def load_scanner_results_from_file(
     :return: the collection of scan results stored in the file
     """
     if path is None:
+        # TODO properly implement the retrieval of the correct result file
+        files = get_result_files_of_scanner(scanner.NAME)
         path = Path(f"./data/{scanner.NAME.lower()}.{format}")
     return scanner.load_results(path)
 
@@ -414,24 +442,18 @@ def categorize_by_check_id(check_id: str | None) -> str:
     else:
         prefix = check_id.split("-")[0].lower().strip()
 
-    if prefix == "pod":
+    if prefix in ["pod", "wl", "ns", "cj", "srv", "sc"]:
         return CheckCategory.Workload
-    elif prefix == "psp":
-        return CheckCategory.AdmissionControl
-    elif prefix == "pss":
+    elif prefix in ["pss", "psa", "psp"]:
         return CheckCategory.AdmissionControl
     elif prefix == "rbac":
         return CheckCategory.IAM
-    elif prefix in ["wl", "ns", "cj", "srv"]:
-        return CheckCategory.Workload
     elif prefix in ["cm"]:  # currently only matches CM-001 but might need more granual distinction -> other prefix
         return CheckCategory.DataSecurity
     elif prefix in ["np", "ing"]:
         return CheckCategory.Network
     elif prefix in ["rel", "res"]:
         return CheckCategory.Reliability
-    elif prefix in ["sc"]:
-        return CheckCategory.Workload
     elif prefix == "inf":
         return CheckCategory.Infrastructure
     else:
@@ -482,7 +504,7 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @lru_cache
-def load_benchmark() -> pd.DataFrame:
+def load_benchmark(with_categories: bool = False) -> pd.DataFrame:
     """
     Load the checks from the generated manifests, along with their id and additional meta information
     and return them in a tabular format
@@ -492,6 +514,8 @@ def load_benchmark() -> pd.DataFrame:
     manifests = generate_manifests(app)
 
     df = tabulate_manifests(manifests)
+    if with_categories:
+        df[Col.Category] = df[Col.CheckId].map(categorize_by_check_id)
     return df
 
 
@@ -565,11 +589,16 @@ def check_summary_per_category(df: pd.DataFrame) -> dict:
     return df_cat.to_dict()
 
 
-def create_benchmark_overview(dest_dir: Path) -> list[str]:
+class OverviewType(LowercaseStrEnum):
+    Markdown = auto()
+    Latex = auto()
+
+
+def create_benchmark_overview(dest_dir: Path, format: OverviewType = OverviewType.Markdown) -> list[str]:
     """Create a markdown file 'benchmark-checks.md' with an overview of all the checks at the destination folder.
     If the file already exists, it will be overwritten.
 
-    :param dest_dir: the folder where the file will be created.
+    :param dest_dir: the folder where the file will be created
     """
     IMPLEMENTED_COL = "Implemented"
     df_bench = load_benchmark()
@@ -615,6 +644,93 @@ def create_benchmark_overview(dest_dir: Path) -> list[str]:
         f.write(df.to_markdown())
 
     return misclassified_checks
+
+
+def create_benchark_overview_latex_table() -> str:
+    df_bench = load_benchmark(with_categories=True)
+
+    tbl = df_bench.to_latex(
+        caption="An overview of all generated checks and number of variants, grouped by their respective categories"
+    )
+    return tbl
+
+
+def create_evaluation_summary(data_dir: str | Path = "./data", show_extra: bool = True) -> pd.DataFrame:
+    """Load all evaluation results of all scanners as a dataframe
+    :params data_dir: the global directory, where the scanner results are stored
+    :param show_extra: if set, show the number of additional checks in parenthesis
+
+    :return: a dataframe where every row corresponds to the information for a particular scanner
+    """
+    scanner_infos = []
+
+    for name, scanner in SCANNERS.items():
+        # TODO use local setting for the result file
+        files = get_scanner_result_file_paths(name, data_dir=data_dir)
+
+        if len(files) == 0:
+            logger.warning(f"No result files for '{name}' found, so no summary can be loaded")
+            summary = EvaluationSummary(None, {}, 0, 0, 0, 0)
+
+        else:
+            # default to the first file listed
+            result_file = files[0]
+            results = load_scanner_results_from_file(scanner, result_file)
+
+            df = evaluate_scanner(scanner, results)
+            summary = create_summary(df, version=get_version_from_result_file(result_file))
+
+            categories = summary.checks_per_category
+
+        scanner_info = ScannerInfo(
+            name,
+            image=scanner.IMAGE_URL,
+            version=summary.version,
+            score=summary.score,
+            coverage=summary.coverage,
+            ci_mode=scanner.CI_MODE,
+            runs_offline=str(scanner.RUNS_OFFLINE),
+            cat_network=get_category_sum(categories.get(CheckCategory.Network, None), show_extra=show_extra),
+            cat_IAM=get_category_sum(categories.get(CheckCategory.IAM, None), show_extra=show_extra),
+            cat_admission_ctrl=get_category_sum(
+                categories.get(CheckCategory.AdmissionControl, None), show_extra=show_extra
+            ),
+            cat_data_security=get_category_sum(categories.get(CheckCategory.DataSecurity, None), show_extra=show_extra),
+            # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
+            cat_workload=get_category_sum(categories.get(CheckCategory.Workload, None), show_extra=show_extra),
+            cat_misc=get_category_sum(
+                categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {}),
+                show_extra=show_extra,
+            ),
+            can_scan_manifests=scanner.can_scan_manifests,
+            can_scan_cluster=scanner.can_scan_cluster,
+            custom_checks=str(scanner.CUSTOM_CHECKS),
+            formats=", ".join(scanner.FORMATS),  # Ag Grid does not support lists
+            is_valid_summary=summary is None,
+        )
+        scanner_infos.append(scanner_info)
+
+    df = pd.DataFrame(scanner_infos)
+    return df
+
+
+def get_category_sum(category_summary: pd.Series | None, show_extra: bool = True) -> str:
+    """Compress the information of the result types into a single string.
+
+    :param category_summary: a series of all the result types of a particular scanner
+    :param show_extra: if set, show the number of additional checks in parenthesis
+    :return: the summary of the result types formatted as a string
+    """
+    if category_summary is None:
+        covered, missing, extra = 0, 0, 0
+    else:
+        covered = category_summary.get(ResultType.Covered, 0)
+        missing = category_summary.get(ResultType.Missing, 0)
+        extra = category_summary.get(ResultType.Extra, 0)
+    res = f"{covered}/{covered+missing}"
+    if show_extra and extra > 0:
+        res += f" (+{extra})"
+    return res
 
 
 def _determine_misclassified_checks(df_bench: pd.DataFrame, df_missing_checks: pd.DataFrame):
