@@ -302,24 +302,25 @@ def gen_rbac(app) -> None:
         )
 
         # wildcard variants are covered with RBAC-003
-        RBACCheck(
-            app,
-            f"RBAC-004-{i + 1}",
-            f"{pfx}role creates pods",
-            descr="The ability to create pods in a cluster opens up possibilities for privilege escalation",
-            check_path=[
-                "ClusterRole.rules[].verbs",
-                "ClusterRole.rules[].resources",
-                "Role.rules[].verbs",
-                "Role.rules[].resources",
-                ".rules[].verbs",
-                ".rules[].resources",
-            ],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}pod-creator",
-            resources="pod",
-            verbs="create",
-        )
+        for j, verb in enumerate(["create", "update", "patch", "delete"]):
+            RBACCheck(
+                app,
+                f"RBAC-004-{(j + 1) + (i * 4)}",
+                f"{pfx}role creates pods",
+                descr="The ability to create pods in a cluster opens up possibilities for privilege escalation",
+                check_path=[
+                    "ClusterRole.rules[].verbs",
+                    "ClusterRole.rules[].resources",
+                    "Role.rules[].verbs",
+                    "Role.rules[].resources",
+                    ".rules[].verbs",
+                    ".rules[].resources",
+                ],
+                is_cluster_role=is_cluster,
+                role_name=f"{pfx}pod-{verb}",
+                resources="pod",
+                verbs=verb,
+            )
 
         RBACCheck(
             app,
@@ -537,6 +538,27 @@ def gen_rbac(app) -> None:
                 role_name=f"{pfx}role-poison-dns",
                 resources="configmaps",
                 verbs=verb,
+            )
+            
+        for j, verb in enumerate(["create", "update", "patch"]):
+            RBACCheck(
+                app,
+                f"RBAC-021-{(j+1) + (i*3)}",
+                name=f"only admins should be able to {verb} persistent volumes",
+                descr="",
+                role_name=f"pv-{verb}",
+                check_path=[
+                    "ClusterRole.rules[].resources",
+                    "ClusterRole.rules[].verbs",
+                    "Role.rules[].resources",
+                    "Role.rules[].verbs",
+                    ".rules[].resources",
+                    ".rules[].verbs",
+                ],
+                is_cluster_role=is_cluster,
+                resources="persistentvolumes", 
+                subject=f"rbac-021-pv-{verb}",
+                verbs=verb
             )
 
     RBACCheck(
