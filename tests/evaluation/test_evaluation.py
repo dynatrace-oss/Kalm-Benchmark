@@ -385,15 +385,20 @@ class TestCheckCategorizationByCheckId:
         cat = categorize_by_check_id(id)
         assert cat == CheckCategory.IAM
 
-    @pytest.mark.parametrize("id", ["NS-1", "ns-2", "SRV-1", "WL-2", "CJ-1"])
+    @pytest.mark.parametrize("id", ["SRV-1", "WL-2", "CJ-1"])
     def test_workload_management(self, id: str):
         cat = categorize_by_check_id(id)
         assert cat == CheckCategory.Workload
 
-    @pytest.mark.parametrize("id", ["NP-1", "np-2", "ING-1", "ing-2"])
+    @pytest.mark.parametrize("id", ["ING-1", "ing-2"])
     def test_networking(self, id: str):
         cat = categorize_by_check_id(id)
         assert cat == CheckCategory.Network
+        
+    @pytest.mark.parametrize("id", ["NP-1", "np-2", "NS-1", "ns-2"])
+    def test_segregation(self, id: str):
+        cat = categorize_by_check_id(id)
+        assert cat == CheckCategory.Segregation
 
     @pytest.mark.parametrize("id", ["ARST-1", "MISC-1", "INVALID", "", None])
     def test_all_other_are_misc(self, id: str | None):
