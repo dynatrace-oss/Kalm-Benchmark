@@ -59,13 +59,13 @@ class ScannerInfo:
     version: str | None = None
     score: float = 0.0
     coverage: float = 0.0
-    cat_IAM: str = "0/0"
-    cat_network: str = "0/0"
     cat_admission_ctrl: str = "0/0"
     cat_data_security: str = "0/0"
-    cat_workload: str = "0/0"
+    cat_IAM: str = "0/0"
+    cat_network: str = "0/0"
     cat_reliability: str = "0/0"
     cat_segregation: str = "0/0"
+    cat_workload: str = "0/0"
     cat_misc: str = "0/0"
     can_scan_manifests: bool = False
     can_scan_cluster: bool = False

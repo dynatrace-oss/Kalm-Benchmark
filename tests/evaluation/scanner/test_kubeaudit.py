@@ -73,7 +73,7 @@ class TestCheckCategorization:
     )
     def test_limits_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.Workload
+        assert cat == CheckCategory.Reliability
 
     @pytest.mark.parametrize(
         "check_id",
@@ -97,7 +97,7 @@ class TestCheckCategorization:
     )
     def test_netpol_checks(self, check_id: str):
         cat = Scanner.categorize_check(check_id)
-        assert cat == CheckCategory.Network
+        assert cat == CheckCategory.Segregation
 
     @pytest.mark.parametrize(
         "check_id",

@@ -20,7 +20,7 @@ CONTROL_CATEGORY = {
         ],
     ),  # Exec into container
     "C-0004": (
-        CheckCategory.Workload,
+        CheckCategory.Reliability,
         [
             ".spec.containers[].resources.limits.memory",
             ".spec.containers[].resources.requests.memory",
@@ -125,7 +125,7 @@ CONTROL_CATEGORY = {
         ["RoleBinding.roleRef.name", "ClusterRoleBinding.roleRef.name", ".roleRef.name"],
     ),  # Cluster-admin binding
     "C-0036": (
-        CheckCategory.Infrastructure,
+        CheckCategory.AdmissionControl,
         "ValidatingWebhookConfiguration",
     ),  # Validate admission controller (validating)
     "C-0037": (
@@ -139,7 +139,7 @@ CONTROL_CATEGORY = {
     ),  # CoreDNS poisoning
     "C-0038": (CheckCategory.Workload, [".spec.hostIPC", ".spec.hostPID"]),  # Host PID/IPC privileges
     "C-0039": (
-        CheckCategory.Infrastructure,
+        CheckCategory.AdmissionControl,
         "MutatingWebhookConfiguration",
     ),  # Validate admission controller (mutating)
     "C-0041": (CheckCategory.Workload, ".spec.hostNetwork"),  # HostNetwork access
@@ -149,7 +149,7 @@ CONTROL_CATEGORY = {
     "C-0046": (CheckCategory.Workload, ".spec.securityContext.capabilities"),  # Insecure capabilities
     # "C-0047": (CheckCategory.Workload, ""),  # gone?
     "C-0048": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # HostPath mount
-    "C-0049": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  # Network mapping
+    "C-0049": (CheckCategory.Segregation, "NetworkPolicy.metadata.namespace"),  # Network mapping
     "C-0050": (
         CheckCategory.Reliability,
         [
@@ -162,7 +162,7 @@ CONTROL_CATEGORY = {
         CheckCategory.IAM,
         ["ClusterRoleBinding.subjects[].name", "RoleBinding.subjects[].name", ".subjects[].name"],
     ),  # Access container service account
-    "C-0054": (CheckCategory.Network, "NetworkPolicy.metadata.namespace"),  #  Cluster internal networking
+    "C-0054": (CheckCategory.Segregation, "NetworkPolicy.metadata.namespace"),  #  Cluster internal networking
     "C-0055": (
         CheckCategory.Workload,
         [
@@ -178,7 +178,7 @@ CONTROL_CATEGORY = {
         "kubelet",
     ),  # CVE-2021-25741 - Using symlink for arbitrary host file system access.
     "C-0059": (
-        CheckCategory.Workload,
+        CheckCategory.Vulnerability,
         "Ingress.metadata.annotations.nginx",
     ),  # CVE-2021-25742-nginx-ingress-snippet-annotation-vulnerability
     # "C-0060": (CheckCategory.Workload, ""),  # gone?

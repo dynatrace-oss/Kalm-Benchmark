@@ -170,7 +170,7 @@ class Scanner(ScannerBase):
     IMAGE_URL = (
         "https://raw.githubusercontent.com/bridgecrewio/checkov/master/docs/web/images/checkov_by_bridgecrew.png"
     )
-    FORMATS = ["Plain", "JSON", "CycloneDX", "JunitXML", "Github_failed_only", "Sarif"]
+    FORMATS = ["Plain", "CSV", "JSON", "CycloneDX", "JunitXML", "Github_failed_only", "Gitlab_SAST", "Sarif", "SPDX"]
     CI_MODE = True
     RUNS_OFFLINE = True
     VERSION_CMD = ["checkov", "--version"]
