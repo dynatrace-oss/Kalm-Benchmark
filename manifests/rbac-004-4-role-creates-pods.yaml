@@ -7,8 +7,8 @@ metadata:
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
-    check: RBAC-004-1
-  name: rbac-004-1-pod-create
+    check: RBAC-004-4
+  name: rbac-004-4-pod-delete
   namespace: kalm-benchmark
 rules:
   - apiGroups:
@@ -16,4 +16,4 @@ rules:
     resources:
       - pod
     verbs:
-      - create
+      - delete

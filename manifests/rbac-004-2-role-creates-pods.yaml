@@ -7,8 +7,8 @@ metadata:
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
-    check: RBAC-004-1
-  name: rbac-004-1-pod-create
+    check: RBAC-004-2
+  name: rbac-004-2-pod-update
   namespace: kalm-benchmark
 rules:
   - apiGroups:
@@ -16,4 +16,4 @@ rules:
     resources:
       - pod
     verbs:
-      - create
+      - update

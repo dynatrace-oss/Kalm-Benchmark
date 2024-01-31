@@ -561,6 +561,25 @@ def gen_rbac(app) -> None:
                 verbs=verb
             )
 
+        RBACCheck(
+            app,
+            f"RBAC-022-{i + 1}",
+            f"{pfx}role impersonation",
+            descr=(),
+            check_path=[
+                    "ClusterRole.rules[].resources",
+                    "ClusterRole.rules[].verbs",
+                    "Role.rules[].resources",
+                    "Role.rules[].verbs",
+                    ".rules[].resources",
+                    ".rules[].verbs",
+            ],
+            is_cluster_role=is_cluster,
+            role_name=f"{pfx}role-bind-default-sa",
+            resources=["users", "groups", "serviceaccounts"],
+            verbs="impersonate",
+        )
+
     RBACCheck(
         app,
         "RBAC-016",
@@ -593,3 +612,16 @@ def gen_rbac(app) -> None:
         resources="services",
         verbs="get",
     )
+
+
+
+    # for subject_ns in ["default", "kube-system"]:
+    #     RBACCheck(
+    #         app,
+    #         "RBAC-018",
+    #         "rolebinding grants permission to subject in reserved namespace",
+    #         descr="Reserved namespaces should not be used for regular workload.",
+    #         role_name="default-role",
+    #         subject_type=SubjectType.SA,
+    #         subject=
+    #     )

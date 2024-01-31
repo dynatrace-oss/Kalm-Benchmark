@@ -1,7 +1,6 @@
 /BenchmarkManifests/**/*.yaml
 scanners_example outputs/
 data/summaries
-manifests/
 
 # Editors
 .vscode/

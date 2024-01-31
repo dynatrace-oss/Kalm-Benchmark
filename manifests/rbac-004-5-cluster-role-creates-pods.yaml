@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   annotations:
     check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources
@@ -7,8 +7,8 @@ metadata:
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
-    check: RBAC-004-1
-  name: rbac-004-1-pod-create
+    check: RBAC-004-5
+  name: rbac-004-5-cluster-pod-create
   namespace: kalm-benchmark
 rules:
   - apiGroups:
