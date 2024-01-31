@@ -39,6 +39,7 @@ class CheckCategory(StrEnum):
     IAM = auto()
     Infrastructure = auto()
     Reliability = auto()
+    Segregation = auto()
     Vulnerability = auto()
     Workload = auto()
 

@@ -64,6 +64,8 @@ class ScannerInfo:
     cat_admission_ctrl: str = "0/0"
     cat_data_security: str = "0/0"
     cat_workload: str = "0/0"
+    cat_reliability: str = "0/0"
+    cat_segregation: str = "0/0"
     cat_misc: str = "0/0"
     can_scan_manifests: bool = False
     can_scan_cluster: bool = False
@@ -185,7 +187,7 @@ def load_scanner_results_from_file(
     """
     if path is None:
         # TODO properly implement the retrieval of the correct result file
-        files = get_result_files_of_scanner(scanner.NAME)
+        # files = get_result_files_of_scanner(scanner.NAME)
         path = Path(f"./data/{scanner.NAME.lower()}.{format}")
     return scanner.load_results(path)
 
@@ -442,7 +444,7 @@ def categorize_by_check_id(check_id: str | None) -> str:
     else:
         prefix = check_id.split("-")[0].lower().strip()
 
-    if prefix in ["pod", "wl", "ns", "cj", "srv", "sc"]:
+    if prefix in ["pod", "wl", "cj", "srv", "sc"]:
         return CheckCategory.Workload
     elif prefix in ["pss", "psa", "psp"]:
         return CheckCategory.AdmissionControl
@@ -450,8 +452,10 @@ def categorize_by_check_id(check_id: str | None) -> str:
         return CheckCategory.IAM
     elif prefix in ["cm"]:  # currently only matches CM-001 but might need more granual distinction -> other prefix
         return CheckCategory.DataSecurity
-    elif prefix in ["np", "ing"]:
-        return CheckCategory.Network
+    elif prefix in ["np", "ns"]:
+        return CheckCategory.Segregation
+    elif prefix in ["ing"]:
+        return CheckCategory.Network 
     elif prefix in ["rel", "res"]:
         return CheckCategory.Reliability
     elif prefix == "inf":
@@ -697,6 +701,7 @@ def create_evaluation_summary(data_dir: str | Path = "./data", show_extra: bool 
             ),
             cat_data_security=get_category_sum(categories.get(CheckCategory.DataSecurity, None), show_extra=show_extra),
             # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
+            cat_reliability=get_category_sum(categories.get(CheckCategory.Reliability, None), show_extra=show_extra),
             cat_workload=get_category_sum(categories.get(CheckCategory.Workload, None), show_extra=show_extra),
             cat_misc=get_category_sum(
                 categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {}),

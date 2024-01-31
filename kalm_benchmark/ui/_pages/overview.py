@@ -43,11 +43,13 @@ def collect_overview_information() -> pd.DataFrame:
             coverage=summary.coverage,
             ci_mode=scanner.CI_MODE,
             runs_offline=str(scanner.RUNS_OFFLINE),
-            cat_network=evaluation.get_category_sum(categories.get(CheckCategory.Network, None)),
-            cat_IAM=evaluation.get_category_sum(categories.get(CheckCategory.IAM, None)),
             cat_admission_ctrl=evaluation.get_category_sum(categories.get(CheckCategory.AdmissionControl, None)),
             cat_data_security=evaluation.get_category_sum(categories.get(CheckCategory.DataSecurity, None)),
+            cat_IAM=evaluation.get_category_sum(categories.get(CheckCategory.IAM, None)),
             # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
+            cat_network=evaluation.get_category_sum(categories.get(CheckCategory.Network, None)),
+            cat_reliability=evaluation.get_category_sum(categories.get(CheckCategory.Reliability, None)),
+            cat_segregation=evaluation.get_category_sum(categories.get(CheckCategory.Segregation, None)),
             cat_workload=evaluation.get_category_sum(categories.get(CheckCategory.Workload, None)),
             cat_misc=evaluation.get_category_sum(
                 categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {})

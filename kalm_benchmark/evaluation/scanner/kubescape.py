@@ -38,7 +38,7 @@ CONTROL_CATEGORY = {
         ],
     ),  # Data Destruction
     "C-0009": (
-        CheckCategory.Workload,  # Resource limits
+        CheckCategory.Reliability,  # Resource limits
         [
             ".spec.containers[].resources.limits.memory",
             ".spec.containers[].resources.requests.memory",
@@ -182,7 +182,7 @@ CONTROL_CATEGORY = {
         "Ingress.metadata.annotations.nginx",
     ),  # CVE-2021-25742-nginx-ingress-snippet-annotation-vulnerability
     # "C-0060": (CheckCategory.Workload, ""),  # gone?
-    "C-0061": (CheckCategory.Workload, ".metadata.namespace"),  # Pods in default namespace
+    "C-0061": (CheckCategory.Segregation, ".metadata.namespace"),  # Pods in default namespace
     "C-0062": (CheckCategory.Workload, ".spec.containers[].command[]"),  # Sudo in container entrypoint
     "C-0063": (
         CheckCategory.IAM,
