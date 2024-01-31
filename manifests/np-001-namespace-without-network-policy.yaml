@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   annotations:
-    check_path: NetworkPolicy.metadata.namespace|.metadata.namespace
+    check_path: NetworkPolicy.metadata.namespace
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
@@ -15,7 +15,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   annotations:
-    check_path: NetworkPolicy.metadata.namespace|.metadata.namespace
+    check_path: NetworkPolicy.metadata.namespace
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
@@ -32,7 +32,7 @@ apiVersion: v1
 kind: LimitRange
 metadata:
   annotations:
-    check_path: NetworkPolicy.metadata.namespace|.metadata.namespace
+    check_path: NetworkPolicy.metadata.namespace
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
@@ -60,7 +60,7 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
-    check_path: NetworkPolicy.metadata.namespace|.metadata.namespace
+    check_path: NetworkPolicy.metadata.namespace
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
@@ -72,7 +72,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    check_path: NetworkPolicy.metadata.namespace|.metadata.namespace
+    check_path: NetworkPolicy.metadata.namespace
     expected: alert
   labels:
     app.kubernetes.io/part-of: kalm-benchmark

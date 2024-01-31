@@ -347,7 +347,7 @@ def gen_network_policy_checks(app) -> None:
         "namespace without network policy",
         has_network_policy=False,
         use_default_deny_all_network_policy=False,
-        check_path=["NetworkPolicy.metadata.namespace", ".metadata.namespace"],
+        check_path=["NetworkPolicy.metadata.namespace"],
     )
 
     for i, policy_type in enumerate(["Ingress", "Egress"], start=1):
