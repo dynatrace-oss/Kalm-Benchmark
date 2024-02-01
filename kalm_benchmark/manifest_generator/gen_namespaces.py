@@ -257,7 +257,7 @@ def gen_namespace_resource_checks(app: App) -> None:
         "RES-007-0",
         "no LimitRange object for namespace",
         has_limit_range=False,
-        check_path=["LimitRange.metadata.namespace", ".metadata.namespace"],
+        check_path=["LimitRange.metadata.namespace"],
     )
     NamespaceCheck(
         app,
@@ -318,7 +318,7 @@ def gen_namespace_resource_checks(app: App) -> None:
         "RES-009-1",
         "no resource quota applied to namespace",
         has_quota=False,
-        check_path=["ResourceQuota.metadata.namespace", ".metadata.namespace"],
+        check_path=["ResourceQuota.metadata.namespace"],
     )
     NamespaceCheck(
         app,

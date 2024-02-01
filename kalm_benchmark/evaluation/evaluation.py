@@ -441,8 +441,11 @@ def categorize_by_check_id(check_id: str | None) -> str:
     """
     if check_id is None or pd.isnull(check_id):
         prefix = ""
+    elif check_id.lower().startswith("pod-025"):
+        return CheckCategory.DataSecurity  # secrets in env vars
     else:
         prefix = check_id.split("-")[0].lower().strip()
+
 
     if prefix in ["pod", "wl", "cj", "srv", "sc"]:
         return CheckCategory.Workload
@@ -702,6 +705,7 @@ def create_evaluation_summary(data_dir: str | Path = "./data", show_extra: bool 
             cat_data_security=get_category_sum(categories.get(CheckCategory.DataSecurity, None), show_extra=show_extra),
             # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
             cat_reliability=get_category_sum(categories.get(CheckCategory.Reliability, None), show_extra=show_extra),
+            cat_segregation=get_category_sum(categories.get(CheckCategory.Segregation, None), show_extra=show_extra),
             cat_workload=get_category_sum(categories.get(CheckCategory.Workload, None), show_extra=show_extra),
             cat_misc=get_category_sum(
                 categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {}),

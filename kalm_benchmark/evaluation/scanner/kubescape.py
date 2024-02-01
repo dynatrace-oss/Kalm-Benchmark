@@ -103,7 +103,7 @@ CONTROL_CATEGORY = {
     "C-0026": (CheckCategory.Workload, "Cronjob"),  # Kubernetes CronJob
     # "C-0028": (CheckCategory.PodSecurity, ""),  # gone?
     "C-0030": (
-        CheckCategory.Network,
+        CheckCategory.Segregation,
         ["NetworkPolicy.spec.podSelector.matchLabels", "NetworkPolicy.spec.ingress", "NetworkPolicy.spec.egress"],
     ),  # Ingress and Egress blocked
     "C-0031": (
