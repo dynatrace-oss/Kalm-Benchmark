@@ -65,6 +65,7 @@ class ScannerInfo:
     cat_network: str = "0/0"
     cat_reliability: str = "0/0"
     cat_segregation: str = "0/0"
+    cat_vulnerability: str = "0/0"
     cat_workload: str = "0/0"
     cat_misc: str = "0/0"
     can_scan_manifests: bool = False
@@ -443,6 +444,8 @@ def categorize_by_check_id(check_id: str | None) -> str:
         prefix = ""
     elif check_id.lower().startswith("pod-025"):
         return CheckCategory.DataSecurity  # secrets in env vars
+    elif check_id.lower().startswith("pod-045"):  # CVE-2021-25741
+        return CheckCategory.Vulnerability
     else:
         prefix = check_id.split("-")[0].lower().strip()
 
@@ -706,6 +709,7 @@ def create_evaluation_summary(data_dir: str | Path = "./data", show_extra: bool 
             # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
             cat_reliability=get_category_sum(categories.get(CheckCategory.Reliability, None), show_extra=show_extra),
             cat_segregation=get_category_sum(categories.get(CheckCategory.Segregation, None), show_extra=show_extra),
+            cat_vulnerability=get_category_sum(categories.get(CheckCategory.Vulnerability, None), show_extra=show_extra),
             cat_workload=get_category_sum(categories.get(CheckCategory.Workload, None), show_extra=show_extra),
             cat_misc=get_category_sum(
                 categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {}),
