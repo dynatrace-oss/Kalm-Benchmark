@@ -561,24 +561,25 @@ def gen_rbac(app) -> None:
                 verbs=verb
             )
 
-        RBACCheck(
-            app,
-            f"RBAC-022-{i + 1}",
-            f"{pfx}role impersonation",
-            descr=(),
-            check_path=[
-                    "ClusterRole.rules[].resources",
-                    "ClusterRole.rules[].verbs",
-                    "Role.rules[].resources",
-                    "Role.rules[].verbs",
-                    ".rules[].resources",
-                    ".rules[].verbs",
-            ],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}role-bind-default-sa",
-            resources=["users", "groups", "serviceaccounts"],
-            verbs="impersonate",
-        )
+        for j, verb in enumerate(["create", "update", "patch"]):
+            RBACCheck(
+                app,
+                f"RBAC-022-{(j + 1) + (i*3)}",
+                f"{pfx}role can manage NetworkPolicy",
+                descr=(),
+                check_path=[
+                        "ClusterRole.rules[].resources",
+                        "ClusterRole.rules[].verbs",
+                        "Role.rules[].resources",
+                        "Role.rules[].verbs",
+                        ".rules[].resources",
+                        ".rules[].verbs",
+                ],
+                is_cluster_role=is_cluster,
+                role_name=f"{pfx}role-{verb}-netpol",
+                resources="networkpolicies",
+                verbs=verb,
+            )
 
     RBACCheck(
         app,
