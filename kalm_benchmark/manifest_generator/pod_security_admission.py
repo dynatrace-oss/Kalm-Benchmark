@@ -213,8 +213,8 @@ def gen_pod_security_admission_checks(app) -> None:
     NamespaceCheck(
         app,
         "PSA-002",
-        "Using privileged privilegedPodSecurity level is insecure",
-        descr="Privileged pod security level imposes no restrictions and may allow for known privilege escalations",
+        "Using `privileged` Pod Security Standard is insecure",
+        descr="Privileged pod security standard imposes no restrictions and may allow for known privilege escalations",
         check_path=[
             "Namespace.metadata.labels.pod-security.kubernetes.io",
         ],

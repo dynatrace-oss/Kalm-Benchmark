@@ -444,8 +444,16 @@ def categorize_by_check_id(check_id: str | None) -> str:
         prefix = ""
     elif check_id.lower().startswith("pod-025"):
         return CheckCategory.DataSecurity  # secrets in env vars
+    elif check_id.lower().startswith("pod-043"):  # Azure Cloud Credentials mounted
+        return CheckCategory.DataSecurity
     elif check_id.lower().startswith("pod-045"):  # CVE-2021-25741
         return CheckCategory.Vulnerability
+    elif check_id.lower().startswith("CM-002"):  # CVE-2021-25742
+        return CheckCategory.Vulnerability
+    elif check_id.lower().startswith("ing-005"):  # CVE-2021-25742
+        return CheckCategory.Vulnerability
+    elif check_id.lower().startswith("rel-004"):  # nodeSelector
+        return CheckCategory.Segregation
     else:
         prefix = check_id.split("-")[0].lower().strip()
 

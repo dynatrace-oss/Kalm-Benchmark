@@ -204,7 +204,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     NakedPodIsBad(
         app,
         "WL-001",
-        "Naked Pod",
+        "Unmanaged Pods are discouraged",
         descr="Pods shouldn't be deployed without a resource managing it",
         check_path=[".metadata.ownerReferences", ".kind"],
     )
@@ -212,7 +212,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-002-1",
-        "Explicit Default SA",
+        "Explicit Default ServiceAccountName",
         descr="`default` ServiceAccount should never be used. Create a dedicated ServiceAccount when access"
         " to API server is needed when access to API server is needed.",
         service_account_name="default",
@@ -221,7 +221,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-002-2",
-        "no SA specified",
+        "No ServiceAccountName specified",
         descr="if no service account is specified it defaults to the "
         "`default` ServiceAccount, which should be avoided. "
         "Create a dedicated ServiceAccount without any permissions instead.",
@@ -231,7 +231,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
 
     pod_sa_automount_combos = [
         {
-            "name": "default-pod-and-sa",
+            "name": "Automount ServiceAccountToken by Default",
             "pod": None,
             "sa": None,
             "expect": CheckStatus.Alert,
@@ -310,7 +310,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "REL-004-1",
-        "No node selection specified",
+        "No nodeSelector or nodeAffinity specified",
         descr="Pods with high risk workloads can be assigned to specific node to separate them from other workloads",
         node_selector=None,
         node_affinity=False,
@@ -347,7 +347,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "REL-001",
-        "No ReadinessProbe",
+        "No ReadinessProbe defined",
         descr="Configuring a readinessProbe is recommended as it's intended to "
         "ensure that workload is ready to process network traffic",
         container_kwargs={"readiness_probe": None},
@@ -357,7 +357,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "REL-002",
-        "No LivenessProbe",
+        "No LivenessProbe defined",
         descr="Configuring a livenessProbe is recommended as it's intended to ensure that workload "
         "remains healthy during its entire execution lifecycle, or otherwise restart the container.",
         container_kwargs={"liveness_probe": None},
@@ -367,7 +367,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-008-1",
-        "Use no hostPID",
+        "hostPID flag not set",
         expect=CheckStatus.Pass,
         descr="The hostPID defaults to `false` and thus should be okay",
         host_pid=None,
@@ -377,7 +377,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-008-2",
-        "Pod has hostPID set",
+        "hostPID flag set",
         descr="Containers should be isolated from the host machine as much as possible. `hostPID` pods may allow "
         "cross-container influence and may expose the host itself to potentially malicious or destructive actions",
         host_pid=True,
@@ -387,7 +387,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-009-1",
-        "use no hostIPC",
+        "hostIPC flag not set",
         expect=CheckStatus.Pass,
         descr="The hostIPC defaults to `false` and thus should be okay",
         host_ipc=None,
@@ -397,7 +397,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-009-2",
-        "has hostIPC set",
+        "hostIPC flag set",
         descr="Containers should be isolated from the host machine as much as possible. `hostIPC` on pods may allow"
         " cross-container influence and may expose the host itself to potentially malicious or destructive actions",
         host_ipc=True,
@@ -407,7 +407,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-010-1",
-        "Use no hostNetwork",
+        "hostNetwork flag not set",
         expect=CheckStatus.Pass,
         descr="The hostNetwork defaults to `false` and thus should be okay",
         host_network=None,
@@ -416,7 +416,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-010-2",
-        "Has hostNetwork set",
+        "hostNetwork flag set",
         descr="Containers should be isolated from the host machine as much as possible.",
         host_network=True,
         check_path=".spec.hostNetwork",
@@ -425,7 +425,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-011",
-        "Uses hostPort",
+        "Pod uses hostPort",
         descr="When you bind a Pod to a hostPort, it limits the number of places the  Pod can be scheduled, "
         "because each <hostIP, hostPort, protocol> combination must be unique.",
         container_kwargs={"ports": [k8s.ContainerPort(container_port=31337, host_port=31337)]},
@@ -435,7 +435,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-012",
-        "use HostAliases to modify pods /etc/hosts",
+        "Pod uses HostAliases to modify its /etc/hosts",
         descr="Managing /etc/hosts aliases can prevent Docker from modifying the file after a pod's"
         " containers have already been started",
         host_aliases=[k8s.HostAlias(ip="127.0.0.1", hostnames=["foo.com"])],
@@ -445,7 +445,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-013",
-        "use serviceAccount field",
+        "deprecate serviceAccount field used",
         descr="ServiceAccount field is deprecated, ServiceAccountName should be used instead",
         service_account="deprecated-sa",
         service_account_name=None,
@@ -455,7 +455,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     PodCheck(
         app,
         "POD-014",
-        "no apparmor profile",
+        "no AppArmor profile defined",
         descr="AppArmor can be configured for any application to reduce "
         "its potential attack surface and provide greater in-depth defense.",
         apparmor_profile=None,
@@ -489,18 +489,18 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     # the hardened version in this benchmark prioritizes the run_as_user field,
     # which is why for this test, runAsUser will be disabled (mostly) to test only the runAsNonRoot field
     non_root_user_configs = [
-        {
-            "name": "default to root user",
-            "descr": "Having neither runAsNonRoot nor `runAsUser>1000` means a user has elevated privileges",
-            "pod": {"run_as_non_root": None, "run_as_user": None},
-            "container": {"run_as_non_root": None, "run_as_user": None},
-        },
         # setting run_as_non_root for pod
         {
-            "name": "use runAsNonRoot flag on pod",
+            "name": "use runAsNonRoot flag on Pod",
             "expect": CheckStatus.Pass,
             "descr": "Using runAsNonRoot is a viable alternative to `runAsUser>1000`",
             "pod": {"run_as_non_root": True, "run_as_user": None},
+            "container": {"run_as_non_root": None, "run_as_user": None},
+        },
+        {
+            "name": "no runAsNonRoot defaults to root user",
+            "descr": "Having neither runAsNonRoot nor `runAsUser>1000` means a user has elevated privileges",
+            "pod": {"run_as_non_root": None, "run_as_user": None},
             "container": {"run_as_non_root": None, "run_as_user": None},
         },
         {
@@ -574,7 +574,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     # is managed via runAsUser and the runAsNonRoot is not set
     run_as_user_configs = [
         {
-            "name": "default to root user",
+            "name": "no runAsUser defaults to root user",
             "descr": "Having neither runAsNonRoot nor `runAsUser>1000` means a user has elevated privileges",
             "pod": {"run_as_user": None},
             "container": {"run_as_user": None},
@@ -627,7 +627,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
 
     run_as_group_configs = [
         {
-            "name": "default to root group",
+            "name": "no runAsGroup defaults to root group",
             "descr": "by default GID 0 is used, which has elevated privileges",
             "pod": {"run_as_group": None},
             "container": {"run_as_group": None},
@@ -1029,7 +1029,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
     VolumeMountCheck(
         app,
         "POD-045",
-        "containing CVE-2021-25741",
+        "Pod contains CVE-2021-25741",
         descr="A user may be able to create a container with subPath or subPathExpr volume mounts to access files &"
         " directories anywhere on the host filesystem. "
         "Following Kubernetes versions are affected: v1.22.0-v1.22.1, v1.21.0-v1.21.4, v1.20.0-v1.20.10, <v1.19.14",
