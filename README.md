@@ -1,13 +1,14 @@
+<!-- markdownlint-disable MD040 MD059 -->
 # 📊 Kalm Benchmark
 
 The goal of the Kalm benchmark is to provide a proper baseline for comparing Kubernetes (workload) compliance/misconfiguration scanners.  
 This benchmark consists of two parts:
+
 - a set of manifests, which contain misconfigurations, which scanners should detect
 - a web UI to help with the comparison and analysis of the scanner results on this benchmark
 
 | ⚠️ This product is not officially supported by Dynatrace. |
 | --------------------------------------------------------- |
-
 
 ## Description
 
@@ -24,28 +25,24 @@ An overview of all the checks in the benchmark can be found in [Benchmark Checks
 ### Web UI
 
 The web application consists of two pages:
+
 - an overview of various scanners checked with this benchmark  
-   ![](docs/images/overview_page.png)
+   ![overview](docs/images/overview_page.png)
 - an analysis page to inspect the results of a specific scanner in more detail  
-   ![](docs/images/analysis_page.png)
-
-
+   ![analysis](docs/images/analysis_page.png)
 
 ## Use-Cases
 
 - for Security and Ops teams:
-   - find a suitable scanner for your needs
-   - aids you in the development of your custom checks/policies/queries/rules for a tool
+  - find a suitable scanner for your needs
+  - aids you in the development of your custom checks/policies/queries/rules for a tool
 
 - For scanner developers
-   - compare your tool to alternatives on the market
-   - develop and maintain your implemented checks, e.g.:
-      - identify noisy checks (e.g., multiple checks which raise an alert for the same issue)
-      - or faulty checks (e.g., alerts which were erroneously raised or not raised due to a bug)
-      ![](./docs/images/noisy_checks.gif)
-
-
-
+  - compare your tool to alternatives on the market
+  - develop and maintain your implemented checks, e.g.:
+    - identify noisy checks (e.g., multiple checks which raise an alert for the same issue)
+    - or faulty checks (e.g., alerts which were erroneously raised or not raised due to a bug)
+      ![faulty](./docs/images/noisy_checks.gif)
 
 ## Prerequisites
 
@@ -55,9 +52,7 @@ The web application consists of two pages:
 - Any **scanner** for which a scan should be triggered must be installed manually
 - [Poetry](https://python-poetry.org) is used to manage the project itself
 
-
 ## Getting Started
-
 
 ### 1) 🔨 Installation
 
@@ -81,7 +76,6 @@ For detailed information of the available commands or general help run:
 poetry run cli --help
 ```
 
-
 #### 2.1) Generating manifests
 
 To generate manifests use the `generate` command:
@@ -91,8 +85,6 @@ poetry run cli generate [--out <target directory>]
 ```
 
 These manifests form the basis for the benchmark and will be placed in the directory specified with the `--out` argument. The location defaults to the `manifests` folder in the working directory.
-
-
 
 #### 2.2) Start the Web UI
 
@@ -134,40 +126,35 @@ Then the stored results can be loaded by the tool for the evaulation.
 poetry run cli evaluate <tool>
 ```
 
-
-
 ## 🚀 Deployment
 
 Some scanners only scan resources deployed in a Kubernetes cluster.
 You can find instructions on how to deploy the benchmark in a cluster [here](./docs/deployment.md)
 
-
-
 ## Tool-specific considerations
 
-#### kube-bench
+### kube-bench
+
 As their description states, it focuses on **infrastructure security** and not **workload security**:
 > Checks whether Kubernetes is deployed according to security best practices as defined in the CIS Kubernetes Benchmark.
 
 Thus, the tool is listed in the benchmark just for completness sake and is expected to perform poorly because it focuses on another domain, than what is covered by this benchmark!
 
-
 #### KubiScan
+
 KubiScan is not formally installed on a system. Instead, the project can be cloned and executed as Python script.
 For a consistent interface, the benchmark assumes to that KubiScan can be called directly using the alias `kubiscan`
 E.g. to use a dedicated virtual environment (called `venv` inside the kubiscan directory) you can create the alias in Linux using this command
+
 ```
 alias kubiscan="<PATH-TO-DIR>/venv/bin/python <PATH-TO-DIR>/KubiScan.py"
 ```
 
-
 ## Troubleshooting
 
-#### The results from `docker run` can't be parsed
+### The results from `docker run` can't be parsed
 
 - ensure the `-t` flag is not used in the command. If it is, `stdout` and `stderr` are joined to just `stdout`. This means errors can't be handled properly and it corrupts the results in `stdout`.
-
-
 
 ## 💪 Contributing
 
@@ -179,6 +166,7 @@ Want to contribute? Awesome! We welcome contributions of all kinds: new scanners
 - By contributing you agree to abide by the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ---
+
 ## License
 
 [Apache Version 2.0](./LICENSE)
