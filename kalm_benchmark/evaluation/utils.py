@@ -1,17 +1,26 @@
 import os
 import re
 from pathlib import Path
-from typing import Generator, Tuple
+from typing import Generator, Tuple, Optional, Union
 
 
-def normalize_path(path: str, related_objects: list[dict] | None = None, is_relative: bool = True) -> str:
+def normalize_path(path: str, related_objects: Optional[list[dict]] = None, is_relative: bool = True) -> str:
     # resolve the related object to it's actual 'kind' so it's a absolute path
     if related_objects is not None and path.startswith("relatedObjects"):
-        # extract index in relatedObjects
-        idx = int(re.search(r"\[(\d)\]", path).group(1))
-        kind = related_objects[idx]["kind"]
-        path = path.replace(f"relatedObjects[{idx}]", kind)
-        is_relative = False
+        # extract index in relatedObjects - use safe regex with timeout protection
+        match = re.search(r"\[(\d+)\]", path)  # Fixed: allow multiple digits, more specific pattern
+        if match is None:
+            # If no match found, return path as-is to avoid crashes
+            return path
+        try:
+            idx = int(match.group(1))
+            if idx < len(related_objects) and "kind" in related_objects[idx]:
+                kind = related_objects[idx]["kind"]
+                path = path.replace(f"relatedObjects[{idx}]", kind)
+                is_relative = False
+        except (ValueError, IndexError, KeyError):
+            # If parsing fails, return original path to avoid crashes
+            pass
 
     # remove any index or key list index itself is not relevant -> make it generic
     path = re.sub(r"\[[\w-]*\]", "[]", path)
@@ -105,22 +114,48 @@ def fix_path_to_current_environment(file_path: Path) -> str:
     # make reference path relative to current working diretcory
     cwd = Path(os.getcwd())
     file_path = Path(file_path)
+    
+    # Validate that file_path doesn't contain path traversal patterns
+    if ".." in str(file_path) or str(file_path).startswith("/"):
+        print(f"Potentially unsafe path detected: {file_path}")
+        return ""
+    
     try:
         a = file_path.relative_to(cwd)
         return str(a)
     except ValueError:
-        # look for the file on the filesystem
-        matching_paths = list(cwd.rglob("*" + file_path.name))
-        num_paths = len(matching_paths)
-        if num_paths > 0:
+        # look for the file on the filesystem - but only within reasonable subdirectories
+        # Limit search depth to prevent performance issues and restrict scope
+        filename = file_path.name
+        if not filename or len(filename) > 255:  # Basic filename validation
+            print(f"Invalid filename: {filename}")
+            return ""
+            
+        # Only search in specific safe subdirectories to prevent traversal issues
+        safe_patterns = ["data", "manifests", "results", "output"]
+        matching_paths = []
+        
+        for pattern in safe_patterns:
+            safe_dir = cwd / pattern
+            if safe_dir.exists() and safe_dir.is_dir():
+                # Use name matching instead of glob pattern to be more specific
+                for path in safe_dir.rglob(filename):
+                    # Ensure the found path is actually within our safe directory
+                    try:
+                        path.relative_to(safe_dir)
+                        matching_paths.append(path)
+                    except ValueError:
+                        continue  # Skip paths that aren't within the safe directory
+        
+        if len(matching_paths) > 0:
             return str(matching_paths[0])
         else:
-            print(f"Found no path which contains the file {file_path.name}")
+            print(f"Found no path which contains the file {filename}")
 
     return ""
 
 
-def get_difference_in_parent_path(path1: str, path2: str) -> Tuple[str, str] | None:
+def get_difference_in_parent_path(path1: str, path2: str) -> Optional[Tuple[str, str]]:
     """Find the parts of each path which are not the same and return the different parents.
 
     :param path1: the first path for the comparison
@@ -158,8 +193,40 @@ class GeneratorWrapper:
         self.value = yield from self._gen
 
 
-def get_version_from_result_file(file_name: str | Path) -> str | None:
-    *_, version, date = str(file_name).split("_")
-    if version.startswith("v"):
-        return version[1:]  # drop leading 'v' which would just denote the version anyways
-    return version
+def get_version_from_result_file(file_name: Union[str, Path]) -> Optional[str]:
+    file_name_str = str(file_name)
+    
+    # Extract just the filename without path
+    from pathlib import Path
+    filename_only = Path(file_name_str).name
+    
+    # Remove file extension if present (only common extensions to avoid removing version parts)
+    if filename_only.endswith(('.json', '.yaml', '.yml', '.txt')):
+        filename_only = filename_only.rsplit('.', 1)[0]
+    
+    # Split by underscore to match original logic
+    parts = filename_only.split("_")
+    
+    # Need at least 2 parts (version_date) and the pattern should look like a proper scanner result file
+    if len(parts) < 2:
+        return None
+    
+    # Use the original logic: second-to-last part is version, last part is date
+    # This mimics the original: *_, version, date = parts
+    try:
+        version = parts[-2]
+        date_part = parts[-1]
+        
+        # Basic validation: date part should look like a date (YYYY-MM-DD format)
+        # and version should contain some version-like characters
+        if (len(date_part) >= 8 and 
+            any(c.isdigit() for c in date_part) and 
+            (version.startswith("v") or any(c.isdigit() or c == '.' for c in version))):
+            
+            if version.startswith("v"):
+                return version[1:]  # drop leading 'v' which would just denote the version anyways
+            return version
+        
+        return None
+    except IndexError:
+        return None

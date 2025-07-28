@@ -1,4 +1,6 @@
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import streamlit as st
 
@@ -68,3 +70,18 @@ def show_scan_ui(tool: ScannerBase, source: str, generator: RunUpdateGenerator) 
             # "failed" scans are ignored (i.e. they have no return value)
             if exc.value is not None:
                 st.session_state[SessionKeys.LatestScanResult][tool.NAME] = exc.value
+                
+                # Save the scan results to data directory (same logic as CLI)
+                data_dir = Path(st.session_state.get(SessionKeys.DataDir, "./data"))
+                if data_dir.exists():
+                    version = tool.get_version() or "?"
+                    date = datetime.now().strftime("%Y-%m-%d")
+                    suffix = "json" if "json" in [f.lower() for f in tool.FORMATS] else "txt"
+                    # ensure resulting files are written as lowercase for consistency
+                    out_file = data_dir / f"{tool.NAME.lower()}_v{version}_{date}.{suffix}"
+                    
+                    try:
+                        tool.save_results(exc.value, out_file)
+                        log_messages.success(f"Results saved to {out_file}")
+                    except Exception as e:
+                        log_messages.error(f"Failed to save results to {out_file}: {e}")
