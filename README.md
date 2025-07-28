@@ -31,6 +31,14 @@ The web application consists of two pages:
 - an analysis page to inspect the results of a specific scanner in more detail  
    ![analysis](docs/images/analysis_page.png)
 
+**Recent UI Enhancements:**
+
+- Improved settings panel with better organization and visual structure
+- Logging system with centralized log management
+- Automatic result saving to data directory after scans
+- Real-time scan progress monitoring
+- Streamlined session state management
+
 ## Use-Cases
 
 - for Security and Ops teams:
@@ -93,6 +101,13 @@ Besides the CLI commands the tool also provides a web user interface to manage t
 ```shell
 poetry run cli serve
 ```
+
+The web UI includes:
+
+- **Settings Panel**: Configure data directory and display options
+- **Automatic Result Saving**: Scan results are automatically saved to the configured data directory
+- **Centralized Logging**: View scan logs and UI activity in organized log files
+- **Real-time Updates**: Monitor scan progress with live status updates
 
 #### 2.3) Perform a scan with a Scanner
 

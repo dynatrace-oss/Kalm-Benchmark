@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Optional, Union
 
 import streamlit as st
 from loguru import logger
@@ -18,7 +19,7 @@ from kalm_benchmark.ui.constants import (
 SUMMARIES_DIR_NAME = "summaries"
 
 
-def get_query_param(param: str, default: str | None = None) -> str | None:
+def get_query_param(param: str, default: Optional[str] = None) -> Optional[str]:
     """Retrieves the value of the specified query parameter.
     If the query parameter is not found the default value is returned if specified.
     If no default value is specified, it defaults to None.
@@ -45,7 +46,7 @@ def get_selected_result_file(tool_name: str) -> str:
     return file_name
 
 
-def get_result_files_of_scanner(tool_name: str, data_dir: str | None = None) -> list[str]:
+def get_result_files_of_scanner(tool_name: str, data_dir: Optional[str] = None) -> list[str]:
     """Retrieve all the files which have scan results store for a given scanner.
     :param tool_name: the name of the scanner
     :param data_dir: the directory in which to look for files.
@@ -66,16 +67,15 @@ def get_result_files_of_scanner(tool_name: str, data_dir: str | None = None) -> 
 def init():
     """
     Initialize the session with appropriate defaults
+    Note: Page config is now handled in app.py's configure_page() function
     """
-    st.set_page_config(layout="wide", page_title="Kubernetes Scanner Benchmark")
-
     if SessionKeys.DataDir not in st.session_state:
         st.session_state[SessionKeys.DataDir] = "./data"
     if SessionKeys.LatestScanResult not in st.session_state:
         st.session_state[SessionKeys.LatestScanResult] = {}
 
 
-def load_scan_result(scanner: ScannerBase, source: str | Path) -> list | dict:
+def load_scan_result(scanner: ScannerBase, source: Union[str, Path]) -> Union[list, dict]:
     if is_ephemeral_scan_result(source):
         results = st.session_state[SessionKeys.LatestScanResult][scanner.NAME]
         return scanner.parse_results(results)

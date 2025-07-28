@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 import pandas as pd
 import streamlit as st
@@ -72,21 +73,6 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     :param df: the dataftrame used for the generation of the initial config
     :return: the grid configuration as a dictionary
     """
-    # render_image = JsCode(
-    #     """function (params) {
-    #         var element = document.createElement("span");
-    #         element.classList.add("scanner-logo");
-    #         var imageElement = document.createElement("img");
-    #         if (params.data.image && params.data.image != "None") {
-    #             imageElement.src = params.data.image;
-    #             imageElement.height="20";
-    #         } else {
-    #             imageElement.src = "";
-    #         }
-    #         element.appendChild(imageElement);
-    #         return element;
-    #     }"""
-    # )
     percent_formatter = JsCode("function (params) { return (params.value*100).toFixed(1) + '%'; }")
     bool_flag_formatter = JsCode(
         """
@@ -112,17 +98,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     builder.configure_default_column(filterable=False, tooltipShowDelay=50)
     builder.configure_selection(selection_mode="single")
     builder.configure_column("name", header_name="Scanner", pinned="left", lockPinned="true", filter=False)
-    # Temporary workaround: hide image column, because with latest Ag-Grid version
-    # a new HTML element to display an image can no longer be injected
-    # builder.configure_column(
-    #     "image",
-    #     header_name="Image",
-    #     cellRenderer=render_image,
-    #     filter=False,
-    #     sortable=False,
-    #     maxWidth=120,
-    #     cellClass="img-cell",
-    # )
+
     builder.configure_column("image", hide=True)
     builder.configure_column(
         "version",
@@ -200,13 +176,16 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     return grid_options
 
 
-def show_overview_grid() -> dict | None:
+def show_overview_grid(df: Optional[pd.DataFrame] = None) -> Optional[dict]:
     """Load the overview data for all known scanners and display them in a grid.
+    :param df: Optional dataframe to display. If None, loads all scanner data.
     :return a dictionary with the selected scanner entry or None, if nothing is selected
     """
     # make the hover color half as intensive as the selection color
     HOVER_COLOR = "rgba(255, 75, 75, .5)"
-    df = collect_overview_information()
+    
+    if df is None:
+        df = collect_overview_information()
 
     grid_options = _configure_grid(df)
 
@@ -225,9 +204,21 @@ def show_overview_grid() -> dict | None:
             ".invalid-summary.ag-row": {"color": "red", "font-style": "italic"},
         },
     )
-    st.info("💡️ _to get a description of a column hover over the column name_")
-    if df["is_valid_summary"].sum() < len(df):
-        st.warning("No valid summaries were found for entries with a red font color")
+    
+    st.markdown("""
+    <div style="background: linear-gradient(90deg, #e3f2fd 0%, #f3e5f5 100%); padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #1f77b4;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: #1565c0; font-weight: 500;">
+                💡 <strong>Interactive Guide:</strong> Hover over column headers for descriptions • Select any row to see quick actions and details
+            </div>
+            {}
+        </div>
+    </div>
+    """.format(
+        f'<div style="color: #f57c00; font-weight: 600;">⚠️ {len(df) - df["is_valid_summary"].sum()} scanner(s) missing results</div>' 
+        if df["is_valid_summary"].sum() < len(df) else 
+        '<div style="color: #2e7d32; font-weight: 600;">✅ All scanners have valid results</div>'
+    ), unsafe_allow_html=True)
 
     selected_rows = result["selected_rows"]
     return None if len(selected_rows) == 0 else selected_rows[0]
@@ -258,20 +249,231 @@ def _group_columns(grid_options: dict, group_name: str, columns_to_group: list[s
     return grid_options
 
 
-def show() -> None:
-    """Show the overview information for all known scanners."""
-    st.title("Overview")
+def show_header():
+    """Show header with professional styling."""
+    st.markdown("""
+    <div style="text-align: center; padding: 3rem 0 2rem 0; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; margin-bottom: 2rem;">
+        <div style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+            <h1 style="color: #1f77b4; margin-bottom: 0.5rem; font-size: 2.5rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                🛡️ Kalm Benchmark
+            </h1>
+            <h3 style="color: #495057; font-weight: 400; margin-bottom: 1.5rem; font-size: 1.3rem;">
+                Kubernetes Security Scanner Comparison Platform
+            </h3>
+            <p style="color: #6c757d; max-width: 650px; margin: 0 auto; line-height: 1.6; font-size: 1rem;">
+                Comprehensive evaluation and comparison of Kubernetes workload compliance scanners. 
+                Compare features, performance metrics, and coverage to make informed decisions about 
+                your security toolchain.
+            </p>
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.7); border-radius: 8px; display: inline-block;">
+                <span style="color: #28a745; font-weight: 600;">✨ Professional Security Analysis</span> • 
+                <span style="color: #17a2b8; font-weight: 600;">📊 Data-Driven Insights</span> • 
+                <span style="color: #6f42c1; font-weight: 600;">🚀 Open Source</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    selection = show_overview_grid()
-    if selection is not None:
-        tool_name = selection["name"]
-        if st.button(f"Show Details for {tool_name}"):
-            # trigger navigation by setting page query parameter and reloading the page
+
+def show_quick_stats(df: pd.DataFrame):
+    """Show quick statistics with professional styling."""
+    total_scanners = len(df)
+    valid_results = df["is_valid_summary"].sum()
+    avg_score = df[df["is_valid_summary"]]["score"].mean() if valid_results > 0 else 0
+    avg_coverage = df[df["is_valid_summary"]]["coverage"].mean() if valid_results > 0 else 0
+    
+    # stats with custom styling
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid #e9ecef; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h4 style="text-align: center; color: #495057; margin-bottom: 1.5rem; font-weight: 600;">📈 Platform Statistics</h4>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            label="📊 Total Scanners",
+            value=total_scanners,
+            help="Number of scanners available in the benchmark"
+        )
+    
+    with col2:
+        st.metric(
+            label="✅ With Results", 
+            value=valid_results,
+            help="Scanners with valid evaluation results"
+        )
+    
+    with col3:
+        st.metric(
+            label="🎯 Avg Score",
+            value=f"{avg_score:.1%}" if avg_score > 0 else "N/A",
+            help="Average F1 score across all scanners with results"
+        )
+    
+    with col4:
+        st.metric(
+            label="📈 Avg Coverage",
+            value=f"{avg_coverage:.1%}" if avg_coverage > 0 else "N/A",
+            help="Average check coverage across all scanners with results"
+        )
+
+
+def show_filter_options(df: pd.DataFrame) -> dict:
+    """Show filtering options and return filter criteria."""
+    with st.expander("🔍 Filter Options", expanded=False):
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # Score filter
+            min_score = st.slider(
+                "Minimum Score",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.0,
+                step=0.1,
+                format="%.1f",
+                help="Filter scanners by minimum F1 score"
+            )
+        
+        with col2:
+            # Coverage filter
+            min_coverage = st.slider(
+                "Minimum Coverage", 
+                min_value=0.0,
+                max_value=1.0,
+                value=0.0,
+                step=0.1,
+                format="%.1f",
+                help="Filter scanners by minimum check coverage"
+            )
+        
+        with col3:
+            # Capability filter
+            capabilities = st.multiselect(
+                "Required Capabilities",
+                options=["Cluster Scanning", "Manifest Scanning", "CI Mode", "Custom Checks"],
+                default=[],
+                help="Filter scanners that support selected capabilities"
+            )
+    
+    return {
+        "min_score": min_score,
+        "min_coverage": min_coverage,
+        "capabilities": capabilities
+    }
+
+
+def apply_filters(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
+    """Apply filters to the dataframe."""
+    filtered_df = df.copy()
+    
+    # Score filter
+    if filters["min_score"] > 0:
+        filtered_df = filtered_df[filtered_df["score"] >= filters["min_score"]]
+    
+    # Coverage filter
+    if filters["min_coverage"] > 0:
+        filtered_df = filtered_df[filtered_df["coverage"] >= filters["min_coverage"]]
+    
+    # Capability filters
+    if "Cluster Scanning" in filters["capabilities"]:
+        filtered_df = filtered_df[filtered_df["can_scan_cluster"]]
+    if "Manifest Scanning" in filters["capabilities"]:
+        filtered_df = filtered_df[filtered_df["can_scan_manifests"]]
+    if "CI Mode" in filters["capabilities"]:
+        filtered_df = filtered_df[filtered_df["ci_mode"]]
+    if "Custom Checks" in filters["capabilities"]:
+        filtered_df = filtered_df[filtered_df["custom_checks"] != "False"]
+    
+    return filtered_df
+
+
+def show_quick_actions(selection: Optional[dict]):
+    """Show quick action buttons for selected scanner."""
+    if selection is None:
+        st.info("💡 **Tip:** Select a scanner from the table below to see quick actions")
+        return
+    
+    tool_name = selection["name"]
+    scanner = SCANNERS.get(tool_name)
+    
+    st.markdown("### ⚡ Quick Actions")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("📊 View Details", key="view_details", type="primary"):
             st.query_params = {QueryParam.Page: Page.Scanner, QueryParam.SelectedScanner: tool_name}
-            # wait a bit to ensure the query params are properly updated
-            # because the rerun is triggered via an exception that stops everything
-            time.sleep(0.2)
+            time.sleep(0.1)
             st.rerun()
+    
+    with col2:
+        if scanner and scanner.can_scan_manifests:
+            if st.button("🚀 Quick Scan", key="quick_scan"):
+                st.query_params = {
+                    QueryParam.Page: Page.Scanner, 
+                    QueryParam.SelectedScanner: tool_name,
+                    "action": "scan"
+                }
+                time.sleep(0.1)
+                st.rerun()
+        else:
+            st.button("🚀 Quick Scan", disabled=True, help="This scanner doesn't support manifest scanning")
+    
+    with col3:
+        if selection.get("is_valid_summary"):
+            score = selection.get("score", 0)
+            coverage = selection.get("coverage", 0)
+            st.markdown(f"**Score:** {score:.1%} | **Coverage:** {coverage:.1%}")
+        else:
+            st.warning("⚠️ No valid results available")
+
+
+def show() -> None:
+    """Show the overview page with professional styling and modern UI."""
+    show_header()
+    
+    df = collect_overview_information()
+    
+    show_quick_stats(df)
+    
+    st.markdown("""
+    <div style="height: 2px; background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, #dee2e6 80%, transparent 100%); margin: 2rem 0;"></div>
+    """, unsafe_allow_html=True)
+    
+    filters = show_filter_options(df)
+    filtered_df = apply_filters(df, filters)
+    
+    if len(filtered_df) < len(df):
+        st.markdown(f"""
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0;">
+            🔍 <strong>Filtered View:</strong> Showing {len(filtered_df)} of {len(df)} scanners based on your criteria
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="margin: 2rem 0 1rem 0;">
+        <h3 style="color: #495057; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            📋 Scanner Comparison Table
+        </h3>
+        <p style="color: #6c757d; margin-top: 0.5rem; font-size: 0.9rem;">
+            Interactive comparison of security scanners with detailed metrics and capabilities
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    selection = show_overview_grid(filtered_df)
+    
+    if selection:
+        st.markdown("""
+        <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+        """, unsafe_allow_html=True)
+        show_quick_actions(selection)
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        show_quick_actions(selection)
 
 
 if __name__ == "__main__":

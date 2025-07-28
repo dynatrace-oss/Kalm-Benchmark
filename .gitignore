@@ -115,3 +115,6 @@ venv.bak/
 dmypy.json
 *.cue
 docs/example_manifests
+
+# logs directory (moved to root)
+logs/

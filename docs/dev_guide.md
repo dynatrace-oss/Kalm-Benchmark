@@ -23,6 +23,12 @@ Directory Structure
 │   │   ├── ...
 │   │   └── workload                    # definition of workload related manifests
 │   └── ui                              # module for the visualization of the evaluation
+│       ├── _pages                      # UI page modules (overview, scanner details)
+│       ├── scanner_details             # scanner-specific UI components
+│       ├── app.py                      # main Streamlit application entry point
+│       ├── constants.py                # UI constants and session keys
+│       ├── logging_config.py           # centralized logging configuration
+│       └── utils.py                    # UI utility functions
 │
 ├── manifests                                # (generated) the target directory for generated manifests
 ├── notebooks                           # folder containing all notebooks used for the analysis

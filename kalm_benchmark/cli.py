@@ -1,6 +1,10 @@
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+# Silence Node.js version warning from cdk8s/jsii (Find it annoying; no effect on functionality)
+os.environ.setdefault("JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION", "1")
 
 import typer
 
