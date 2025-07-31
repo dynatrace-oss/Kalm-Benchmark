@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD040 -->
 # Dev Guide
 
 ## 1) Overview
@@ -22,6 +23,12 @@ Directory Structure
 │   │   ├── ...
 │   │   └── workload                    # definition of workload related manifests
 │   └── ui                              # module for the visualization of the evaluation
+│       ├── _pages                      # UI page modules (overview, scanner details)
+│       ├── scanner_details             # scanner-specific UI components
+│       ├── app.py                      # main Streamlit application entry point
+│       ├── constants.py                # UI constants and session keys
+│       ├── logging_config.py           # centralized logging configuration
+│       └── utils.py                    # UI utility functions
 │
 ├── manifests                                # (generated) the target directory for generated manifests
 ├── notebooks                           # folder containing all notebooks used for the analysis
@@ -30,6 +37,7 @@ Directory Structure
 ```
 
 The project consists of 2 main modules:
+
 - `manifest_generator`: the code for the generation and management of the manifests for the benchmark
 - `evaluation`: contains all the code for scanners and their evaluations  
 
@@ -38,6 +46,7 @@ The project consists of 2 main modules:
 ### 1) Installation
 
 To install the project and all the dependencies execute:
+
 ```shell
 poetry run install
 ```
@@ -49,6 +58,7 @@ poetry run pre-commit install
 ```
 
 This installs the following tools with minor adjustments:
+
 - [black](https://black.readthedocs.io/en/stable/) to format the code
 - [flake8](https://flake8.pycqa.org/en/latest/) to lint the code
 - [isort](https://pycqa.github.io/isort/) to sort the import statements
@@ -69,7 +79,6 @@ For unit-tests [pytest](https://docs.pytest.org/en/) is used. To run all tests e
 ```shell
 poetry run pytest
 ```
-
 
 ## Evaluation pipeline
 

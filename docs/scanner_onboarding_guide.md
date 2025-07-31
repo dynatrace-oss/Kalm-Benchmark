@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD033 -->
 # Onboarding a new tool to the Comparison
 
 All tools which are supported by the comparison and analysis tool have a dedicated Python script within the `evaluation/scanner` folder. In the respective file everything which is needed to **parse and analyze the results**, and to **start a scan** is implemented.
@@ -5,11 +6,12 @@ All tools which are supported by the comparison and analysis tool have a dedicat
 All scripts within that folder are automatically loaded by the Kalm benchmark upon starting, if the file meets the requirements listed below.
 
 In order to add a new tool to the comparision there must exist:
+
 - a dedicated script
 - **result file** which can be loaded and analyzed by the tool.
 
-
 ## Quick Start
+
 A detailed explanation for every step can be found in the [dedicated section](#steps-to-add-a-new-scanner)
 
 1) create a new script in the `evaluation/scanner` folder
@@ -20,30 +22,31 @@ A detailed explanation for every step can be found in the [dedicated section](#s
 6) (optional) override function to obtain tool version
     - only necessary, if scanning is supported
 
-
 ## Result file
 
 The result file is expected to meet certain expectations for it to be handled correctly:
+
 - the preferred file format is `JSON`. If `JSON` is not supported, it is treated as textfile
 - the file name has the pattern `<tool_name>_<version>_<date of scan>.<format>`
-    - the version and date in the file name allow the comparison of results across multiple versions/iterations
-
+  - the version and date in the file name allow the comparison of results across multiple versions/iterations
 
 ---
+
 ## Steps to add a new scanner
 
 ### 1. Create a script in the `evaluation/scanner` folder
+
 The script can be named as you wish, as long as it's located in that folder and it is unique.
 Ideally, it should be have the same name as the scanner itself.  
 
-
 ### 2. Create a class named `Scanner`
+
 Currently, the class must be called `Scanner`, so it can be discovered by the Kalm Benchmark.
 
 The class must inherit from `ScannerBase`, which is located in the file `scanner_evaluator.py` in the same directory. This base-class has several utility functions, which can be freely used within your class.
 
-
 For example:
+
 ```python
 from .scanner_evaluator import ScannerBase
 
@@ -51,7 +54,6 @@ class Scanner(ScannerBase)
     NAME = "..."  # a class variable (see next step)
     ...
 ```
-
 
 ### 3. Add comparison-relevant information as class variables
 
@@ -67,27 +69,25 @@ The overview page of the benchmark web-app gets most of the information from the
 - `RUNS_OFFLINE`: a boolean flag if the scanner is self-sufficient and can run without a connection to an external server
 - `IMAGE_URL`: a URL to the logo of the scanner, which will be shown in the comparison page
 - `FORMATS`: a list of output formats supported by the scanner
-    - From this list only `JSON` is used internally to infer the file format when saving scan results.
+  - From this list only `JSON` is used internally to infer the file format when saving scan results.
 
 - `SCAN_CLUSTER_CMD`: the full command to start a cluster scan as if it were invoked via the commandline.  
-    - if this command is specified, the benchmark assumes that cluster scans are supported
-    - _Note: it's assumed, that the tool is installed locally and (pre-)configured when executing this command._
+  - if this command is specified, the benchmark assumes that cluster scans are supported
+  - _Note: it's assumed, that the tool is installed locally and (pre-)configured when executing this command._
 - `SCAN_MANIFESTS_CMD`: the partial command to start a scan of the benchmark manifests.
-    - if this command is specified, the benchmark assumes that manifest scans are supported
-    - **Important:** the path to the benchmark files is appended automatically at the end of the command. If the path needs to be specified using a CLI flag,  just specify the flag at the end of the command, without the path.
-    - _Note: it's assumed, that the tool is installed locally and (pre-)configured when executing this command._
+  - if this command is specified, the benchmark assumes that manifest scans are supported
+  - **Important:** the path to the benchmark files is appended automatically at the end of the command. If the path needs to be specified using a CLI flag,  just specify the flag at the end of the command, without the path.
+  - _Note: it's assumed, that the tool is installed locally and (pre-)configured when executing this command._
 - `SCAN_PER_FILE`: an internal flag for the manifest scan. If true, then a dedicated scan will be started for each manifest in the benchmark. This is only necessary, if the scanner supports only the scan of individual files and not entire directories.
 - `VERSION_CMD`: Optional[list] = None
-</details>
 
+</details>
 
 #### `*_CMD` fields are special cases
 
 The 3 `CMD` fields are optional and primarily for convenience and assume a default behaviour of the commands.
 If the default behaviour of these commands does not meet your requirement, you can customize the behaviour by overriding the respective `scan_cluster`, `scan_manifests` or `get_version` functions.  
 If either the `CMD` field or the respective function are specified, the benchmark assumes that this feature is supported by the scanner, which will also be shown in the comparison page.
-
-
 
 ### 4. Implement function to parse the results
 
@@ -104,15 +104,16 @@ The function is expected to return a **list of `CheckResult`s**. `CheckResult` i
 Not all fields of `CheckResult` have to be populated by parsing the results. Some of values originate from the benchmark itself, which will be set later in the processing pipeline.
 
 The only mandatory fields are:
+
 - `scanner_check_id`: the `id` of the check as used by the scanner
 - `got`: the verdict from the scanner. For normalized results this is an instance of the enum `CheckStatus` which is either `Alert` or `Pass`.
-    - this enum is located in the same file as `ScannerBase` and `CheckResult`
+  - this enum is located in the same file as `ScannerBase` and `CheckResult`
 - `checked_path`: the path(s) in the resources based on which the scanner determined the result
-    - some checks check multiple paths to come to a conclusen. Thus, this can be either a string or a list of strings
-    - _Note: for consistency, any array on the path is denoted by the `[]` suffix (as opposied to `[*]` seen in some cases)._
-
+  - some checks check multiple paths to come to a conclusen. Thus, this can be either a string or a list of strings
+  - _Note: for consistency, any array on the path is denoted by the `[]` suffix (as opposied to `[*]` seen in some cases)._
 
 The other optional fields are:
+
 - `obj_name`: the name of the scanned Kubernetes resource
 - `scanner_check_name`: the human readable name of the check
 - `severity`: the textual severity of the finding. This can also be a numeric value formatted as string.
@@ -120,7 +121,6 @@ The other optional fields are:
 - `namespace`: the namespace in which the resource is located
 - `details`: a detailed description of the finding or recommended remediation provided by the scanner
 - `extra`: any additional information that can be useful when inspecting results in the analysis page
-
 
 We know, hardly any scanner reports the `checked_path` and it is not trivial to provide this mapping. However, this information is **necessary to avoid (undetected) false positives**.
 
@@ -131,9 +131,8 @@ We know, hardly any scanner reports the `checked_path` and it is not trivial to 
 - the scanner is not able to detect this misconfiguration
 - however, the scanner raises a (false positive) alert, but on an unrelated field
 - without the information on the `checked_path` this would lead to an incorrect "true positive", because the benchmark expects an alert and the tool actually raised an alert.
+
 </details>
-
-
 
 ### 5. (Optional) Implement custom scanning functionality
 
@@ -148,11 +147,12 @@ This means, if possible **avoid using prints** and instead yield updates.
 For convenience the `run` classmethod of the _base class_ can be used to handle the execution of the actual command.
 Additionally, an 'warning update' is generated, when the exit code of the execution is > 0.
 This method can be configured with the following arguments:
+
 - `parse_json`: a boolean flag, if the scan returns results formatted as JSON and if these should be parsed right away
 - `stream_process_output`: some scanners provide progress updates while scanning. When this flag is set, the updates will be forwarded to the UI (both in the terminal or the webpage)
 
-
 ### 6. (Optional) implement custom version function
+
 When a scan can be executed for the scanner the results will be stored with a predefined format, part of which is the version number of the scanner (see [Result file](#result-file)).
 Ideally, the version number is retrieved directly from the scanner.
 

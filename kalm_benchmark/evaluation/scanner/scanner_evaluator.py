@@ -1,11 +1,12 @@
 import json
 import os
+import shlex
 import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import auto
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, Optional, Union
 
 from loguru import logger
 from strenum import LowercaseStrEnum, StrEnum
@@ -16,18 +17,18 @@ from ..utils import GeneratorWrapper
 
 @dataclass
 class CheckResult:
-    check_id: str | None = None
-    obj_name: str | None = None
-    scanner_check_id: str | None = None
-    scanner_check_name: str | None = None
-    got: str | None = None
-    expected: str | None = None
-    checked_path: str | None = None
-    severity: str | None = None
-    kind: str | None = None
-    namespace: str | None = None  # None means it's a cluster resource check
-    details: str | None = None
-    extra: str | None = None
+    check_id: Optional[str] = None
+    obj_name: Optional[str] = None
+    scanner_check_id: Optional[str] = None
+    scanner_check_name: Optional[str] = None
+    got: Optional[str] = None
+    expected: Optional[str] = None
+    checked_path: Optional[str] = None
+    severity: Optional[str] = None
+    kind: Optional[str] = None
+    namespace: Optional[str] = None  # None means it's a cluster resource check
+    details: Optional[str] = None
+    extra: Optional[str] = None
 
 
 class CheckCategory(StrEnum):
@@ -52,27 +53,27 @@ class CheckStatus(LowercaseStrEnum):
 
 class ScannerBase(ABC):
     NAME = "_base_"
-    NOTES = []
+    NOTES: list[str] = []
     CI_MODE: bool = False
-    CUSTOM_CHECKS: bool | str = False
-    SCAN_CLUSTER_CMD: Optional[list] = None
-    SCAN_MANIFESTS_CMD: Optional[list] = None
+    CUSTOM_CHECKS: Union[bool, str] = False
+    SCAN_CLUSTER_CMD: Optional[list[str]] = None
+    SCAN_MANIFESTS_CMD: Optional[list[str]] = None
     SCAN_PER_FILE: bool = False
-    VERSION_CMD: Optional[list] = None
-    RUNS_OFFLINE: bool | str = False
-    IMAGE_URL: str | None = None
+    VERSION_CMD: Optional[list[str]] = None
+    RUNS_OFFLINE: Union[bool, str] = False
+    IMAGE_URL: Optional[str] = None
     FORMATS: list[str] = []
 
     def __init__(self) -> None:
-        self._results = []
+        self._results: list[CheckResult] = []
 
     @staticmethod
-    def update_version(*args) -> str | None:
+    def update_version(*args) -> Optional[str]:
         return None
 
     @classmethod
     @abstractmethod
-    def parse_results(cls, results: dict | str | list) -> list[CheckResult]:
+    def parse_results(cls, results: Union[dict, str, list]) -> list[CheckResult]:
         """
         Parses the execution results and returns them.
         :param results: the raw results to parse
@@ -98,20 +99,38 @@ class ScannerBase(ABC):
         To be tolerant of various mechanics of the scanners (e.g. CI pipeline support)
         `stdout` is treated as result regardless of the errorcode.
 
-        :param cmd: the command to execute
+        :param cmd: the command to execute - must be a list of strings for security
         :param parse_json: a flag specifying if the results is JSON formatted and should be parsed
         :param stream_process_output: a flag specifying if the process output will be forwarded to the caller
         :return: the results from the started process or an empty list in case of an error
         :yield: in case of an error the information is returned as a status update
         """
+        # Validate command input for security
+        if not isinstance(cmd, list) or not all(isinstance(arg, str) for arg in cmd):
+            yield UpdateType.Error, "Command must be a list of strings for security reasons"
+            return None
+        
+        if not cmd:
+            yield UpdateType.Error, "Command cannot be empty"
+            return None
+
+        # Sanitize command arguments to prevent injection
+        sanitized_cmd = []
+        for arg in cmd:
+            # Basic validation - reject arguments with shell metacharacters that could be dangerous
+            if any(char in arg for char in [';', '|', '&', '$', '`', '(', ')', '<', '>', '\n', '\r']):
+                yield UpdateType.Warning, f"Command argument contains potentially dangerous characters: {arg}"
+            sanitized_cmd.append(str(arg))  # Ensure all arguments are strings
+
         try:
             if stream_process_output:
-                output, errors, proc = yield from cls._stream_process_output(cmd)
+                output, errors, proc = yield from cls._stream_process_output(sanitized_cmd)
             else:
                 proc = subprocess.run(
-                    cmd,
+                    sanitized_cmd,
                     capture_output=True,
                     encoding="utf-8",
+                    shell=False,  # Explicitly disable shell to prevent injection
                 )
                 output = proc.stdout
                 errors = proc.stderr
@@ -120,13 +139,13 @@ class ScannerBase(ABC):
             # there is nothing to process if the scan could not be started
             return None
 
-        cmd_str = " ".join(cmd)
+        cmd_str = shlex.join(sanitized_cmd)  # Use shlex.join for safe command display
         has_results = output is not None and len(output) > 0
-        result = output
+        result: Union[str, dict, list, None] = output
         output_is_json = False  # in case of an error useful information could be contained in output
         if has_results and parse_json:
             try:
-                result = json.loads(result)
+                result = json.loads(output)
                 output_is_json = True  # the output contains no useful info for debugging
             except json.JSONDecodeError as exc:
                 yield UpdateType.Error, f"Malformed JSON response of '{cmd_str}': {exc}"
@@ -150,38 +169,53 @@ class ScannerBase(ABC):
     @staticmethod
     def _stream_process_output(
         cmd: list[str],
-    ) -> Generator[tuple[UpdateType, str], None, tuple[str, str, subprocess.CompletedProcess]]:
+    ) -> Generator[tuple[UpdateType, str], None, tuple[str, str, subprocess.Popen]]:
         """Start the specified command in a sub-process and forward the output to the caller in real-time.
 
-        :param cmd: the command to execute
-        :return: a tuple with the full output, error and a reference to the CompletedProcess
+        :param cmd: the command to execute - must be a list of strings for security
+        :return: a tuple with the full output, error and a reference to the Popen process
         :yield: individual lines output by the process
         """
         proc = subprocess.Popen(
             cmd,
-            shell=False,
+            shell=False,  # Explicitly disable shell to prevent injection
             bufsize=1,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding="utf-8",
             errors="replace",
         )
-        stdout = []
-        stderr = []
-        while True:
-            output = proc.stdout.readline()
-            if output == "" and proc.poll() is not None:
-                break
-            stdout.append(output)
-            if output:
-                yield UpdateType.Info, output.strip()
+        stdout: list[str] = []
+        stderr: list[str] = []
+        
+        try:
+            while True:
+                if proc.stdout is None:
+                    break
+                output = proc.stdout.readline()
+                if output == "" and proc.poll() is not None:
+                    break
+                stdout.append(output)
+                if output:
+                    yield UpdateType.Info, output.strip()
+
+            # Read any remaining stderr
+            if proc.stderr is not None:
+                stderr_content = proc.stderr.read()
+                if stderr_content:
+                    stderr.append(stderr_content)
+        finally:
+            # Ensure process is properly closed
+            if proc.poll() is None:
+                proc.terminate()
+                proc.wait()
 
         return os.linesep.join(stdout), os.linesep.join(stderr), proc
 
-    def load_results(self, path: str | Path) -> list[CheckResult]:
+    def load_results(self, path: Union[str, Path]) -> list[CheckResult]:
         """Load the specified file with results and parse it
         :param path: the path to the file with the results
-                :return: a list of check results
+        :return: a list of check results
         """
         with open(path, "r", encoding="utf8") as f:
             if Path(path).suffix == ".json":
@@ -192,7 +226,7 @@ class ScannerBase(ABC):
         self._results = self.parse_results(res)
         return self._results
 
-    def save_results(self, results: list | None = None, path: str | Path = ".") -> None:
+    def save_results(self, results: Optional[list] = None, path: Union[str, Path] = ".") -> None:
         """Save the provided results in the specified file.
 
         :param results: an optional list of checkresults to save.
@@ -202,16 +236,17 @@ class ScannerBase(ABC):
         if results is None:
             results = self._results
 
-        with open(path, "w") as f:
-            if path.suffix == ".json":
+        path_obj = Path(path)
+        with open(path_obj, "w") as f:
+            if path_obj.suffix == ".json":
                 json.dump(results, f)
             elif isinstance(results, str):
                 # simply write contents as is
                 f.write(results)
             else:
-                logger.warning(f"Failed to save results to '{str(path)}' because results have an invalid type")
+                logger.warning(f"Failed to save results to '{str(path_obj)}' because results have an invalid type")
 
-    def get_version(self) -> str | None:
+    def get_version(self) -> Optional[str]:
         """Retrieve the version of the tool by executing the corresponding command.
 
         :return: the version of the tool or None, if the version can't be retrieved
@@ -221,13 +256,13 @@ class ScannerBase(ABC):
             # consume all updates from the command
             list(gen)
             version = gen.value
-            if version is not None and version.startswith("v"):
+            if version is not None and isinstance(version, str) and version.startswith("v"):
                 version = version[1:]  # drop leading 'v' which some tools print
-            return version.strip() if version is not None else ""
+            return version.strip() if version is not None and isinstance(version, str) else None
 
         return None
 
-    def scan_manifests(self, path: str | Path, **kwargs) -> RunUpdateGenerator:
+    def scan_manifests(self, path: Union[str, Path], **kwargs) -> RunUpdateGenerator:
         """Start a scan of manifests at the specified location.
         If the path points to a directory, all yaml files within it will be scanned
 
@@ -238,11 +273,12 @@ class ScannerBase(ABC):
             yield UpdateType.Error, f"{self.NAME} does not support scanning of manifests"
             return None
 
-        if not self.SCAN_PER_FILE or path.is_file():
-            results = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(path)], **kwargs)
+        path_obj = Path(path)
+        if not self.SCAN_PER_FILE or path_obj.is_file():
+            results = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(path_obj)], **kwargs)
         else:  # special handling if tool does not support scanning an entire folder
             results = []
-            for p in path.glob("*.yaml"):
+            for p in path_obj.glob("*.yaml"):
                 res = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(p)], **kwargs)
                 if res is not None and len(res) > 0:
                     results.append(res)

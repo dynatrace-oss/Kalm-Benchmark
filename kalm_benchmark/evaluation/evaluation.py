@@ -3,7 +3,7 @@ from enum import auto
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import cdk8s
 import pandas as pd
@@ -55,8 +55,8 @@ class Col(SnakeCaseStrEnum):
 class ScannerInfo:
     # note: the order of the fields dictates the initial order of the columns in the UI
     name: str
-    image: str | None = None
-    version: str | None = None
+    image: Optional[str] = None
+    version: Optional[str] = None
     score: float = 0.0
     coverage: float = 0.0
     cat_admission_ctrl: str = "0/0"
@@ -380,7 +380,7 @@ def _coalesce_columns(
     df: pd.DataFrame,
     primary_col: str,
     secondary_col: str,
-    result_name: str | None = None,
+    result_name: Optional[str] = None,
 ) -> pd.DataFrame:
     def _pick_value(row: pd.Series, primary: str, secondary: str) -> str:
         if row[primary] and not pd.isnull(row[primary]):
@@ -434,7 +434,7 @@ def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     return df_dedup
 
 
-def categorize_by_check_id(check_id: str | None) -> str:
+def categorize_by_check_id(check_id: Optional[str]) -> str:
     """
     Assign a category to the check depending on the prefix of the check id (i.e. the first part of the id)
     :param check_id: the id of the check which will be used for the categorization.
@@ -554,7 +554,7 @@ class EvaluationSummary:
         return EvaluationSummary(**data)
 
 
-def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | None = None) -> EvaluationSummary:
+def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: Optional[str] = None) -> EvaluationSummary:
     """
     Create a summary of the evaluation results.
     :param df: the dataframe containing the execution results

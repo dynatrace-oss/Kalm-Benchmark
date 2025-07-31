@@ -1,5 +1,6 @@
 from pathlib import Path
 from textwrap import dedent
+from typing import Optional
 
 import altair as alt
 import numpy as np
@@ -21,7 +22,7 @@ from kalm_benchmark.ui.constants import SELECTED_RESULT_FILE, Color
 from kalm_benchmark.ui.utils import get_result_files_of_scanner, load_scan_result
 
 
-def show_result_selection_ui(tool_name: str) -> str | None:
+def show_result_selection_ui(tool_name: str) -> Optional[str]:
     """Shows UI elements to select the source with the data for the evaluation
 
     :param tool_name: the name of the tool for which the results will be shown
@@ -123,7 +124,7 @@ def calculate_score(df: pd.DataFrame, metric: Metric = Metric.F1) -> float:
 
 @st.cache_data
 def load_scanner_results(
-    scanner_name: str, result_source: Path | None = None, keep_redundant_results: bool = False
+    scanner_name: str, result_source: Optional[Path] = None, keep_redundant_results: bool = False
 ) -> pd.DataFrame:
     """Load the results of the scanner evaluated on the benchmark instances in a tabular format
 
@@ -143,7 +144,7 @@ def load_scanner_results(
 
 
 @st.cache_data
-def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: str | None = None) -> EvaluationSummary:
+def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: Optional[str] = None) -> EvaluationSummary:
     """Load the evaluation summary of the given dataframe with check results.
 
     :param df: the dataframe which will be summarized
@@ -154,7 +155,7 @@ def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: str | Non
     return evaluation.create_summary(df, metric, version=version)
 
 
-def show_results(scanner_name: str, result_file: Path | None = None) -> None:
+def show_results(scanner_name: str, result_file: Optional[Path] = None) -> None:
     """
     Display the overview and detail
     :param scanner_name: the name of the scanner whose results will be shown
@@ -224,7 +225,7 @@ def _create_results_per_scanner_check_histogram(df: pd.DataFrame, id_col: str) -
     )
 
 
-def show_detailed_check_overview(df: pd.DataFrame, result_types: list[ResultType] = None) -> None:
+def show_detailed_check_overview(df: pd.DataFrame, result_types: Optional[list[ResultType]] = None) -> None:
     """
     Show the full details of the checks results in a table. The shown check can be filtered
      to show only specific types of results.
@@ -253,7 +254,9 @@ def show_detailed_check_overview(df: pd.DataFrame, result_types: list[ResultType
         else:
             df_filtered = df[df["result_type"].isin(selected_categories)]
         # convert '-' to Nan
-        df_filtered = df_filtered.replace("-", np.nan)
+        # Use explicit dtype specification to avoid pandas FutureWarning
+        with pd.option_context('future.no_silent_downcasting', True):
+            df_filtered = df_filtered.replace("-", np.nan)
         df_filtered = df_filtered.sort_values(by=["check_id", "scanner_check_id"]).reset_index(drop=True)
         st.dataframe(style_results(df_filtered))
 
@@ -362,10 +365,10 @@ def style_results(df: pd.DataFrame) -> "pd.Styler":
     df_styled = (
         df.fillna("-")
         .style.apply(format_color_groups, axis=None)
-        .applymap(_bold_id, subset=[Col.CheckId, Col.ScannerCheckId])
-        .applymap(_colorize_status, subset=[Col.Expected, Col.Got])
-        .applymap(_colorize_result_type, subset=[Col.ResultType])
-        .applymap(lambda v: f"color: {Color.Gray}" if pd.isnull(v) else "")  # make NaNs less prominet
+        .map(_bold_id, subset=[Col.CheckId, Col.ScannerCheckId])
+        .map(_colorize_status, subset=[Col.Expected, Col.Got])
+        .map(_colorize_result_type, subset=[Col.ResultType])
+        .map(lambda v: f"color: {Color.Gray}" if pd.isnull(v) else "")  # make NaNs less prominet
     )
 
     return df_styled

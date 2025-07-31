@@ -5,25 +5,29 @@ Any cluster can be used for the evaluation. However, the benchmark was developed
 The resources can be deployed and removed manually using `kubectl`.
 However, for more comfort [Skaffold](https://skaffold.dev) is supported to deploy and delete all the benchmark resources.
 
-
 ## 🐣 Setup
 
 1. Make sure that all manifests have been generated and placed in the `manifests` folder
 2. Create a cluster
    - for [kind](https://kind.sigs.k8s.io) the following command can be used:
+
      ```sh
      kind create cluster --config=cluster.yaml
      ```
 
 3. Ensure that **kubectl context** is set to the target cluster
    - check the current context with:
+
      ```sh
      kubectl config current-context
      ```
+
    - the context can be switched with:
+
      ```sh
      kubectl config use-context <context-name>
      ```
+
 4. Deploy the benchmark resources by running
 
    ```sh
@@ -37,9 +41,11 @@ However, for more comfort [Skaffold](https://skaffold.dev) is supported to deplo
 ## 💀 Teardown
 
 1. Delete all deployed benchmark resources by running
+
    ```sh
    skaffold delete
    ```
+
 2. Verify that all the generated resources have been removed by viewing all resources with the `kalm-benchmark` label
 
    ```sh
@@ -50,6 +56,7 @@ However, for more comfort [Skaffold](https://skaffold.dev) is supported to deplo
 
 3. Delete the cluster
    - for [kind](https://kind.sigs.k8s.io) is following command can be used:
+
      ```sh
      kind delete cluster --name kalm-benchmark
      ```
