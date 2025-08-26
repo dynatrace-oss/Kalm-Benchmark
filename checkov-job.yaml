@@ -180,6 +180,21 @@ spec:
         runAsNonRoot: true
       restartPolicy: Never
       serviceAccountName: checkov
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       containers:
         - name: checkov
           image: bridgecrew/checkov-k8s:latest
@@ -187,11 +202,11 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "500m"
+              memory: "128Mi"
+              cpu: "100m"
             limits:
-              memory: "256Mi"
-              cpu: "500m"
+              memory: "512Mi"
+              cpu: "1000m"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

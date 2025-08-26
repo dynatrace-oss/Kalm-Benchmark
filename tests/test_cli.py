@@ -1,11 +1,10 @@
-from datetime import datetime
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
 from kalm_benchmark.cli import app, benchmark
-from kalm_benchmark.constants import UpdateType
+from kalm_benchmark.utils.constants import UpdateType
 from kalm_benchmark.evaluation.scanner_manager import ScannerManager
 
 runner = CliRunner()
@@ -122,31 +121,27 @@ class TestInvokeScan:
         runner.invoke(app, ["scan", SCANNER_NAME, "-c"])
         mock_scan.assert_called()
 
-    def test_results_are_written_to_output_path(self, manager, tmp_path, mock_scan):
-        scanner = manager.get(SCANNER_NAME)
-        runner.invoke(app, ["scan", SCANNER_NAME, "--files", tmp_path, "--out", tmp_path])
-        mock_scan.assert_called()
-        scanner.save_results.assert_called()
-
-    def test_results_are_only_saved_if_specified(self, manager, tmp_path, mock_scan):
-        scanner = manager.get(SCANNER_NAME)
+    @patch('kalm_benchmark.cli.EvaluationService')
+    def test_results_are_saved_to_database(self, mock_service_class, manager, tmp_path, mock_scan):
+        mock_service = mock_service_class.return_value
+        mock_service.save_scanner_results.return_value = "test-scan-id"
+        
         runner.invoke(app, ["scan", SCANNER_NAME, "--files", tmp_path])
         mock_scan.assert_called()
-        scanner.save_results.assert_not_called()
+        mock_service.save_scanner_results.assert_called_once()
 
-    def test_use_file_named_after_scanner_in_output_directory(self, manager, tmp_path, mock_scan):
-        scanner = manager.get(SCANNER_NAME)
-        date = datetime.now().strftime("%Y-%m-%d")
-        res_file_name = tmp_path / f"{SCANNER_NAME}_v0.0.1_{date}.json"
-        runner.invoke(app, ["scan", SCANNER_NAME, "--files", tmp_path, "--out", tmp_path])
-        mock_scan.assert_called()
-        scanner.save_results.assert_called_with(ANY, res_file_name)
-
-    def test_use_txt_if_json_not_supported(self, manager, tmp_path, mock_scan):
-        scanner = manager.get(SCANNER_NAME)
-        scanner.FORMATS = ["Pretty"]  # no JSON affects the used suffix
-        date = datetime.now().strftime("%Y-%m-%d")
-        res_file_name = tmp_path / f"{SCANNER_NAME}_v0.0.1_{date}.txt"
-        runner.invoke(app, ["scan", SCANNER_NAME, "--files", tmp_path, "--out", tmp_path])
-        mock_scan.assert_called()
-        scanner.save_results.assert_called_with(ANY, res_file_name)
+    @patch('kalm_benchmark.cli.EvaluationService')
+    def test_scan_creates_database_entry(self, mock_service_class, manager, tmp_path, mock_scan):
+        mock_service = mock_service_class.return_value
+        mock_service.save_scanner_results.return_value = "test-scan-id"
+        
+        result = runner.invoke(app, ["scan", SCANNER_NAME, "--files", tmp_path])
+        
+        # Check that database save was called with correct parameters
+        mock_service.save_scanner_results.assert_called_once()
+        call_args = mock_service.save_scanner_results.call_args
+        assert call_args.kwargs['scanner_name'] == SCANNER_NAME.lower()
+        assert call_args.kwargs['scanner_version'] == "0.0.1"
+        
+        # Check success message mentions database
+        assert "database" in result.stdout

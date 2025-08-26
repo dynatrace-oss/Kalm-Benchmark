@@ -3,7 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from kalm_benchmark.constants import RunUpdateGenerator
+from kalm_benchmark.utils.constants import RunUpdateGenerator
 
 from ..utils import normalize_path
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
@@ -230,15 +230,15 @@ class Scanner(ScannerBase):
     SCAN_MANIFESTS_CMD = [
         "kubescape",
         "scan",
-        "framework",
-        "allcontrols,nsa,mitre",
         "--format",
         "json",
+        "--format-version",
+        "v2",
         # "--verbose",
         # "--keep-local",
         # "--view",
         # "resource",
-    ]  # Note: control view contains paths
+    ]  # Note: Removed framework to fix prioritizedResource missing issue
     RUNS_OFFLINE = "artifacts/frameworks can be downloaded"
     CUSTOM_CHECKS = True
     VERSION_CMD = ["kubescape", "version"]
@@ -304,6 +304,37 @@ def parse_resource_result(res_result: dict, resource_info: dict) -> list[CheckRe
     results = []
     for ctrl in res_result["controls"]:
         ctrl_id = ctrl["controlID"]
+
+        # Extract severity from multiple possible locations
+        severity = None
+        numeric_severity = None
+
+        if prio and "severity" in prio:
+            numeric_severity = prio["severity"]
+        elif prio and "priorityVector" in prio:
+            # Look for severity in priorityVector array
+            for vector in prio["priorityVector"]:
+                if "severity" in vector:
+                    numeric_severity = vector["severity"]
+                    break
+
+        # If no numeric severity found, use scoreFactor as fallback
+        if numeric_severity is None and "scoreFactor" in ctrl:
+            score_factor = ctrl["scoreFactor"]
+            if score_factor >= 8:
+                numeric_severity = 3  # High
+            elif score_factor >= 5:
+                numeric_severity = 2  # Medium
+            elif score_factor >= 2:
+                numeric_severity = 1  # Low
+            else:
+                numeric_severity = 0  # Info
+
+        # Convert numeric severity to text labels
+        if numeric_severity is not None:
+            severity_map = {3: "High", 2: "Medium", 1: "Low", 0: "Info"}
+            severity = severity_map.get(numeric_severity, "Medium")
+
         for rule in ctrl["rules"]:
             checked_path = get_checked_path(ctrl_id, rule.get("paths", None), resource_info)
             status = _normalize_status(rule["status"])
@@ -318,7 +349,7 @@ def parse_resource_result(res_result: dict, resource_info: dict) -> list[CheckRe
                 details=f"Rule '{rule['name']}'",
                 checked_path=checked_path,
                 got=status,
-                severity=prio.get("serverity", None),
+                severity=severity,
             )
             results.append(res)
 

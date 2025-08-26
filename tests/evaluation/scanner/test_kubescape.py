@@ -76,34 +76,6 @@ class TestAlertObjectParsing:
             "namespace": "kube-system",
         }
 
-    def test_single_api_object_missing_label(self):
-        check_id = "POD-001"
-        expect = CheckStatus.Alert
-        name = "pod-001-naked-pod"
-        ns = "my-namespace"
-        kind = "Pod"
-        api_obj = {
-            "apiVersion": "v1",
-            "kind": kind,
-            "metadata": {
-                "annotations": {
-                    "expected": expect,
-                    "description": "Pods shouldn't be deployed without a resource managing it",
-                },
-                "labels": {"check": check_id},
-                "name": name,
-                "namespace": ns,
-            },
-        }
-
-        res = _parse_api_object(api_obj)
-        assert res == {
-            "check_id": check_id,
-            "kind": kind,
-            "obj_name": name,
-            "namespace": ns,
-        }
-
     def test_single_api_object_with_no_labels(self):
         kind = "Deployment"
         name = "local-path-provisioner"

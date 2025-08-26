@@ -262,6 +262,35 @@ class Scanner(ScannerBase):
             checked_path = cls.get_checked_path(scanner_check_id)
             status = CheckStatus.Alert
 
+            # KubeLinter doesn't provide explicit severity levels in JSON output
+            # All failures are treated as errors, but we can infer severity based on check type
+            severity = "MEDIUM"  # Default severity for most security/best practice checks
+
+            # Assign higher severity to critical security checks
+            high_severity_checks = [
+                "privileged-container",
+                "run-as-non-root",
+                "host-network",
+                "host-pid",
+                "host-ipc",
+                "docker-sock",
+                "cluster-admin-role-binding",
+                "access-to-secrets",
+            ]
+            if scanner_check_id in high_severity_checks:
+                severity = "HIGH"
+
+            # Assign lower severity to non-security checks
+            low_severity_checks = [
+                "required-annotation-email",
+                "required-label-owner",
+                "latest-tag",
+                "minimum-three-replicas",
+                "hpa-minimum-three-replicas",
+            ]
+            if scanner_check_id in low_severity_checks:
+                severity = "LOW"
+
             check_results.append(
                 CheckResult(
                     check_id=check_id,
@@ -273,6 +302,7 @@ class Scanner(ScannerBase):
                     namespace=ns,
                     details=report["Diagnostic"]["Message"],
                     extra=report["Remediation"],
+                    severity=severity,
                 )
             )
         return check_results

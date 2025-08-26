@@ -110,6 +110,17 @@ class Scanner(ScannerBase):
                     scanner_check_name = result["test_desc"]
 
                     status = CheckStatus.Pass if result["status"] == "PASS" else CheckStatus.Alert
+
+                    # Map kube-bench status to severity levels
+                    severity = None
+                    if result["status"] == "FAIL":
+                        severity = "HIGH"  # Failed CIS benchmark checks are high severity
+                    elif result["status"] == "WARN":
+                        severity = "MEDIUM"  # Warnings are medium severity
+                    elif result["status"] == "INFO":
+                        severity = "LOW"  # Info checks are low severity
+                    # PASS status doesn't need severity
+
                     check_results.append(
                         CheckResult(
                             scanner_check_id=scanner_check_id,
@@ -118,6 +129,7 @@ class Scanner(ScannerBase):
                             checked_path=result["audit"],
                             details=result["remediation"],
                             extra=result.get("reason", ""),
+                            severity=severity,
                         )
                     )
         return check_results

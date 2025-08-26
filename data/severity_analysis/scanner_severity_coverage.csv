@@ -1,0 +1,12 @@
+scanner_name,total_with_severity,severity_levels_used,severity_distribution,unique_checks
+polaris,4110,2,"{'MEDIUM': 2644, 'HIGH': 1466}",36
+kube-score,3888,3,"{'PASS': 3707, 'CRITICAL': 174, 'MEDIUM': 7}",27
+kubescape,3781,2,"{'MEDIUM': 3061, 'HIGH': 720}",31
+kubelinter,1199,3,"{'MEDIUM': 746, 'LOW': 442, 'HIGH': 11}",33
+trivy,561,4,"{'LOW': 465, 'MEDIUM': 64, 'HIGH': 20, 'CRITICAL': 12}",47
+kics,399,4,"{'LOW': 269, 'MEDIUM': 95, 'HIGH': 33, 'INFO': 2}",43
+kubesec,337,2,"{'LOW': 189, 'HIGH': 148}",14
+snyk,208,3,"{'LOW': 168, 'MEDIUM': 27, 'HIGH': 13}",22
+terrascan,87,3,"{'MEDIUM': 43, 'LOW': 27, 'HIGH': 17}",25
+kube-bench,81,2,"{'MEDIUM': 46, 'HIGH': 35}",81
+kubiscan,80,3,"{'CRITICAL': 50, 'HIGH': 29, 'LOW': 1}",4

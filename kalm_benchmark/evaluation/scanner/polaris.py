@@ -6,7 +6,10 @@ import pandas as pd
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 CHECK_MAPPING = {
-    "automountServiceAccountToken": (CheckCategory.Workload, [".spec.automountServiceAccountToken","ServiceAccount.automountServiceAccountToken"]),
+    "automountServiceAccountToken": (
+        CheckCategory.Workload,
+        [".spec.automountServiceAccountToken", "ServiceAccount.automountServiceAccountToken"],
+    ),
     "cpuLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits.cpu"),
     "cpuRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.cpu"),
     "dangerousCapabilities": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
@@ -31,7 +34,10 @@ CHECK_MAPPING = {
     "memoryLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits.memory"),
     "memoryRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.memory"),
     "missingPodDisruptionBudget": (CheckCategory.Reliability, "PodDisruptionBudget"),  # ignored by default
-    "missingNetworkPolicy": (CheckCategory.Segregation, ["NetworkPolicy.spec.podSelector", "NetworkPolicy.spec.ingress", "Networkpolicy.spec.egress"]),  
+    "missingNetworkPolicy": (
+        CheckCategory.Segregation,
+        ["NetworkPolicy.spec.podSelector", "NetworkPolicy.spec.ingress", "Networkpolicy.spec.egress"],
+    ),
     "notReadOnlyRootFilesystem": (
         CheckCategory.Workload,
         ".spec.containers[].securityContext.readOnlyRootFilesystem",
@@ -135,7 +141,9 @@ class Scanner(ScannerBase):
             _cat, checked_path = CHECK_MAPPING.get(scanner_check_id, (None, None))
 
             if checked_path is None:
-                print(f"Unknown check {scanner_check_id}!")
+                from loguru import logger
+
+                logger.warning(f"Unknown check {scanner_check_id}!")
                 continue
 
             if isinstance(checked_path, list):

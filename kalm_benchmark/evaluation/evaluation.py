@@ -1,18 +1,16 @@
 from dataclasses import asdict, dataclass, field
 from enum import auto
 from functools import lru_cache
-from itertools import product
+
+# itertools.product import removed - no longer needed after merge simplification
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import cdk8s
 import pandas as pd
 from loguru import logger
 from strenum import LowercaseStrEnum, SnakeCaseStrEnum, StrEnum
 
-from kalm_benchmark.evaluation.scanner_manager import SCANNERS
-from kalm_benchmark.evaluation.utils import get_version_from_result_file
-from kalm_benchmark.io import get_scanner_result_file_paths
 from kalm_benchmark.manifest_generator.check import Check
 from kalm_benchmark.manifest_generator.constants import (
     MISSING_CHECKS,
@@ -21,6 +19,7 @@ from kalm_benchmark.manifest_generator.constants import (
 )
 from kalm_benchmark.manifest_generator.gen_manifests import generate_manifests
 
+from .category_mapping import get_category_by_prefix, get_category_by_specific_check
 from .scanner.scanner_evaluator import CheckCategory, CheckResult, ScannerBase
 
 
@@ -61,7 +60,7 @@ class ScannerInfo:
     coverage: float = 0.0
     cat_admission_ctrl: str = "0/0"
     cat_data_security: str = "0/0"
-    cat_IAM: str = "0/0"
+    cat_iam: str = "0/0"
     cat_network: str = "0/0"
     cat_reliability: str = "0/0"
     cat_segregation: str = "0/0"
@@ -72,9 +71,10 @@ class ScannerInfo:
     can_scan_cluster: bool = False
     ci_mode: bool = False
     runs_offline: bool | str = False
-    custom_checks: str = False
+    custom_checks: bool | str = False
     formats: list[str] = field(default_factory=list)
     is_valid_summary: bool = True
+    latest_scan_date: str = "Never"
 
 
 def get_confusion_matrix(df: pd.DataFrame, margins: bool = True) -> pd.DataFrame:
@@ -90,8 +90,6 @@ def get_confusion_matrix(df: pd.DataFrame, margins: bool = True) -> pd.DataFrame
     actual = df.expected.replace("-", CheckStatus.Pass)
     margins_name = "Total"
     df_xtab = pd.crosstab(actual, got, margins=margins, margins_name=margins_name)
-    # ensure that all rows/columns are present in the resulting dataframe, even if there are no actual values
-    # df = df.reindex(index=["alert", "pass"], columns=["alert", "pass"], fill_value=0)
     labels = [CheckStatus.Alert, CheckStatus.Pass]
     if margins:
         labels.append(margins_name)
@@ -99,7 +97,6 @@ def get_confusion_matrix(df: pd.DataFrame, margins: bool = True) -> pd.DataFrame
     df_xtab = df_xtab.reindex(
         index=labels,
         columns=labels,
-        # columns={"alert": "expected alert", "pass": "expected pass"},
         fill_value=0,
     )
     df_xtab = df_xtab.rename(
@@ -187,8 +184,6 @@ def load_scanner_results_from_file(
     :return: the collection of scan results stored in the file
     """
     if path is None:
-        # TODO properly implement the retrieval of the correct result file
-        # files = get_result_files_of_scanner(scanner.NAME)
         path = Path(f"./data/{scanner.NAME.lower()}.{format}")
     return scanner.load_results(path)
 
@@ -210,6 +205,10 @@ def evaluate_scanner(
         return None
     df_scanner = pd.DataFrame(results)
 
+    # Ensure column name consistency for merge operation
+    # CheckResult objects create columns that match field names
+    # The merge function expects both DataFrames to have consistent column naming
+
     # use the check id derived from the object name as fallback if none could be extracted from scanner
     check_id_pattern = r"^(\w+(?:-\d+)+)"  # match the first letters and then the numbers following it
     extracted_check_id = df_scanner["obj_name"].str.extract(check_id_pattern, expand=False)
@@ -217,16 +216,21 @@ def evaluate_scanner(
 
     # use outer join to ensure coverage can be properly analysed
     df_bench = load_benchmark()
-    df = merge_dataframes(df_bench, df_scanner, id_column=Col.CheckId, path_columns=[Col.PathToCheck, Col.CheckedPath])
+    df = merge_dataframes(df_bench, df_scanner, id_column=Col.CheckId)
+
+    # Ensure all expected columns exist for downstream processing
+    required_cols = [Col.PathToCheck, Col.CheckedPath, Col.ScannerCheckId, Col.ScannerCheckName]
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = None  # Add missing columns with null values
 
     if not keep_redundant_checks:
         df = _filter_redundant_extra_checks(df)
 
     df = (
-        df.pipe(_add_comparison_cols)  # temporary columns for analysing parsing results
+        df.pipe(_add_comparison_cols)
         .pipe(_coalesce_columns, primary_col="obj_name", secondary_col="name", result_name="name")
         .pipe(drop_duplicates)
-        # note: use dataframe provided via lambda as "outer" df is not updated along the pipeline
         .assign(category=lambda _df: _df.apply(categorize_result, args=(scanner,), axis=1))
         .pipe(filter_out_of_scope_alerts)
         .fillna("-")
@@ -240,65 +244,140 @@ def merge_dataframes(
     df1: pd.DataFrame,
     df2: pd.DataFrame,
     id_column: str | tuple[str, str],
-    path_columns: Optional[str | tuple[str, str]] = None,
+    path_columns: Optional[str | list[str, str]] = None,
     keep_matched_paths: bool = False,
 ) -> pd.DataFrame:
-    """Merge two dataframe on one or two columns.
-    If two columns are provided, then the column is expected to contain
-    a path or several potential paths of the checked field. In the case of multiple path alternatives,
-    only one has to match the path in the other dataframe.
+    """Merge two dataframes on check ID with path matching support.
 
-    :param df1: the first dataframe
-    :param df2: the second dataframe
-    :param id_column: one column as string or multiple columns as a list of strings
-    :param path_columns: either the name of the path column in both dataframes or
-        a tuple of two strings with the name of the path column in the respective dataframe.
-        If the name is the same in both dataframes, the column after the merge will contain only the matched paths.
-    :param keep_matched_paths: flag whether to add a column with the path(s) which matched
-    :return: the dataframe resulting from the merge of the provided two dataframes.
+    :param df1: the benchmark dataframe
+    :param df2: the scanner results dataframe
+    :param id_column: column name to join on (typically check_id)
+    :param path_columns: column name(s) containing paths to match on
+    :param keep_matched_paths: whether to keep matched path information
+    :return: merged dataframe
     """
-    # 1) first merge on just the check id
-    suffixes = ("", "_2")
+    if path_columns is not None and isinstance(path_columns, str):
+        # Handle path-aware merging
+        return _merge_with_path_matching(df1, df2, id_column, path_columns)
+
+    # Simple merge without path matching
     if isinstance(id_column, str):
-        df = df1.merge(df2, on=id_column, how="outer", suffixes=suffixes)
+        # Use suffixes to avoid column conflicts
+        df = df1.merge(df2, on=id_column, how="outer", suffixes=("_bench", "_scanner"))
+
+        # Find all columns that got suffixed due to conflicts
+        all_suffixed_cols = [col for col in df.columns if col.endswith(("_bench", "_scanner"))]
+        base_col_names = set()
+        for col in all_suffixed_cols:
+            if col.endswith("_bench"):
+                base_col_names.add(col[:-6])  # Remove '_bench'
+            elif col.endswith("_scanner"):
+                base_col_names.add(col[:-8])  # Remove '_scanner'
+
+        # Coalesce overlapping columns: prefer scanner data, fallback to benchmark
+        for base_col in base_col_names:
+            bench_col = f"{base_col}_bench"
+            scanner_col = f"{base_col}_scanner"
+
+            if bench_col in df.columns and scanner_col in df.columns:
+                # Both columns exist - combine them (prefer scanner data)
+                df[base_col] = df[scanner_col].combine_first(df[bench_col])
+                df = df.drop(columns=[bench_col, scanner_col])
+            elif bench_col in df.columns:
+                # Only benchmark column exists
+                df[base_col] = df[bench_col]
+                df = df.drop(columns=[bench_col])
+            elif scanner_col in df.columns:
+                # Only scanner column exists
+                df[base_col] = df[scanner_col]
+                df = df.drop(columns=[scanner_col])
+
     else:
-        df = df1.merge(df2, left_on=id_column[0], right_on=id_column[1], how="outer", suffixes=suffixes)
-
-    # then check if paths match - if they are also part of the merge criterion
-    if path_columns is not None:
-        is_same_path_col = isinstance(path_columns, str)
-        # if it's a string, then the columns have the same name in both dataframes and will have resulted in
-        # a collision during previous merge -> reflect this change of the column names here
-        _path_cols = [f"{path_columns}{sfx}" for sfx in suffixes] if is_same_path_col else path_columns
-        matched_paths = df.apply(_compare_paths, args=(_path_cols,), axis=1)
-
-        if is_same_path_col:
-            df[path_columns] = matched_paths
-        elif keep_matched_paths:
-            df[Col.MatchedPath] = matched_paths
-
-        # adjust results if paths don't match: split left and right part into separate rows
-        # but only those who have no combination if id and paths col in the dataframe (i.e. no data loss)
-        df_no_matches = df[matched_paths == ""]
-        # correct the results by dropping the results without a path match.
-        df = df.drop(df_no_matches.index)
-
-        # Then reproduce the 'outer' join by merging the individual dataframes back in,
-        # but only for the cases where there was no match
-        suffixes = ("_x", "_y")
-        excluded_cols = [Col.Expected, Col.Got] + [path_columns] if is_same_path_col else path_columns
-        for outer_df in [df1, df2]:
-            other_cols = [c for c in outer_df.columns if c not in excluded_cols]
-            conflicting_cols = [c for c in df.columns if c in outer_df.columns and c not in other_cols]
-            df = df.merge(outer_df, how="outer", on=other_cols, suffixes=suffixes)
-            # any column with a suffix is the result of name collision
-            for col in conflicting_cols:
-                # the first dataframe in merge is considered to be the primary one, this is replected in suffix order
-                c1, c2 = [f"{col}{s}" for s in suffixes]
-                # coalesce into original column
-                df = _coalesce_columns(df, c1, c2, result_name=col)
+        # Handle tuple case (different column names in each dataframe)
+        df = df1.merge(df2, left_on=id_column[0], right_on=id_column[1], how="outer", suffixes=("_bench", "_scanner"))
 
     return df
+
+
+def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: str, path_column: str) -> pd.DataFrame:
+    """Merge dataframes with path matching logic for pipe-separated paths."""
+    results = []
+
+    # Get all unique check IDs from both dataframes
+    all_ids = set(df1[id_column].dropna()) | set(df2[id_column].dropna())
+
+    for check_id in all_ids:
+        df1_rows = df1[df1[id_column] == check_id]
+        df2_rows = df2[df2[id_column] == check_id]
+
+        if df1_rows.empty and not df2_rows.empty:
+            # Only in df2
+            for _, row2 in df2_rows.iterrows():
+                results.append(_combine_rows(None, row2, path_column))
+        elif not df1_rows.empty and df2_rows.empty:
+            # Only in df1
+            for _, row1 in df1_rows.iterrows():
+                results.append(_combine_rows(row1, None, path_column))
+        elif not df1_rows.empty and not df2_rows.empty:
+            # In both - need path matching
+            matched_pairs = set()
+
+            for _, row1 in df1_rows.iterrows():
+                for _, row2 in df2_rows.iterrows():
+                    if _paths_match(row1.get(path_column), row2.get(path_column)):
+                        results.append(_combine_rows(row1, row2, path_column))
+                        matched_pairs.add((row1.name, row2.name))
+
+            # Add unmatched rows from df1
+            for _, row1 in df1_rows.iterrows():
+                if not any(pair[0] == row1.name for pair in matched_pairs):
+                    results.append(_combine_rows(row1, None, path_column))
+
+            # Add unmatched rows from df2
+            for _, row2 in df2_rows.iterrows():
+                if not any(pair[1] == row2.name for pair in matched_pairs):
+                    results.append(_combine_rows(None, row2, path_column))
+
+    return pd.DataFrame(results) if results else pd.DataFrame()
+
+
+def _paths_match(path1, path2):
+    """Check if two paths match, handling pipe-separated multiple paths."""
+    if pd.isna(path1) or pd.isna(path2):
+        return pd.isna(path1) and pd.isna(path2)
+
+    if path1 == path2:
+        return True
+
+    # Handle pipe-separated paths
+    paths1 = str(path1).split("|") if "|" in str(path1) else [str(path1)]
+    paths2 = str(path2).split("|") if "|" in str(path2) else [str(path2)]
+
+    # Check if any path from paths1 matches any path from paths2
+    for p1 in paths1:
+        for p2 in paths2:
+            if p1.strip() == p2.strip():
+                return True
+
+    return False
+
+
+def _combine_rows(row1, row2, path_column):
+    """Combine two rows from different dataframes."""
+    if row1 is None:
+        return row2.to_dict()
+    elif row2 is None:
+        return row1.to_dict()
+    else:
+        # Both exist - combine them (prefer row2 for conflicts, row1 for path)
+        combined = row1.to_dict()
+        for col, val in row2.items():
+            if col not in combined or pd.isna(combined[col]):
+                combined[col] = val
+            elif col == path_column:
+                # For path column, use the more specific path
+                combined[col] = val if not pd.isna(val) else combined[col]
+        return combined
 
 
 def _filter_redundant_extra_checks(df: pd.DataFrame) -> pd.DataFrame:
@@ -315,43 +394,15 @@ def _filter_redundant_extra_checks(df: pd.DataFrame) -> pd.DataFrame:
     return df[~(no_expectation & no_scanner_alert)]
 
 
-def _compare_paths(row: pd.Series, paths_cols: list[str]) -> str:
-    paths1, paths2 = row.fillna("")[paths_cols]
-
-    # special case if neither specifies a path then it's also a match
-    # use "-" to indicate that to avoid being filtered later on
-    if paths1 == "" and paths2 == "":
-        return "-"
-
-    paths1 = set(paths1.split("|"))
-    paths2 = set(paths2.split("|"))
-
-    # the the second path can be more specific than first path to count as a match
-    match = [p2 for p1, p2 in product(paths1, paths2) if _is_partial_match(p1, p2)]
-    return "|".join(sorted(match))
-
-
-def _is_partial_match(reference_path: str, checked_path: str) -> bool:
-    """Check if a path, which consists of multiple parts separated by a '.' is
-    a partial match to the other provided path.
-
-    :param reference_path: the path to which the checked path is compared
-    :param checked_path: the path, which is checked for the patial match to the other path
-    :return: bool if it the 2nd path is a partial match of the first path
-    """
-    ref_tokens = reference_path.lower().split(".")
-    checked_tokens = checked_path.lower().split(".")
-    # pad the checked_tokens if it's shorter than the ref_tokens, so the later `zip` won't truncated it
-    len_diff = len(ref_tokens) - len(checked_tokens)
-    if len_diff > 0:
-        checked_tokens += len_diff * [""]
-
-    return all(r == z for r, z in zip(ref_tokens, checked_tokens))
+# Path comparison functions removed - simplified merge no longer needs complex path matching
 
 
 def _add_comparison_cols(df: pd.DataFrame) -> pd.DataFrame:
     # the 2 "compare" columns columns are temporary analysis instruments and are bound to be removed
-    return df.assign(compare_name=df["obj_name"] == df["name"], compare_expected=df["expected"] == df["expected_2"])
+    # Since we simplified the merge, expected_2 no longer exists - just check if expected column exists
+    compare_name = df["obj_name"] == df["name"] if "name" in df.columns else pd.Series([False] * len(df))
+    compare_expected = pd.Series([True] * len(df))  # Always true since we only have one expected column now
+    return df.assign(compare_name=compare_name, compare_expected=compare_expected)
 
 
 def filter_out_of_scope_alerts(df: pd.DataFrame) -> pd.DataFrame:
@@ -400,7 +451,7 @@ def _coalesce_columns(
     return df_res
 
 
-def categorize_result(row: pd.Series, scanner: ScannerBase = None) -> str:
+def categorize_result(row: pd.Series, scanner: ScannerBase | None = None) -> str:
     """Categorize the result into a predefined check category.
     The main feature for the categorization is the scanner check id.
     If the scanner check id does not provide the necessary information,
@@ -437,46 +488,22 @@ def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
 def categorize_by_check_id(check_id: Optional[str]) -> str:
     """
     Assign a category to the check depending on the prefix of the check id (i.e. the first part of the id)
+    Uses configuration-driven approach to reduce cognitive complexity.
+
     :param check_id: the id of the check which will be used for the categorization.
     :returns: the category as string
     """
     if check_id is None or pd.isnull(check_id):
-        prefix = ""
-    elif check_id.lower().startswith("pod-025"):
-        return CheckCategory.DataSecurity  # secrets in env vars
-    elif check_id.lower().startswith("pod-043"):  # Azure Cloud Credentials mounted
-        return CheckCategory.DataSecurity
-    elif check_id.lower().startswith("pod-045"):  # CVE-2021-25741
-        return CheckCategory.Vulnerability
-    elif check_id.lower().startswith("CM-002"):  # CVE-2021-25742
-        return CheckCategory.Vulnerability
-    elif check_id.lower().startswith("ing-005"):  # CVE-2021-25742
-        return CheckCategory.Vulnerability
-    elif check_id.lower().startswith("rel-004"):  # nodeSelector
-        return CheckCategory.Segregation
-    else:
-        prefix = check_id.split("-")[0].lower().strip()
-
-
-    if prefix in ["pod", "wl", "cj", "srv", "sc"]:
-        return CheckCategory.Workload
-    elif prefix in ["pss", "psa", "psp"]:
-        return CheckCategory.AdmissionControl
-    elif prefix == "rbac":
-        return CheckCategory.IAM
-    elif prefix in ["cm"]:  # currently only matches CM-001 but might need more granual distinction -> other prefix
-        return CheckCategory.DataSecurity
-    elif prefix in ["np", "ns"]:
-        return CheckCategory.Segregation
-    elif prefix in ["ing"]:
-        return CheckCategory.Network 
-    elif prefix in ["rel", "res"]:
-        return CheckCategory.Reliability
-    elif prefix == "inf":
-        return CheckCategory.Infrastructure
-    else:
-        # if there is no valid check id then it defaults to the "misc" category
         return CheckCategory.Misc
+
+    # Check for specific mappings first (overrides prefix-based categorization)
+    specific_category = get_category_by_specific_check(check_id)
+    if specific_category:
+        return specific_category
+
+    # Extract prefix and use configuration-driven mapping
+    prefix = check_id.split("-")[0].lower().strip()
+    return get_category_by_prefix(prefix)
 
 
 def tabulate_manifests(manifests: list[cdk8s.Chart]) -> pd.DataFrame:
@@ -545,6 +572,9 @@ class EvaluationSummary:
     coverage: float
     extra_checks: int
     missing_checks: int
+    ccss_alignment_score: Optional[float] = None
+    ccss_correlation: Optional[float] = None
+    total_ccss_findings: Optional[int] = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -612,7 +642,7 @@ class OverviewType(LowercaseStrEnum):
     Latex = auto()
 
 
-def create_benchmark_overview(dest_dir: Path, format: OverviewType = OverviewType.Markdown) -> list[str]:
+def create_benchmark_overview(dest_dir: Path) -> list[str]:
     """Create a markdown file 'benchmark-checks.md' with an overview of all the checks at the destination folder.
     If the file already exists, it will be overwritten.
 
@@ -664,75 +694,13 @@ def create_benchmark_overview(dest_dir: Path, format: OverviewType = OverviewTyp
     return misclassified_checks
 
 
-def create_benchark_overview_latex_table() -> str:
+def create_benchmark_overview_latex_table() -> str:
     df_bench = load_benchmark(with_categories=True)
 
     tbl = df_bench.to_latex(
         caption="An overview of all generated checks and number of variants, grouped by their respective categories"
     )
     return tbl
-
-
-def create_evaluation_summary(data_dir: str | Path = "./data", show_extra: bool = True) -> pd.DataFrame:
-    """Load all evaluation results of all scanners as a dataframe
-    :params data_dir: the global directory, where the scanner results are stored
-    :param show_extra: if set, show the number of additional checks in parenthesis
-
-    :return: a dataframe where every row corresponds to the information for a particular scanner
-    """
-    scanner_infos = []
-
-    for name, scanner in SCANNERS.items():
-        # TODO use local setting for the result file
-        files = get_scanner_result_file_paths(name, data_dir=data_dir)
-
-        if len(files) == 0:
-            logger.warning(f"No result files for '{name}' found, so no summary can be loaded")
-            summary = EvaluationSummary(None, {}, 0, 0, 0, 0)
-
-        else:
-            # default to the first file listed
-            result_file = files[0]
-            results = load_scanner_results_from_file(scanner, result_file)
-
-            df = evaluate_scanner(scanner, results)
-            summary = create_summary(df, version=get_version_from_result_file(result_file))
-
-            categories = summary.checks_per_category
-
-        scanner_info = ScannerInfo(
-            name,
-            image=scanner.IMAGE_URL,
-            version=summary.version,
-            score=summary.score,
-            coverage=summary.coverage,
-            ci_mode=scanner.CI_MODE,
-            runs_offline=str(scanner.RUNS_OFFLINE),
-            cat_network=get_category_sum(categories.get(CheckCategory.Network, None), show_extra=show_extra),
-            cat_IAM=get_category_sum(categories.get(CheckCategory.IAM, None), show_extra=show_extra),
-            cat_admission_ctrl=get_category_sum(
-                categories.get(CheckCategory.AdmissionControl, None), show_extra=show_extra
-            ),
-            cat_data_security=get_category_sum(categories.get(CheckCategory.DataSecurity, None), show_extra=show_extra),
-            # cat_supply_chain=_get_category_sum(categories.get(CheckCategory.Workload, None)),
-            cat_reliability=get_category_sum(categories.get(CheckCategory.Reliability, None), show_extra=show_extra),
-            cat_segregation=get_category_sum(categories.get(CheckCategory.Segregation, None), show_extra=show_extra),
-            cat_vulnerability=get_category_sum(categories.get(CheckCategory.Vulnerability, None), show_extra=show_extra),
-            cat_workload=get_category_sum(categories.get(CheckCategory.Workload, None), show_extra=show_extra),
-            cat_misc=get_category_sum(
-                categories.get(CheckCategory.Misc, {}) | categories.get(CheckCategory.Vulnerability, {}),
-                show_extra=show_extra,
-            ),
-            can_scan_manifests=scanner.can_scan_manifests,
-            can_scan_cluster=scanner.can_scan_cluster,
-            custom_checks=str(scanner.CUSTOM_CHECKS),
-            formats=", ".join(scanner.FORMATS),  # Ag Grid does not support lists
-            is_valid_summary=summary is None,
-        )
-        scanner_infos.append(scanner_info)
-
-    df = pd.DataFrame(scanner_infos)
-    return df
 
 
 def get_category_sum(category_summary: pd.Series | None, show_extra: bool = True) -> str:

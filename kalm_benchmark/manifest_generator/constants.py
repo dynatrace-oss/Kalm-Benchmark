@@ -324,7 +324,7 @@ MISSING_CHECKS = [
             "instead of leveraging the load balancing capabilities. By verifying that ingress traffic is "
             "targeted by multiple pods, you will achieve higher application availability because you won't be "
             "dependent upon a single pod to serve all ingress traffic. "
-            "(From https://hub.datree.io/built-in-rules/prevent-ingress-forwarding-traffic-to-single-containerdatree)"
+            "(Originally from Datree documentation)"
         ),
         "Ingress.spec.rules[].host",
     ),

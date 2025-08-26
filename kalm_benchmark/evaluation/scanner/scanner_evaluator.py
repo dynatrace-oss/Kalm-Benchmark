@@ -11,7 +11,7 @@ from typing import Generator, Optional, Union
 from loguru import logger
 from strenum import LowercaseStrEnum, StrEnum
 
-from ...constants import RunUpdateGenerator, UpdateType
+from ...utils.constants import RunUpdateGenerator, UpdateType
 from ..utils import GeneratorWrapper
 
 
@@ -109,7 +109,7 @@ class ScannerBase(ABC):
         if not isinstance(cmd, list) or not all(isinstance(arg, str) for arg in cmd):
             yield UpdateType.Error, "Command must be a list of strings for security reasons"
             return None
-        
+
         if not cmd:
             yield UpdateType.Error, "Command cannot be empty"
             return None
@@ -118,7 +118,7 @@ class ScannerBase(ABC):
         sanitized_cmd = []
         for arg in cmd:
             # Basic validation - reject arguments with shell metacharacters that could be dangerous
-            if any(char in arg for char in [';', '|', '&', '$', '`', '(', ')', '<', '>', '\n', '\r']):
+            if any(char in arg for char in [";", "|", "&", "$", "`", "(", ")", "<", ">", "\n", "\r"]):
                 yield UpdateType.Warning, f"Command argument contains potentially dangerous characters: {arg}"
             sanitized_cmd.append(str(arg))  # Ensure all arguments are strings
 
@@ -158,9 +158,7 @@ class ScannerBase(ABC):
             msg_details = (
                 f": {os.linesep}{errors} "
                 if len(errors) > 0
-                else output
-                if len(output) > 0 and not output_is_json
-                else ""
+                else output if len(output) > 0 and not output_is_json else ""
             )
             level = UpdateType.Warning if has_results else UpdateType.Error
             yield level, f"The process '{cmd_str}' ended with exit-code {proc.returncode}{msg_details}"
@@ -187,7 +185,7 @@ class ScannerBase(ABC):
         )
         stdout: list[str] = []
         stderr: list[str] = []
-        
+
         try:
             while True:
                 if proc.stdout is None:
@@ -267,7 +265,7 @@ class ScannerBase(ABC):
         If the path points to a directory, all yaml files within it will be scanned
 
         :param path: the path to the location with the manifest(s)
-        :return: a list of results per file
+        :return: a list of parsed CheckResult objects
         """
         if self.SCAN_MANIFESTS_CMD is None:
             yield UpdateType.Error, f"{self.NAME} does not support scanning of manifests"
@@ -275,21 +273,41 @@ class ScannerBase(ABC):
 
         path_obj = Path(path)
         if not self.SCAN_PER_FILE or path_obj.is_file():
-            results = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(path_obj)], **kwargs)
+            raw_results = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(path_obj)], **kwargs)
         else:  # special handling if tool does not support scanning an entire folder
-            results = []
+            raw_results = []
             for p in path_obj.glob("*.yaml"):
                 res = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(p)], **kwargs)
                 if res is not None and len(res) > 0:
-                    results.append(res)
-        return results
+                    raw_results.append(res)
+
+        # Parse raw results into CheckResult objects
+        if raw_results is not None:
+            try:
+                parsed_results = self.parse_results(raw_results)
+                return parsed_results
+            except Exception as e:
+                yield UpdateType.Error, f"Failed to parse results from {self.NAME}: {e}"
+                return []
+
+        return []
 
     def scan_cluster(self, **kwargs) -> RunUpdateGenerator:
         if self.SCAN_CLUSTER_CMD is None:
             yield UpdateType.Error, f"{self.NAME} does not support checking a cluster"
-            return
-        results = yield from self.run(self.SCAN_CLUSTER_CMD, **kwargs)
-        return results
+            return []
+        raw_results = yield from self.run(self.SCAN_CLUSTER_CMD, **kwargs)
+
+        # Parse raw results into CheckResult objects
+        if raw_results is not None:
+            try:
+                parsed_results = self.parse_results(raw_results)
+                return parsed_results
+            except Exception as e:
+                yield UpdateType.Error, f"Failed to parse results from {self.NAME}: {e}"
+                return []
+
+        return []
 
     # sadly, the approach to infer method overriding at class-level doesn't work - only at instance-level
     @property

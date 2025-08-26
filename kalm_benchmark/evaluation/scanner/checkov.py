@@ -3,12 +3,13 @@ import re
 from pathlib import Path
 from typing import Generator
 
-from kalm_benchmark.constants import RunUpdateGenerator, UpdateType
+from kalm_benchmark.utils.constants import RunUpdateGenerator, UpdateType
 
 from ..utils import normalize_path
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 # a list of all checks is here: https://www.checkov.io/5.Policy%20Index/kubernetes.html
+
 CHECK_MAPPING = {
     "CKV_K8S_1": (CheckCategory.AdmissionControl, ".spec.hostPID"),
     "CKV_K8S_2": (CheckCategory.AdmissionControl, ".spec.privileged"),
@@ -182,11 +183,13 @@ class Scanner(ScannerBase):
         :param path: the path to the location with the manifest(s)
         :return: a list of results per file
         """
-        # paths = [path] if path.is_file() else path.glob("*.yaml")
         scan_flag = "-f" if path.is_file() else "-d"
         cmd = ["checkov", "-o", "json", "--compact", scan_flag, str(path)]
         results = yield from self.run(cmd)
-        return results
+        # Parse results before returning to match the expected CheckResult format
+        if results is not None:
+            return self.parse_results(results)
+        return []
 
     def scan_cluster(self) -> RunUpdateGenerator:
         """Start a scan of the cluster resources by creating a job, which queries all resources and scans them.
@@ -289,7 +292,10 @@ class Scanner(ScannerBase):
                 results = None
 
         yield from self._cleanup_resources(created_resources, namespace)
-        return results
+        # Parse results before returning to match the expected CheckResult format
+        if results is not None:
+            return self.parse_results(results)
+        return []
 
     def _wait_for_resource(
         self, gen: RunUpdateGenerator, explanations: dict[str, str]
@@ -332,7 +338,7 @@ class Scanner(ScannerBase):
                 yield UpdateType.Error, e
 
     @classmethod
-    def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:
+    def parse_results(cls, results: dict) -> list[CheckResult]:
         """
         Parses the raw results and turns them into a flat list of check results.
         The results consists of a list of the results per file.
@@ -355,6 +361,11 @@ class Scanner(ScannerBase):
             scanner_check_id = check["check_id"]
             checked_path = cls.get_checked_path(scanner_check_id, check_result["evaluated_keys"])
 
+            # Extract severity information if available
+            # Note: Severity requires Bridgecrew/Prisma Cloud API key integration
+            # Without API key, severity field won't be present in JSON output
+            severity = check.get("severity", None)
+
             check_results.append(
                 CheckResult(
                     check_id=check_id,
@@ -366,6 +377,7 @@ class Scanner(ScannerBase):
                     extra=check["check_class"],
                     kind=kind,
                     namespace=ns,
+                    severity=severity,
                 )
             )
 

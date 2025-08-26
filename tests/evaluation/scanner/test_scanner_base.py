@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kalm_benchmark.constants import UpdateType
+from kalm_benchmark.utils.constants import UpdateType
 from kalm_benchmark.evaluation.scanner.scanner_evaluator import (
     RunUpdateGenerator,
     ScannerBase,
@@ -78,7 +78,7 @@ class TestRunProcess:
         indirect=True,
     )
     def test_stderr_is_forwarded_as_warning_update_if_it_has_result(self, patch_subprocess_run):
-        mock, (expected_res, err_code, err_msg) = patch_subprocess_run
+        mock, (expected_res, _, err_msg) = patch_subprocess_run
         gen = ScannerBase.run(["do", "something"], parse_json=False)
         result, messages = _consume_updates(gen)
         mock.assert_called()
@@ -90,7 +90,7 @@ class TestRunProcess:
 
     @pytest.mark.parametrize("patch_subprocess_run", [RunParam("{success:}", as_json=False)], indirect=True)
     def test_malformed_json_is_handled_as_error_update(self, patch_subprocess_run):
-        mock, (expected_res, err_code, err_msg) = patch_subprocess_run
+        mock, (_) = patch_subprocess_run
         gen = ScannerBase.run(["do", "something"], stream_process_output=False)
         result, messages = _consume_updates(gen)
         mock.assert_called()

@@ -1,0 +1,76 @@
+category,base_check_id,name,num_variants,alert_variants
+AdmissionControl,PSA-001,No Pod Security Admission Label Configured,1,1
+AdmissionControl,PSA-002,Using  Privileged  Pod Security Standard Is Insecure,1,1
+AdmissionControl,PSA-003,Just Warning About Violations Of The Pod Security Stand,1,1
+DataSecurity,CM-001,Sensitive Key Referenced In Configmap,1,1
+DataSecurity,POD-025,Sensitive Key Referenced In Environment Variable,1,1
+IAM,RBAC-001,Use Cluster Admin Role,2,2
+IAM,RBAC-002,Read Access To Secrets,6,6
+IAM,RBAC-003,Role Use Resource Wildcard,6,6
+IAM,RBAC-004,Role Creates Pods,8,8
+IAM,RBAC-005,Role Attaches To Pods,2,2
+IAM,RBAC-006,Role Exec Into Pods,2,2
+IAM,RBAC-007,Role Binds Default Serviceaccount,2,2
+IAM,RBAC-008,Role Port Forward Pods,6,6
+IAM,RBAC-009,Role Impersonation,2,2
+IAM,RBAC-010,Role Manages Rbac,8,8
+IAM,RBAC-012,Role Info Disclosure,6,6
+IAM,RBAC-013,Role Destructive,4,4
+IAM,RBAC-014,Role Event Deletion,4,4
+IAM,RBAC-015,Role Core Dns Poisoning,4,4
+IAM,RBAC-016,Serviceaccount Without Binding,1,1
+IAM,RBAC-017,Too Many Roles Per Subject,1,1
+IAM,RBAC-020,Role Manages Rbac,8,8
+IAM,RBAC-021,Only Admins Should Be Able To Create Persistent Volumes,6,6
+IAM,RBAC-022,Role Can Manage Networkpolicy,6,6
+Reliability,REL-001,No Readinessprobe Defined,1,1
+Reliability,REL-002,No Livenessprobe Defined,1,1
+Reliability,REL-003,No Priorityclass,1,1
+Reliability,REL-004,No Nodeselector Or Nodeaffinity Specified,3,1
+Reliability,RES-001,Default Memory Requests From Namespace,2,1
+Reliability,RES-002,Default Memory Limits From Namespace,2,1
+Reliability,RES-003,Default Cpu Requests From Namespace,2,1
+Reliability,RES-004,Default Cpu Limits From Namespace,2,1
+Reliability,RES-005,Default Ephemeral Storage Requests From Namespace,2,1
+Reliability,RES-006,Default Ephemeral Storage Limits From Namespace,2,1
+Reliability,RES-007,No Limitrange Object For Namespace,4,4
+Reliability,RES-008,No Default Memory Request For Namespace,3,3
+Reliability,RES-009,No Resource Quota Applied To Namespace,2,2
+Segregation,NP-001,Namespace Without Network Policy,1,1
+Segregation,NP-002,Only Ingress Is Blocked,2,2
+Segregation,NP-003,Network Policy Allows Access To Cloud Metadata Api,1,1
+Segregation,NP-004,Network Policy Allows Access To Kubelet,1,1
+Segregation,NP-005,Network Policy Refers No Valid Workload,1,1
+Segregation,NS-001,Use Default Namespace,1,1
+Segregation,NS-002,Place Pod In Kube System,2,2
+Vulnerability,POD-045,Pod Contains Cve 2021 25741,1,1
+Workload,POD-002,Explicit Default Serviceaccountname,2,2
+Workload,POD-003,Automount Serviceaccounttoken By Default,9,5
+Workload,POD-008,Hostpid Flag Not Set,2,1
+Workload,POD-009,Hostipc Flag Not Set,2,1
+Workload,POD-010,Hostnetwork Flag Not Set,2,1
+Workload,POD-011,Pod Uses Hostport,1,1
+Workload,POD-012,Pod Uses Hostaliases To Modify Its  Etc Hosts,1,1
+Workload,POD-013,Deprecate Serviceaccount Field Used,1,1
+Workload,POD-014,No Apparmor Profile Defined,1,1
+Workload,POD-016,No Podsecuritycontext Defined,1,1
+Workload,POD-017,Use Runasnonroot Flag On Pod,9,4
+Workload,POD-018,No Runasuser Defaults To Root User,5,2
+Workload,POD-019,No Runasgroup Defaults To Root Group,5,2
+Workload,POD-021,Using Sysctl Kernel.Shm Rmid Forced,3,3
+Workload,POD-022,Linux Is Not Hardened,3,1
+Workload,POD-023,No Seccomp Profile Defined,1,1
+Workload,POD-024,Usage Of Bin Bash In Container,9,9
+Workload,POD-030,No Securitycontext Defined,1,1
+Workload,POD-031,Allowed Privilege Escalation By Default,2,2
+Workload,POD-032,Non Privileged Container By Default,2,1
+Workload,POD-033,Root Fs Is Writeable By Default,2,2
+Workload,POD-034,Using Dangerous Capability All,3,3
+Workload,POD-035,Using Insecure Capability Audit Write,22,22
+Workload,POD-036,Keep Default Capabilities,1,1
+Workload,POD-042,Volume With Read Only Hostpath,3,2
+Workload,POD-043,Mount Azure Cloud Credentials,1,1
+Workload,POD-044,Mounting Docker Socket,2,2
+Workload,SC-001,Imagepullpolicy Defaults To Always,3,2
+Workload,SC-002,Tag Instead Of Digest Is Fine,3,2
+Workload,WL-001,Unmanaged Pods Are Discouraged,1,1

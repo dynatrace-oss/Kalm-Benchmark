@@ -32270,13 +32270,13 @@ class NodeAffinity:
             )
         self._values: typing.Dict[str, typing.Any] = {}
         if preferred_during_scheduling_ignored_during_execution is not None:
-            self._values[
-                "preferred_during_scheduling_ignored_during_execution"
-            ] = preferred_during_scheduling_ignored_during_execution
+            self._values["preferred_during_scheduling_ignored_during_execution"] = (
+                preferred_during_scheduling_ignored_during_execution
+            )
         if required_during_scheduling_ignored_during_execution is not None:
-            self._values[
-                "required_during_scheduling_ignored_during_execution"
-            ] = required_during_scheduling_ignored_during_execution
+            self._values["required_during_scheduling_ignored_during_execution"] = (
+                required_during_scheduling_ignored_during_execution
+            )
 
     @builtins.property
     def preferred_during_scheduling_ignored_during_execution(
@@ -34604,13 +34604,13 @@ class PodAffinity:
         """
         self._values: typing.Dict[str, typing.Any] = {}
         if preferred_during_scheduling_ignored_during_execution is not None:
-            self._values[
-                "preferred_during_scheduling_ignored_during_execution"
-            ] = preferred_during_scheduling_ignored_during_execution
+            self._values["preferred_during_scheduling_ignored_during_execution"] = (
+                preferred_during_scheduling_ignored_during_execution
+            )
         if required_during_scheduling_ignored_during_execution is not None:
-            self._values[
-                "required_during_scheduling_ignored_during_execution"
-            ] = required_during_scheduling_ignored_during_execution
+            self._values["required_during_scheduling_ignored_during_execution"] = (
+                required_during_scheduling_ignored_during_execution
+            )
 
     @builtins.property
     def preferred_during_scheduling_ignored_during_execution(
@@ -34769,13 +34769,13 @@ class PodAntiAffinity:
         """
         self._values: typing.Dict[str, typing.Any] = {}
         if preferred_during_scheduling_ignored_during_execution is not None:
-            self._values[
-                "preferred_during_scheduling_ignored_during_execution"
-            ] = preferred_during_scheduling_ignored_during_execution
+            self._values["preferred_during_scheduling_ignored_during_execution"] = (
+                preferred_during_scheduling_ignored_during_execution
+            )
         if required_during_scheduling_ignored_during_execution is not None:
-            self._values[
-                "required_during_scheduling_ignored_during_execution"
-            ] = required_during_scheduling_ignored_during_execution
+            self._values["required_during_scheduling_ignored_during_execution"] = (
+                required_during_scheduling_ignored_during_execution
+            )
 
     @builtins.property
     def preferred_during_scheduling_ignored_during_execution(

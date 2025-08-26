@@ -3,7 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from kalm_benchmark import benchmark
+from kalm_benchmark.utils.constants import UpdateType
 from kalm_benchmark.evaluation.scanner_manager import ScannerBase, ScannerManager
+from kalm_benchmark.utils import scan_utils
 
 SCANNER_BOTH = "both"
 SCANNER_MANIFESTS = "manifests"
@@ -34,13 +36,13 @@ def manager():
 @pytest.fixture(autouse=True)
 def mock_scanners(manager):
     """Patch the scanner manager for all unittests"""
-    with patch.object(benchmark, "SCANNERS", manager):
+    with patch.object(scan_utils, "SCANNERS", manager):
         yield
 
 
 class TestScanExecution:
     @pytest.fixture()
-    def mock_scan_variants(monkeypatch):
+    def mock_scan_variants(self, monkeypatch):
         with patch.object(benchmark, "scan_manifests") as scan_manifests_mock, patch.object(
             benchmark, "scan_cluster"
         ) as scan_cluster_mock:
@@ -68,7 +70,7 @@ class TestScanExecution:
 
         # last update is the error message
         lvl, msg = updates[-1]
-        assert lvl == benchmark.UpdateType.Error
+        assert lvl == UpdateType.Error
         assert "No source specified" in msg
 
     def test_both_sources_manifest_takes_precedence(self, mock_scan_variants):
@@ -80,7 +82,7 @@ class TestScanExecution:
 
         # last update is the error message
         lvl, msg = updates[-1]
-        assert lvl == benchmark.UpdateType.Warning
+        assert lvl == UpdateType.Warning
         assert "only the manifest scan will be executed" in msg.lower()
 
     def test_both_sources_scan_cluster_if_manifest_not_supported(self, mock_scan_variants):
@@ -91,8 +93,8 @@ class TestScanExecution:
         scan_cluster.assert_called()
 
         # last update is the error message
-        lvl, msg = updates[-1]
-        assert lvl == benchmark.UpdateType.Warning
+        lvl, _ = updates[-1]
+        assert lvl == UpdateType.Warning
 
     def test_both_sources_yield_error_if_nothing_supported(self, mock_scan_variants):
         scan_manifests, scan_cluster = mock_scan_variants
@@ -102,8 +104,8 @@ class TestScanExecution:
         scan_cluster.assert_not_called()
 
         # last update is the error message
-        lvl, msg = updates[-1]
-        assert lvl == benchmark.UpdateType.Error
+        lvl, _ = updates[-1]
+        assert lvl == UpdateType.Error
 
     def test_use_manifest_scan_if_path_is_specified(self, mock_scan_variants):
         scan_manifests, scan_cluster = mock_scan_variants
@@ -120,8 +122,8 @@ class TestScanExecution:
         scan_cluster.assert_not_called()
 
         # last update is the error message
-        lvl, msg = updates[-1]
-        assert lvl == benchmark.UpdateType.Error
+        lvl, _ = updates[-1]
+        assert lvl == UpdateType.Error
 
     def test_use_cluster_scan_if_context_is_specified(self, mock_scan_variants):
         scan_manifests, scan_cluster = mock_scan_variants
@@ -138,5 +140,5 @@ class TestScanExecution:
         scan_cluster.assert_not_called()
 
         # last update is the error message
-        lvl, msg = updates[-1]
-        assert lvl == benchmark.UpdateType.Error
+        lvl, _ = updates[-1]
+        assert lvl == UpdateType.Error

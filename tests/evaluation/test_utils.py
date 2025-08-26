@@ -271,27 +271,55 @@ def fake_fs(fs):
 
 class TestFixPathToCurrentEnvironment:
     def test_paths_are_absolute(self):
+        # Test that absolute paths are rejected for security reasons
         cwd = os.getcwd()
         file_name = "just-a-file.yaml"
         file_path = Path(f"{cwd}/manifests/{file_name}")
         res = fix_path_to_current_environment(file_path)
-        assert res == str(Path(f"manifests/{file_name}"))
+        # Security check should return empty string for absolute paths
+        assert res == ""
 
     def test_paths_not_relative_to_cwd(self, fake_fs):
+        # Test that absolute paths are rejected for security reasons
         file_name = "just-a-file.yaml"
         file_path = f"/usr/src/app/manifests/{file_name}"
         real_file_path = Path(f"{fake_fs.CWD}/manifests/bla/{file_name}")
         fake_fs.create_file(real_file_path)
         res = fix_path_to_current_environment(file_path)
-        assert res == str(real_file_path)
+        # Security check should return empty string for absolute paths
+        assert res == ""
 
     def test_file_is_absolute_ref_is_relative(self, fake_fs):
+        # Test that absolute paths are rejected for security reasons
         file_name = "just-a-file.yaml"
         file_path = f"/usr/src/app/manifests/{file_name}"
         real_file_path = Path(f"{fake_fs.CWD}/manifests/bla/{file_name}")
         fake_fs.create_file(real_file_path)
         res = fix_path_to_current_environment(file_path)
-        assert res == str(real_file_path)
+        # Security check should return empty string for absolute paths
+        assert res == ""
+    
+    def test_relative_paths_work(self):
+        # Test that valid relative paths are processed correctly
+        import tempfile
+        import os
+        with tempfile.TemporaryDirectory() as temp_dir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(temp_dir)
+                # Create manifests directory and file
+                manifests_dir = Path(temp_dir) / "manifests"
+                manifests_dir.mkdir(exist_ok=True)
+                test_file = manifests_dir / "test-file.yaml"
+                test_file.write_text("test content")
+                
+                # Use relative path - this should work
+                rel_path = Path("manifests/test-file.yaml")
+                res = fix_path_to_current_environment(rel_path)
+                # Should return the relative path since file exists
+                assert res == "manifests/test-file.yaml" or res.endswith("manifests/test-file.yaml")
+            finally:
+                os.chdir(original_cwd)
 
 
 class TestGetDifferenceInParentPath:

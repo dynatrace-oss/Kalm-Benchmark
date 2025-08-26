@@ -1,11 +1,10 @@
 <!-- markdownlint-disable MD040 MD059 -->
 # 📊 Kalm Benchmark
 
-The goal of the Kalm benchmark is to provide a proper baseline for comparing Kubernetes (workload) compliance/misconfiguration scanners.  
-This benchmark consists of two parts:
+KALM provides a **comprehensive, standardized benchmark** for evaluating and comparing Kubernetes security scanners. The benchmark consists of two components:
 
-- a set of manifests, which contain misconfigurations, which scanners should detect
-- a web UI to help with the comparison and analysis of the scanner results on this benchmark
+- **235+ intentionally vulnerable Kubernetes manifests** covering 12 major security categories that scanners should detect
+- **Interactive web UI** for analyzing scanner performance, accuracy, and coverage with CCSS alignment scoring
 
 | ⚠️ This product is not officially supported by Dynatrace. |
 | --------------------------------------------------------- |
@@ -14,43 +13,97 @@ This benchmark consists of two parts:
 
 ### Benchmark Manifests
 
-To facilitate a fair comparison, a set of manifests is generated.
-By design the generated manifests follow all the best practices.
-A single manifest is supposed to trigger a single check of the scanner.
-The ID and further information for the check are provided as labels and annotations on the generated resources.
+KALM provides a comprehensive test suite of **235+ Kubernetes manifests** specifically designed to evaluate security scanner effectiveness. Each manifest represents a **specific security misconfiguration or vulnerability pattern** that scanners should detect.
 
-This way, it is easy to compare the expected results with the actual results of a scanner.
-An overview of all the checks in the benchmark can be found in [Benchmark Checks](./docs/benchmark-checks.md).
+**Key characteristics of the benchmark manifests:**
+
+- **Intentionally vulnerable**: Each manifest contains a specific security issue (privileged containers, exposed secrets, RBAC misconfigurations, etc.)
+- **Single-issue focus**: One manifest tests one security check to enable precise scanner comparison  
+- **Comprehensive coverage**: Tests span **12 major security categories**:
+  - **Pod Security**: Privilege escalation, host access, security contexts
+  - **RBAC**: Excessive permissions, cluster-admin usage, service account issues  
+  - **Network Policies**: Traffic isolation, metadata API access
+  - **Resource Management**: CPU/memory limits, resource quotas
+  - **Container Security**: Image policies, capabilities, read-only filesystems
+  - **Secrets & ConfigMaps**: Sensitive data exposure
+  - **Namespaces**: Default namespace usage, system namespace access
+  - **Pod Security Standards**: PSA configuration issues
+  - **Supply Chain**: Image tags, registry security
+  - **Workload Types**: Naked pods, reliability configurations
+  - **Network Security**: Ingress configurations, TLS settings
+  - **Infrastructure**: Storage, reliability, node selection
+
+**Structured for evaluation**: Each manifest includes metadata annotations specifying:
+
+- Expected scanner result (`alert` or `pass`)  
+- Check description and security impact
+- Specific configuration paths that should be flagged
+- Unique check IDs for result correlation
+
+This design enables **precise measurement** of scanner accuracy, false positive rates, and coverage across different security domains.
+
+📋 **Complete catalog**: [Benchmark Checks](./docs/benchmark-checks.md) (235+ individual security tests)
 
 ### Web UI
 
-The web application consists of two pages:
+The web application consists of three pages:
 
 - an overview of various scanners checked with this benchmark  
    ![overview](docs/images/overview_page.png)
 - an analysis page to inspect the results of a specific scanner in more detail  
    ![analysis](docs/images/analysis_page.png)
+- a CCSS alignment page to compare scanner performance against standardized scoring
 
-**Recent UI Enhancements:**
+**Recent UI Updates:**
 
-- Improved settings panel with better organization and visual structure
+- Settings panel with better organization and visual structure
 - Logging system with centralized log management
 - Automatic result saving to data directory after scans
 - Real-time scan progress monitoring
-- Streamlined session state management
+- Session state management
 
-## Use-Cases
+### CCSS Integration
 
-- for Security and Ops teams:
-  - find a suitable scanner for your needs
-  - aids you in the development of your custom checks/policies/queries/rules for a tool
+The benchmark now includes CCSS (Common Configuration Scoring System) integration for scanner analysis:
 
-- For scanner developers
-  - compare your tool to alternatives on the market
-  - develop and maintain your implemented checks, e.g.:
-    - identify noisy checks (e.g., multiple checks which raise an alert for the same issue)
-    - or faulty checks (e.g., alerts which were erroneously raised or not raised due to a bug)
-      ![faulty](./docs/images/noisy_checks.gif)
+- **Scanner Alignment Analysis**: Compare how different scanners align with standardized CCSS scores
+- **Multi-Source Support**: Evaluate scanners against Kubernetes manifests, live API servers, and Helm charts
+- **Research Capabilities**: Designed to support large-scale evaluation (e.g., top 100+ Helm charts from Artifactory)
+- **Flexible Configuration**: Supports any number of charts, mixed source types, and custom evaluation criteria
+- **Data Models**: Extended data structures for comprehensive misconfiguration analysis
+
+Key features:
+
+- Interactive alignment visualizations and scanner rankings
+- Category-specific performance analysis
+- Statistical correlation between native scanner scores and CCSS scores
+- Database persistence for evaluation runs and findings
+- Backward compatibility with existing KALM functionality
+
+## Use Cases
+
+### **For Security and DevOps Teams:**
+
+- **Scanner Evaluation**: Compare 12+ security scanners across 235+ real-world vulnerability patterns
+- **Tool Selection**: Identify scanners with best coverage for your specific security requirements
+- **Custom Rule Development**: Use benchmark results to develop and validate custom security policies
+- **Compliance Assessment**: Evaluate scanner alignment with industry standards (CCSS scoring)
+- **Performance Benchmarking**: Measure scanner accuracy, false positive rates, and detection coverage
+
+### **For Scanner Developers & Vendors:**
+
+- **Competitive Analysis**: Compare your tool against market alternatives using standardized tests
+- **Quality Assurance**: Identify detection gaps, false positives, and rule conflicts across security categories
+- **Product Development**: Use benchmark feedback to improve check accuracy and coverage
+- **Standards Alignment**: Optimize scanner output to align with CCSS and industry scoring standards
+- **Regression Testing**: Validate that updates don't break existing detection capabilities
+
+### **For Security Researchers & Analysts:**
+
+- **Academic Research**: Generate publication-ready data on scanner effectiveness and accuracy trends
+- **Market Analysis**: Analyze detection consistency across different security scanning solutions
+- **Standards Development**: Contribute to security scanning methodology and scoring improvements
+- **Large-Scale Studies**: Evaluate scanner performance across diverse Kubernetes security scenarios
 
 ## Prerequisites
 
@@ -58,6 +111,7 @@ The web application consists of two pages:
 - The manifests are generated using [cdk8s](https://cdk8s.io/), which depends on **[nodeJS](https://nodejs.org/en/)**
   - Please ensure **nodeJS** is installed on your system
 - Any **scanner** for which a scan should be triggered must be installed manually
+  - **📖 See the comprehensive [Scanner Installation Guide](./docs/scanner_installation.md) for detailed setup instructions**
 - [Poetry](https://python-poetry.org) is used to manage the project itself
 
 ## Getting Started
@@ -105,9 +159,10 @@ poetry run cli serve
 The web UI includes:
 
 - **Settings Panel**: Configure data directory and display options
-- **Automatic Result Saving**: Scan results are automatically saved to the configured data directory
+- **Automatic Result Saving**: Scan results are automatically saved to unified database
 - **Centralized Logging**: View scan logs and UI activity in organized log files
 - **Real-time Updates**: Monitor scan progress with live status updates
+- **Database Backend**: SQLite-based data storage
 
 #### 2.3) Perform a scan with a Scanner
 
@@ -119,6 +174,10 @@ poetry run cli scan <tool> [-c | -f <target file or folder>]
 ```
 
 ❗️ **Important** executing a scan requires the respective tool to be installed on the system!
+
+**📋 Supported Scanners**: Kubescape, KubeLinter, KICS, Trivy, Checkov, Polaris, Terrascan, Kube-score, Snyk, Kubesec, Kube-bench, KubiScan
+
+**🔧 Quick Setup**: For detailed installation instructions for all scanners, see the [Scanner Installation Guide](./docs/scanner_installation.md)
 
 E.g., to scan manifests with the tool `dummy` located in the `manifests` folder execute:
 
@@ -134,11 +193,26 @@ poetry run cli scan <tool> [-c | -f <target file or folder>] -o <output-folder>
 
 #### 2.4) Evaluate a Scanner
 
-For the evaluation of a scanner the tool must be run beforehand and the results must be stored as `<tool>_v<version>_<yyyy-mm-dd>.json`.
-Then the stored results can be loaded by the tool for the evaulation.
+To evaluate a scanner, first run a scan to generate results in the database, then use the evaluate command:
 
 ```shell
 poetry run cli evaluate <tool>
+```
+
+You can also evaluate a specific scan run:
+
+```shell
+poetry run cli evaluate <tool> --run-id <scan_run_id>
+```
+
+#### 2.5) Database Management
+
+The benchmark uses a unified SQLite database for CCSS integration:
+
+**View database statistics:**
+
+```shell
+poetry run cli db-stats
 ```
 
 ## 🚀 Deployment
@@ -146,28 +220,39 @@ poetry run cli evaluate <tool>
 Some scanners only scan resources deployed in a Kubernetes cluster.
 You can find instructions on how to deploy the benchmark in a cluster [here](./docs/deployment.md)
 
+### Scanner Requirements Summary
+
+| Scanner Type | Requirements | Examples |
+|--------------|-------------|----------|
+| **Manifest-based** | Scanner binary + YAML files | Kubescape, KICS, Trivy, Polaris |
+| **Cluster-based** | Scanner binary + Running K8s cluster | Kube-bench, KubiScan |
+| **API Key required** | Scanner binary + External service token | Snyk, Checkov (for full features) |
+
+📖 **Detailed setup instructions**: [Scanner Installation Guide](./docs/scanner_installation.md)
+
+## Scanner Features & Severity Support
+
+KALM supports **12 security scanners** and provides comprehensive severity information extraction from all of them. Each scanner has different severity formats and coverage levels.
+
+**📊 Complete severity support matrix**: [Scanner Installation Guide - Scanner Coverage](./docs/scanner_installation.md#scanner-compatibility-matrix)
+
 ## Tool-specific considerations
 
-### kube-bench
+Some scanners have special requirements or focus areas:
 
-As their description states, it focuses on **infrastructure security** and not **workload security**:
-> Checks whether Kubernetes is deployed according to security best practices as defined in the CIS Kubernetes Benchmark.
+- **kube-bench**: Focuses on infrastructure security (CIS Kubernetes Benchmark) rather than workload security
+- **KubiScan**: Requires special setup as it's distributed as a Python script
+- **Snyk/Checkov**: Require API keys for full functionality
 
-Thus, the tool is listed in the benchmark just for completness sake and is expected to perform poorly because it focuses on another domain, than what is covered by this benchmark!
-
-#### KubiScan
-
-KubiScan is not formally installed on a system. Instead, the project can be cloned and executed as Python script.
-For a consistent interface, the benchmark assumes to that KubiScan can be called directly using the alias `kubiscan`
-E.g. to use a dedicated virtual environment (called `venv` inside the kubiscan directory) you can create the alias in Linux using this command
-
-```
-alias kubiscan="<PATH-TO-DIR>/venv/bin/python <PATH-TO-DIR>/KubiScan.py"
-```
+**📖 Complete scanner details and setup instructions**: [Scanner Installation Guide](./docs/scanner_installation.md)
 
 ## Troubleshooting
 
-### The results from `docker run` can't be parsed
+### Scanner Issues
+
+For comprehensive troubleshooting of scanner installation, configuration, and execution issues, see the **[Scanner Installation Guide - Troubleshooting Section](./docs/scanner_installation.md#troubleshooting)**.
+
+### Docker-based Issues
 
 - ensure the `-t` flag is not used in the command. If it is, `stdout` and `stderr` are joined to just `stdout`. This means errors can't be handled properly and it corrupts the results in `stdout`.
 

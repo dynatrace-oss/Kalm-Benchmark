@@ -5,7 +5,7 @@ from typing import Optional
 
 import pandas as pd
 
-from kalm_benchmark.constants import UpdateType
+from kalm_benchmark.utils.constants import UpdateType
 
 from ..utils import get_path_to_line, normalize_path
 from .scanner_evaluator import (
@@ -30,7 +30,7 @@ CHECK_MAPPING = {
 META_NAME_PATTERN = re.compile(r"metadata.name=({{.*?}}|[\w-]*)")
 # note: it's assumed that the captured array field ends with an 's'
 ARRAY_NAME_PATTERN = re.compile(r"(\w*s).(name|kind)=({{.*?}}|[\w-]*)")
-ARRAY_INDEX_PATTERN = re.compile(r"\[.*?\]")
+ARRAY_INDEX_PATTERN = re.compile(r"\[[^\]]*\]")
 ASSIGNED_VALUE_PATTERN = re.compile(r"=[\w-]*")
 QUOTED_PATH_PATTERN = re.compile(r".*'(.*?)'.*")
 
@@ -152,10 +152,13 @@ class Scanner(ScannerBase):
             else:
                 yield UpdateType.Error, "No result file was created"
 
-        return results
+        # Parse results before returning to match the expected CheckResult format
+        if results is not None:
+            return self.parse_results(results)
+        return []
 
     @classmethod
-    def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:
+    def parse_results(cls, results: dict) -> list[CheckResult]:
         """
         Parses the raw results and turns them into a flat list of check results.
         The results consists of a list of the results per file.
@@ -230,7 +233,7 @@ def _extract_checked_path(file: dict) -> str:
     actual_val = _normalize_path(file["actual_value"])
     expected_val = _normalize_path(file["expected_value"])
 
-    paths = sorted(set([search_key, actual_val, expected_val]), key=len, reverse=True)
+    paths = sorted(([search_key, actual_val, expected_val]), key=len, reverse=True)
     # unify the paths
     # if all paths are the same pick any
     if len(paths) == 1:

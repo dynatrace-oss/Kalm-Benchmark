@@ -17,9 +17,12 @@ from kalm_benchmark.evaluation.evaluation import (
     evaluate_scanner,
 )
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS
-from kalm_benchmark.ui import utils
-from kalm_benchmark.ui.constants import SELECTED_RESULT_FILE, Color
-from kalm_benchmark.ui.utils import get_result_files_of_scanner, load_scan_result
+from kalm_benchmark.evaluation.utils import get_version_from_result_file
+from kalm_benchmark.ui.utils.gen_utils import (
+    get_result_files_of_scanner,
+    load_scan_result,
+)
+from kalm_benchmark.utils.constants import SELECTED_RESULT_FILE, Color
 
 
 def show_result_selection_ui(tool_name: str) -> Optional[str]:
@@ -43,7 +46,6 @@ def show_result_selection_ui(tool_name: str) -> Optional[str]:
     else:
         file = None
 
-    # store the selected file in a dedicated variable, so it's accessible in other pages as well
     st.session_state[SEL_FILE_KEY] = file
     return file
 
@@ -56,6 +58,20 @@ def show_tool_evaluation_results(tool_name: str) -> None:
 
     if file is None:
         st.warning(f"No results are available for {tool_name}")
+
+        with st.expander("🔍 Debug Information", expanded=False):
+            from kalm_benchmark.ui.utils.gen_utils import get_unified_service
+
+            unified_service = get_unified_service()
+            scan_runs = unified_service.db.get_scan_runs(scanner_name=tool_name.lower())
+
+            st.markdown(f"**Scanner name used for lookup:** `{tool_name.lower()}`")
+            st.markdown(f"**Number of scan runs found:** {len(scan_runs)}")
+
+            if scan_runs:
+                st.markdown("**Available scan runs:**")
+                for run in scan_runs[:5]:
+                    st.markdown(f"- {run.get('timestamp', 'N/A')} (ID: {run.get('id', 'N/A')})")
     else:
         show_results(tool_name, file)
 
@@ -79,10 +95,7 @@ def create_check_type_chart(df: pd.DataFrame) -> alt.Chart:
     _TYPE_COL = "Type"
     _COUNT_COL = "Count"
 
-    # turn counts of each type of result into a dataframe
     df_counts = pd.DataFrame(dict(df["result_type"].value_counts()), index=[0])
-    # pivot the dataframe so all types and their counts are dedicated columes so it
-    # can be properly used by altair for visualization
     df_check_types = df_counts.melt(var_name=_TYPE_COL, value_name=_COUNT_COL)
 
     return (
@@ -135,8 +148,6 @@ def load_scanner_results(
     """
     scanner = SCANNERS.get(scanner_name)
     results = load_scan_result(scanner, result_source)
-    # ensure all columns are interpreted as string to avoid exception with
-    # Apache Arrow misinterpreting mixed columns containing floats and '-'
 
     eval_results = evaluate_scanner(scanner, results, keep_redundant_checks=keep_redundant_results)
     df_results = eval_results.astype(str) if eval_results is not None else eval_results
@@ -165,15 +176,32 @@ def show_results(scanner_name: str, result_file: Optional[Path] = None) -> None:
 
     if df_results is None:
         st.error(f"'{scanner_name}' did not yield any alerts")
+
+        with st.expander("🔍 Debug Information", expanded=False):
+            st.markdown(f"**Scanner name:** `{scanner_name}`")
+            st.markdown(f"**Result file:** `{result_file}`")
+
+            try:
+                from kalm_benchmark.ui.utils.gen_utils import get_unified_service
+
+                unified_service = get_unified_service()
+                raw_results = unified_service.load_scanner_results(scanner_name, result_file)
+                st.markdown(f"**Raw results count:** {len(raw_results) if raw_results else 0}")
+
+                if raw_results:
+                    st.markdown("**Sample raw result:**")
+                    st.json(raw_results[0].__dict__ if hasattr(raw_results[0], "__dict__") else str(raw_results[0]))
+            except Exception as e:
+                st.markdown(f"**Error loading raw results:** {e}")
+
         return
 
-    # exclude selected checks from evaluation to ignore noisy or harmless checks
     all_checks = sorted(df_results[Col.ScannerCheckId].unique())
     excluded_checks = st.sidebar.multiselect("Excluded Checks:", all_checks)
     df_results = df_results[~df_results[Col.ScannerCheckId].isin(excluded_checks)]
 
     metric = Metric.F1
-    version = utils.get_version_from_result_file(result_file)
+    version = get_version_from_result_file(result_file)
     summary = load_evaluation_summary(df_results, metric, version=version)
     col1, col2 = st.columns(2)
 
@@ -201,7 +229,10 @@ def show_detailed_analysis(df_results):
     st.subheader("Detailed Overview")
     if not st.checkbox("Show Debug Columns"):
         debug_cols = ["expected_2", "compare_name", "compare_expected", Col.CheckedPath, Col.PathToCheck]
-        df_results = df_results.drop(debug_cols, axis=1)
+        # Only drop columns that actually exist in the DataFrame
+        existing_debug_cols = [col for col in debug_cols if col in df_results.columns]
+        if existing_debug_cols:
+            df_results = df_results.drop(existing_debug_cols, axis=1)
 
     show_detailed_check_overview(df_results)
     show_drilldown_per_check(df_results)
@@ -209,9 +240,8 @@ def show_detailed_analysis(df_results):
 
 @st.cache_data
 def _create_results_per_scanner_check_histogram(df: pd.DataFrame, id_col: str) -> alt.Chart:
-    # use only relevant columns to avoid problems with Streamlit's dataframe serialization
     df = df[[id_col, Col.Category]]
-    df_with_checks = df[df[id_col] != "-"]  # filter results without a scanner check id
+    df_with_checks = df[df[id_col] != "-"]
 
     return (
         alt.Chart(df_with_checks)
@@ -248,14 +278,12 @@ def show_detailed_check_overview(df: pd.DataFrame, result_types: Optional[list[R
     )  # show all categories by default
 
     if len(selected_categories) > 0:
-        df = df.dropna(how="all", axis=1)  # drop all empty columns
+        df = df.dropna(how="all", axis=1)
         if set(selected_categories) == set(result_types):
             df_filtered = df
         else:
             df_filtered = df[df["result_type"].isin(selected_categories)]
-        # convert '-' to Nan
-        # Use explicit dtype specification to avoid pandas FutureWarning
-        with pd.option_context('future.no_silent_downcasting', True):
+        with pd.option_context("future.no_silent_downcasting", True):
             df_filtered = df_filtered.replace("-", np.nan)
         df_filtered = df_filtered.sort_values(by=["check_id", "scanner_check_id"]).reset_index(drop=True)
         st.dataframe(style_results(df_filtered))
@@ -293,18 +321,13 @@ def show_drilldown_per_check(df: pd.DataFrame) -> None:
         )
     st.markdown(info_text)
 
-    # workaround for invisible tooltip when chart is fullscreen in streamlit
-    # see:https://discuss.streamlit.io/t/tool-tips-in-fullscreen-mode-for-charts/6800/9
     st.markdown("<style>#vg-tooltip-element{z-index: 1000051}</style>", unsafe_allow_html=True)
 
-    # histogram across scanner checks
     st.altair_chart(_create_results_per_scanner_check_histogram(df, id_col), use_container_width=True)
 
-    # selection of a single scanner check
     scanner_check_ids = sorted(df[id_col].unique())
     sel_check = st.selectbox("Select check", scanner_check_ids)
 
-    # show benchmark checks per scanner check
     if sel_check is not None:
         df_check = df[df[id_col] == sel_check]
         check_names = list(set(df_check[name_col]))
@@ -348,27 +371,24 @@ def style_results(df: pd.DataFrame) -> "pd.Styler":
         return ""
 
     def format_color_groups(df):
-        colors = [Color.Background, "None"]
         colors = [Color.Background, "#00000000"]
         x = df.copy()
-        # factors = list(x["publication"].unique())
         factors = list(x[Col.CheckId].unique())
         i = 0
         for factor in factors:
             style = f"background-color: {colors[i]}"
             x.loc[x[Col.CheckId] == factor, :] = style
-            i = not i
+            i = 1 - i
         x.loc[x[Col.CheckId].isnull(), :] = ""
         return x
 
-    # make ID's bold
     df_styled = (
         df.fillna("-")
         .style.apply(format_color_groups, axis=None)
         .map(_bold_id, subset=[Col.CheckId, Col.ScannerCheckId])
         .map(_colorize_status, subset=[Col.Expected, Col.Got])
         .map(_colorize_result_type, subset=[Col.ResultType])
-        .map(lambda v: f"color: {Color.Gray}" if pd.isnull(v) else "")  # make NaNs less prominet
+        .map(lambda v: f"color: {Color.Gray}" if pd.isnull(v) else "")
     )
 
     return df_styled

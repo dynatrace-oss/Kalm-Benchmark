@@ -9,11 +9,16 @@ os.environ.setdefault("JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION", "1")
 import typer
 
 from kalm_benchmark import benchmark
-from kalm_benchmark.constants import UpdateType
+from kalm_benchmark.config import get_config
 from kalm_benchmark.evaluation import evaluation
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS, ScannerBase
+from kalm_benchmark.evaluation.service import EvaluationService
+from kalm_benchmark.exceptions import (
+    DatabaseError,
+    ScannerNotFoundError,
+)
 from kalm_benchmark.manifest_generator.gen_manifests import create_manifests
-from kalm_benchmark.ui.utils import get_version_from_result_file
+from kalm_benchmark.utils.constants import UpdateType
 
 app = typer.Typer(name="kalm-benchmark", no_args_is_help=True)
 
@@ -39,7 +44,8 @@ def generate_manifests(
     ),
     overview_format: evaluation.OverviewType = typer.Option(
         evaluation.OverviewType.Markdown,
-        help="The output format of the generated overview printed to StdOut. `out` argument will be ignored. Only relevant when `overview` flag is set",
+        help="The output format of the generated overview printed to StdOut. "
+        "`out` argument will be ignored. Only relevant when `overview` flag is set",
     ),
 ) -> None:
     """
@@ -52,7 +58,7 @@ def generate_manifests(
             if len(misclassified_checks) > 0:
                 typer.secho("Misclassified checks: " + ", ".join(misclassified_checks), fg=typer.colors.RED)
         elif overview_format == evaluation.OverviewType.Latex:
-            tbl = evaluation.create_benchark_overview_latex_table()
+            tbl = evaluation.create_benchmark_overview_latex_table()
             typer.echo(tbl)
     else:
         num_checks = create_manifests(str(out_dir), file_per_check=file_per_check)
@@ -69,32 +75,62 @@ def generate_manifests(
 @app.command()
 def evaluate(
     tool: str = typer.Argument(default=None),
-    file: Path = typer.Option(
+    scan_run_id: str = typer.Option(
         None,
-        "-f",
-        file_okay=True,
-        dir_okay=False,
-        help="The path to a file with the results of the scan performed by the tool, which will be evaluated",
+        "--run-id",
+        help="Specific scan run ID to evaluate. If not provided, uses latest scan.",
     ),
 ) -> None:
     """
-    Evaluate the results of one or more scanners.
+    Evaluate the results of one or more scanners from the database.
     :param tool: the name of the scanner.
-    :param file: optional path to the results of the scanner. If no path is provided,
-    then it will be derived from the scanner name
-    If no name is provided, all supported scanners will be evaluated
+    :param scan_run_id: optional specific scan run to evaluate
     """
     if tool is None:
         typer.echo("Evaluation of all tools is not yet supported")
-    else:
-        # Note: handling of the scanner selection can lead to the process being aborted
-        scanner = _handle_scanner_selection(tool)
+        raise typer.Exit(1)
 
-        results = evaluation.load_scanner_results_from_file(scanner, file)
+    # Note: handling of the scanner selection can lead to the process being aborted
+    scanner = _handle_scanner_selection(tool)
+
+    try:
+        service = EvaluationService()
+
+        results = service.load_scanner_results(scanner.NAME.lower(), scan_run_id)
+
+        if not results:
+            typer.echo(f"No results found for {scanner.NAME}")
+            raise typer.Exit(1)
+
         df = evaluation.evaluate_scanner(scanner, results)
-        summary = evaluation.create_summary(df, version=get_version_from_result_file(file_name=file))
+        summary = evaluation.create_summary(df)
+
+        # Save summary to database
+        scan_runs = service.db.get_scan_runs(scanner_name=scanner.NAME.lower())
+        if scan_runs:
+            latest_scan = scan_runs[0]
+            service.db.save_evaluation_summary(
+                scanner_name=scanner.NAME.lower(),
+                summary=summary,
+                scan_timestamp=latest_scan["timestamp"],
+                scanner_version=summary.version,
+            )
+            typer.echo("Saved evaluation summary to database")
+
         typer.echo(f"Here are the results of the evaluation of {tool}:")
-        typer.echo(summary)
+        typer.echo(f"Scanner: {scanner.NAME}")
+        typer.echo(f"Version: {summary.version or 'Unknown'}")
+        typer.echo(f"Score: {summary.score:.3f}")
+        typer.echo(f"Coverage: {summary.coverage:.3f}")
+        typer.echo(f"Extra checks: {summary.extra_checks}")
+        typer.echo(f"Missing checks: {summary.missing_checks}")
+
+        if summary.ccss_alignment_score:
+            typer.echo(f"CCSS Alignment: {summary.ccss_alignment_score:.3f}")
+
+    except Exception as e:
+        typer.echo(f"Evaluation failed: {e}")
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -169,20 +205,33 @@ def scan(
             "Note: some tools treat flaws above a threshold as error. This does not mean the scan failed!",
         )
 
-    if out is not None:
-        if had_error:
-            typer.echo("No results were saved due to an error when starting the scan!")
-            return
+    if had_error:
+        typer.echo("No results were saved due to an error when starting the scan!")
+        return
 
-        # if the specified path is a directory place the resulting file in there named after the scanner
-        if out.is_dir():
-            version = scanner.get_version() or "?"
+    # Save to unified database only
+    try:
+        unified_service = EvaluationService()
+
+        # Create a descriptive source identifier
+        source_identifier = None
+        if out is not None and out.is_dir():
+            version = scanner.get_version() or "unknown"
             date = datetime.now().strftime("%Y-%m-%d")
-            suffix = "json" if "json" in [f.lower() for f in scanner.FORMATS] else "txt"
-            # ensure resulting files are written as lowercase for consistency
-            out = out / f"{scanner.NAME.lower()}_v{version}_{date}.{suffix}"
-        scanner.save_results(results, out)
-        typer.echo(f"Successfully saved {len(results)} results in '{out}'")
+            source_identifier = f"{scanner.NAME.lower()}_v{version}_{date}"
+        elif out is not None:
+            source_identifier = str(out)
+
+        scan_run_id = unified_service.save_scanner_results(
+            scanner_name=scanner.NAME.lower(),
+            results=results,
+            scanner_version=scanner.get_version(),
+            source_file=source_identifier,
+        )
+        typer.echo(f"Successfully saved {len(results)} results to database (run: {scan_run_id})")
+    except Exception as e:
+        typer.echo(f"Failed to save results to database: {e}")
+        raise typer.Exit(1)
 
 
 def show_scan_update(level: benchmark.UpdateType, message: str) -> None:
@@ -240,8 +289,13 @@ def _handle_scanner_selection(tool: str) -> ScannerBase:
 
     if choice is None:
         typer.secho(f"Aborting because '{tool}' is not a valid tool!", fg=typer.colors.RED)
-        raise typer.Exit()
-    return SCANNERS.get(choice)
+        raise typer.Exit(1)
+
+    selected_scanner = SCANNERS.get(choice)
+    if selected_scanner is None:
+        raise ScannerNotFoundError(f"Scanner '{choice}' not found in registry")
+
+    return selected_scanner
 
 
 @app.command()
@@ -261,6 +315,70 @@ def serve() -> None:
         str(app_file),
     ]
     sys.exit(streamlitcli.main())
+
+
+@app.command("config")
+def show_config() -> None:
+    """
+    Show current configuration settings.
+    """
+    config = get_config()
+
+    typer.echo("=" * 50)
+    typer.echo("KALM Configuration")
+    typer.echo("=" * 50)
+    typer.echo(f"Database Path: {config.database_path}")
+    typer.echo(f"Log Level: {config.log_level}")
+    typer.echo(f"UI Host: {config.ui_host}")
+    typer.echo(f"UI Port: {config.ui_port}")
+    typer.echo(f"Scan Timeout: {config.scan_timeout}s")
+    typer.echo(f"Data Directory: {config.data_directory}")
+    typer.echo(f"Manifest Directory: {config.manifest_directory}")
+    typer.echo(f"Log Directory: {config.log_directory}")
+    typer.echo(f"Max Results Cache: {config.max_results_cache}")
+    typer.echo(f"Cleanup Keep Runs: {config.cleanup_keep_runs}")
+    typer.echo("=" * 50)
+    typer.echo("\n💡 Set environment variables to customize:")
+    typer.echo("  KALM_DB_PATH, KALM_LOG_LEVEL, KALM_UI_HOST, KALM_UI_PORT")
+    typer.echo("  KALM_SCAN_TIMEOUT, KALM_DATA_DIR, KALM_MANIFEST_DIR, etc.")
+
+
+@app.command("db-stats")
+def show_database_stats(
+    db_path: Path = typer.Option("./data/kalm.db", "--db-path", help="Path to the database"),
+) -> None:
+    """
+    Show database statistics and information.
+    """
+    if not db_path.exists():
+        typer.echo(f"Database not found at {db_path}")
+        raise typer.Exit(1)
+
+    try:
+        service = EvaluationService(str(db_path))
+        stats = service.get_database_stats()
+
+        typer.echo("=" * 50)
+        typer.echo("KALM Database Statistics")
+        typer.echo("=" * 50)
+        typer.echo(f"Total scanner results: {stats['total_scanner_results']}")
+        typer.echo(f"Total scan runs: {stats['total_scan_runs']}")
+        typer.echo(f"Total evaluation summaries: {stats['total_evaluation_summaries']}")
+        typer.echo(f"Unique scanners: {stats['unique_scanners']}")
+
+        if stats["recent_activity"]:
+            typer.echo("\nRecent scanner activity:")
+            for activity in stats["recent_activity"]:
+                typer.echo(f"  - {activity['scanner']}: {activity['last_activity']}")
+
+        typer.echo("=" * 50)
+
+    except DatabaseError as e:
+        typer.echo(f"Database error: {e}")
+        raise typer.Exit(1)
+    except Exception as e:
+        typer.echo(f"Failed to get database stats: {e}")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

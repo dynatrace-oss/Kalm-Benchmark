@@ -14,9 +14,15 @@ CHECK_MAPPING = {
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
         ],
     ),
-    "KSV003": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.drop"]),   # capabilities no drop all
-    "KSV004": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.drop"]),   # capabilities no drop at least one
-    "KSV005": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # SYS_ADMIN capability 
+    "KSV003": (
+        CheckCategory.Workload,
+        [".spec.containers[].securityContext.capabilities.drop"],
+    ),  # capabilities no drop all
+    "KSV004": (
+        CheckCategory.Workload,
+        [".spec.containers[].securityContext.capabilities.drop"],
+    ),  # capabilities no drop at least one
+    "KSV005": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # SYS_ADMIN capability
     "KSV006": (CheckCategory.Workload, [".spec.volumes[].hostPath.path"]),  # mounts docker socket
     "KSV007": (CheckCategory.Workload, [".spec.hostAliases"]),
     "KSV008": (CheckCategory.Workload, [".spec.hostIPC"]),
@@ -35,7 +41,10 @@ CHECK_MAPPING = {
     "KSV018": (CheckCategory.Reliability, [".spec.containers[].resources.limits.memory"]),
     "KSV020": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsUser"]),
     "KSV021": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsGroup"]),
-    "KSV022": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  #  specific capabilities added
+    "KSV022": (
+        CheckCategory.Workload,
+        [".spec.containers[].securityContext.capabilities.add"],
+    ),  #  specific capabilities added
     "KSV023": (CheckCategory.Workload, [".spec.volumes[].hostPath"]),
     "KSV024": (
         CheckCategory.Workload,
@@ -67,7 +76,7 @@ CHECK_MAPPING = {
             ".spec.containers[].securityContext.seccompProfile.type",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod",
         ],
-    ), # runtime default seccomp profile not set
+    ),  # runtime default seccomp profile not set
     "KSV032": (CheckCategory.Workload, [".spec.containers[].image", ".spec.containers[].name"]),
     "KSV033": (CheckCategory.Workload, [".spec.containers[].image", ".spec.containers[].name"]),
     "KSV034": (CheckCategory.Workload, [".spec.containers[].image"]),
@@ -286,7 +295,7 @@ CHECK_MAPPING = {
             ".spec.containers[].securityContext.seccompProfile.type",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod",
         ],
-    ), # seccomp profile unconfined
+    ),  # seccomp profile unconfined
     "KSV105": (
         CheckCategory.AdmissionControl,
         [".spec.securityContext.runAsUser", ".spec.containers[].securityContext.runAsUser"],
@@ -294,14 +303,14 @@ CHECK_MAPPING = {
     "KSV106": (
         CheckCategory.AdmissionControl,
         [".spec.containers[].securityContext.capabilities.drop", ".spec.containers[].securityContext.capabilities.add"],
-    ), # drop all capabilities only add net bind service
+    ),  # drop all capabilities only add net bind service
     "KSV111": (  # manage all resources in namespace (wildcard)
         CheckCategory.IAM,
         [
             "ClusterRoleBinding.roleRef.name",
             "RoleBinding.roleRef.name",
         ],
-    ), # cluster-admin role only used wherer required
+    ),  # cluster-admin role only used wherer required
     "KSV112": (  # manage all resources in namespace (wildcard)
         CheckCategory.IAM,
         [
@@ -324,12 +333,17 @@ CHECK_MAPPING = {
             "Role.rules[].verbs",
         ],
     ),
-    "KSV119": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # NET_RAW capability 
-    "KSV120": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # SYS_MODULE capability 
-    "KSV121": (CheckCategory.Workload, [".spec.volumes[].hostPath.path"]),  # K8s resource with disallowed volumes mounted (/, /boot, /dev, /etc, /lib, /proc, /sys, /usr, /var/lib/docker)
+    "KSV119": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # NET_RAW capability
+    "KSV120": (
+        CheckCategory.Workload,
+        [".spec.containers[].securityContext.capabilities.add"],
+    ),  # SYS_MODULE capability
+    "KSV121": (
+        CheckCategory.Workload,
+        [".spec.volumes[].hostPath.path"],
+    ),  # K8s resource with disallowed volumes mounted (/, /boot, /dev, /etc, /lib, /proc, /sys, /usr, /var/lib/docker)
     "AVD-KSV-0109": (CheckCategory.DataSecurity, ["ConfigMap.data"]),  # ConfigMap with secrets
-    "AVD-KSV-01010": (CheckCategory.DataSecurity, ["ConfigMap.data"])  # ConfigMap with sensitive content
-
+    "AVD-KSV-01010": (CheckCategory.DataSecurity, ["ConfigMap.data"]),  # ConfigMap with sensitive content
 }
 
 

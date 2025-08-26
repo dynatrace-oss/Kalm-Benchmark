@@ -1,0 +1,2 @@
+#!/bin/bash
+/Users/batusai/Development/dynatrace_oss/Kalm-Benchmark/.venv/bin/python /Users/batusai/Development/dynatrace_oss/Kalm-Benchmark/tmp/KubiScan/KubiScan.py "$@"

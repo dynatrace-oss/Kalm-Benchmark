@@ -39,13 +39,26 @@ class AlertObject:
         valid_kwargs = {}
         # go over all the provided keyword arguments and convert/filter for only valid fields
         for key, value in kwargs.items():
-            if key == "PodName":
+            if key == "PodName" or key == "podname":
                 fixed_key = "name"
             else:
                 fixed_key = re.sub(CASE_PATTERN, "_", key).replace(" ", "_").lower()
 
             if fixed_key in valid_fields:
                 valid_kwargs[fixed_key] = value
+
+        # Handle special case for Risky Containers table which has no 'kind' field
+        # If we have container-related fields but no kind, assume it's a Pod
+        if "kind" not in valid_kwargs:
+            if any(
+                field in valid_kwargs
+                for field in ["container_name", "service_account_name", "service_account_namespace"]
+            ):
+                valid_kwargs["kind"] = "Pod"
+            else:
+                # Default kind for other cases
+                valid_kwargs["kind"] = "Unknown"
+
         return cls(**valid_kwargs)
 
 
@@ -170,22 +183,51 @@ class Scanner(ScannerBase):
                 name, table = cls._parse_table(curr_table)
                 tables[name] = table
                 curr_table = []
+
+        # Process the last table if it exists (in case the output ends with a table)
+        if len(curr_table) > 0:
+            name, table = cls._parse_table(curr_table)
+            tables[name] = table
+
         return tables
 
     @classmethod
     def _parse_table(cls, lines: list[str]) -> tuple[str, list[dict]]:
         # because of the layout of the table is the name of the check always the 2nd line
+        if len(lines) < 4:
+            # Table too short, skip it
+            return "Unknown Table", []
+
         name = lines[1].strip("|\n")
         columns = [c.strip().lower() for c in lines[3].strip("|\n").split("|")]
 
         rows = []
+        # Skip empty tables - if there are no data rows
+        if len(lines) <= 5:
+            return name, rows
+
         for row in lines[5:-1]:
             cells = [c.strip() for c in row.strip("|\n").split("|")]
+
+            # Skip empty rows or separator rows
+            if not cells or all(not cell or cell.startswith("-") for cell in cells):
+                continue
+
+            # Ensure we have the right number of cells
+            if len(cells) != len(columns):
+                continue
+
             # drop the  color code from the priority
             m = re.search(r"[A-Z]+", cells[0])
             cells[0] = m.group() if m is not None else cells[0]
-            alert_obj = AlertObject.from_dict(dict(zip(columns, cells)))
-            rows.append(alert_obj)
+
+            try:
+                alert_obj = AlertObject.from_dict(dict(zip(columns, cells)))
+                rows.append(alert_obj)
+            except Exception as e:
+                # Skip problematic rows silently and continue processing
+                continue
+
         return name, rows
 
     def get_version(self) -> str:

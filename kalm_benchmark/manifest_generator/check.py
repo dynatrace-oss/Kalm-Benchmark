@@ -34,7 +34,6 @@ class Check(Chart):
         :param expect: the expected outcome. Either "ok" or "fail".
         :param descr: an optional description
         :param check_path: the path(s) which is the essence of the check
-        :param name: name of the check
         :param namespace: the optional namespace of the generated resources.
         By default, they will be placed in the main namespace for the benchmark.
         If a resource is not namespaced, this field will be ignored.
@@ -45,10 +44,7 @@ class Check(Chart):
         self.name = sanitize_name(_name)
         labels = {CheckKey.CheckId: check_id}
 
-        if check_path is None:
-            check_path = determine_check_path(forwarded_kwargs)
-        elif isinstance(check_path, list):
-            check_path = "|".join(check_path)
+        check_path = "|".join(check_path) if isinstance(check_path, list) else check_path or ""
 
         if annotations is not None:
             annotations = {CheckKey.Expect: expect, CheckKey.CheckPath: check_path}
@@ -82,7 +78,3 @@ class Meta(k8s.ObjectMeta):
         labels = {"app.kubernetes.io/part-of": "kalm-benchmark", **labels}
 
         super().__init__(name=name, annotations=annotations, labels=labels, namespace=namespace, **kwargs)
-
-
-def determine_check_path(kwargs: dict) -> str:
-    return None

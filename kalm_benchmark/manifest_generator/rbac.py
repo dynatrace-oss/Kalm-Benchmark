@@ -539,7 +539,7 @@ def gen_rbac(app) -> None:
                 resources="configmaps",
                 verbs=verb,
             )
-            
+
         for j, verb in enumerate(["create", "update", "patch"]):
             RBACCheck(
                 app,
@@ -556,9 +556,9 @@ def gen_rbac(app) -> None:
                     ".rules[].verbs",
                 ],
                 is_cluster_role=is_cluster,
-                resources="persistentvolumes", 
+                resources="persistentvolumes",
                 subject=f"rbac-021-pv-{verb}",
-                verbs=verb
+                verbs=verb,
             )
 
         for j, verb in enumerate(["create", "update", "patch"]):
@@ -568,12 +568,12 @@ def gen_rbac(app) -> None:
                 f"{pfx}role can manage NetworkPolicy",
                 descr=(),
                 check_path=[
-                        "ClusterRole.rules[].resources",
-                        "ClusterRole.rules[].verbs",
-                        "Role.rules[].resources",
-                        "Role.rules[].verbs",
-                        ".rules[].resources",
-                        ".rules[].verbs",
+                    "ClusterRole.rules[].resources",
+                    "ClusterRole.rules[].verbs",
+                    "Role.rules[].resources",
+                    "Role.rules[].verbs",
+                    ".rules[].resources",
+                    ".rules[].verbs",
                 ],
                 is_cluster_role=is_cluster,
                 role_name=f"{pfx}role-{verb}-netpol",
@@ -613,8 +613,6 @@ def gen_rbac(app) -> None:
         resources="services",
         verbs="get",
     )
-
-
 
     # for subject_ns in ["default", "kube-system"]:
     #     RBACCheck(
