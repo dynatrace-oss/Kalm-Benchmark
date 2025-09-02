@@ -27,7 +27,7 @@ seaborn = "^0.13.2"
 pre-commit = "^3.3.3"
 isort = "^5.10"
 black = "^24.3.0"
-flake8 = "^6.1.0"
+flake8 = "^7.3.0"
 pytest = "^7.4.0"
 jupyter = "^1.0.0"
 pytest-mock = "^3.7.0"
@@ -35,6 +35,10 @@ pyfakefs = "^5.2.4"
 pytest-subprocess = "^1.4.1"
 tox = "^4.10.0"
 cyclonedx-bom = "^3.11.2"
+hypothesis = "^6.88.0"
+pytest-benchmark = "^4.0.0"
+pytest-asyncio = "^0.21.0"
+factory-boy = "^3.3.0"
 
 
 [tool.poetry.scripts]
@@ -50,6 +54,30 @@ line-length = 120
 
 [tool.isort]
 profile = "black"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--disable-warnings",
+    "--tb=short",
+    "-v"
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "benchmark: marks tests as benchmark tests"
+]
+
+[tool.hypothesis]
+max_examples = 100
+deadline = 2000
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

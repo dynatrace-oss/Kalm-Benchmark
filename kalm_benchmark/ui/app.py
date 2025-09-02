@@ -1,114 +1,27 @@
 from pathlib import Path
-from typing import TypeVar
 
 import streamlit as st
+from loguru import logger
 
-from kalm_benchmark.ui._pages import (
-    ccss_overview,
-    overview,
-    scanner_comparison,
-    scanner_details,
-)
+from kalm_benchmark.ui.interface.gen_utils import get_unified_service, init
 from kalm_benchmark.ui.logging_config import init_logging
-from kalm_benchmark.ui.utils.gen_utils import get_query_param, init  # noqa: E402
-from kalm_benchmark.utils.constants import Page, QueryParam, SessionKeys
-
-PageType = TypeVar("PageType")
-
-
-PAGES = {
-    Page.Overview: overview,
-    Page.Scanner: scanner_details,
-    Page.Comparison: scanner_comparison,
-    Page.CCSS: ccss_overview,
-}
-
-
-def show_settings() -> None:
-    """
-    Show settings in a collapsible section in the sidebar
-    :return: nothing, all ui elements will be placed directly in the app
-    """
-    with st.sidebar.expander("⚙️ Settings", expanded=False):
-        st.markdown("📊 **Storage:** Database-backed results")
-
-        data_dir = st.session_state.get(SessionKeys.DataDir, "./data")
-        init_logging(Path(data_dir))
-
-        scanner_count = 0
-        try:
-            from kalm_benchmark.ui.utils.gen_utils import get_unified_service
-
-            unified_service = get_unified_service()
-            scanner_count = len(unified_service.create_evaluation_summary_dataframe())
-
-            st.success(f"✅ Database connected ({scanner_count} scanners)")
-
-        except Exception as e:
-            st.error(f"❌ Database connection issue: {e}")
-
-        try:
-            log_files = list(Path("./logs").glob("*.log")) if Path("./logs").exists() else []
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Scanner Results", scanner_count)
-            with col2:
-                st.metric("Log Files", len(log_files))
-        except Exception:
-            st.info("📊 Storage metrics unavailable")
-
-        st.markdown("---")
-        st.markdown("**🎨 Display Options**")
-
-        with st.container():
-            auto_refresh = st.checkbox(
-                "🔄 Auto-refresh results",
-                value=True,
-                help="Automatically refresh evaluation results after scans",
-            )
-            st.session_state["auto_refresh"] = auto_refresh
-
-
-def show_page_navigation() -> Page:
-    """Show navigation with modern styling."""
-    st.sidebar.markdown(
-        """
-    <div style="text-align: center; padding: 1rem 0; margin-bottom: 1rem;">
-        <h2 style="color: #1f77b4; margin: 0;">🛡️ Kalm</h2>
-        <p style="color: #666; font-size: 0.8rem; margin: 0;">Security Scanner Benchmark</p>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    pages = list(PAGES.keys())
-    key = "navigation"
-
-    def _on_page_change():
-        st.query_params[QueryParam.Page] = st.session_state[key]
-
-    initial_page = get_query_param(QueryParam.Page, pages[0])
-    st.session_state[key] = initial_page
-
-    page_options = {
-        Page.Overview: "🏠 Overview",
-        Page.Scanner: "🔍 Scanner Details",
-        Page.Comparison: "⚖️ Scanner Comparison",
-        Page.CCSS: "🎯 CCSS Alignment",
-    }
-
-    selected_page = st.sidebar.radio(
-        "📋 Navigation",
-        pages,
-        format_func=lambda x: page_options.get(x, x),
-        key=key,
-        on_change=_on_page_change,
-    )
-
-    st.sidebar.markdown("---")
-
-    return PAGES[selected_page]
+from kalm_benchmark.ui.modules.benchmark_comparison import (
+    show as show_benchmark_comparison,
+)
+from kalm_benchmark.ui.modules.ccss_overview import show as show_ccss_overview
+from kalm_benchmark.ui.modules.helm_scanner_analysis import (
+    show as show_helm_scanner_analysis,
+)
+from kalm_benchmark.ui.modules.helm_security_trends import (
+    show as show_helm_security_trends,
+)
+from kalm_benchmark.ui.modules.overview import show as show_overview
+from kalm_benchmark.ui.scanner_details.scanner_comparison import (
+    show as show_scanner_comparison,
+)
+from kalm_benchmark.ui.scanner_details.scanner_details import (
+    show as show_scanner_details,
+)
 
 
 def configure_page():
@@ -118,68 +31,143 @@ def configure_page():
         page_icon="🛡️",
         layout="wide",
         initial_sidebar_state="expanded",
-        menu_items={
-            "Get Help": "https://github.com/dynatrace-oss/Kalm-Benchmark",
-            "Report a bug": "https://github.com/dynatrace-oss/Kalm-Benchmark/issues",
-            "About": """
-            # Kalm Benchmark
-            
-            A comprehensive evaluation and comparison tool for Kubernetes security scanners.
-            
-            **Features:**
-            - Compare multiple security scanners
-            - Evaluate scanner performance and coverage
-            - Run scans directly from the UI
-            - Centralized logging and result management
-            
-            **Developed by:** Dynatrace
-            """,
-        },
     )
 
 
-def show_footer():
-    """Show clean footer with essential links."""
+def show_home_page():
+    """Show the main overview page with navigation to other sections."""
+
+    # Main header
+    st.markdown(
+        """
+        <div style="text-align: center; padding: 4rem 0 3rem 0;
+                    background: linear-gradient(
+                        135deg, #667eea 0%, #764ba2 25%, #6c5ce7 50%, #a29bfe 75%, #667eea 100%
+                    );
+                    border-radius: 20px; margin-bottom: 3rem;
+                    box-shadow: 0 20px 50px rgba(108, 92, 231, 0.6);
+                    position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                        background: radial-gradient(circle at 20% 20%, rgba(162, 155, 254, 0.4) 0%, transparent 50%),
+                                    radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%);
+                        pointer-events: none;"></div>
+            <div style="max-width: 900px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1;">
+                <h1 style="color: #FFFFFF; margin-bottom: 1rem; font-size: 4rem; font-weight: 900;
+                           text-shadow: 0 4px 20px rgba(0,0,0,0.5); letter-spacing: -0.02em;">
+                    🛡️ Kalm Benchmark
+                </h1>
+                <h2 style="color: rgba(255,255,255,0.95); font-weight: 500; margin-bottom: 2rem;
+                          font-size: 1.8rem; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                    Kubernetes Security Scanner Analysis Platform
+                </h2>
+                <p style="color: rgba(255,255,255,0.9); font-size: 1.2rem; line-height: 1.6;
+                         text-shadow: 0 1px 4px rgba(0,0,0,0.3); max-width: 700px; margin: 0 auto;">
+                    Compare scanner effectiveness, analyze security posture, and track improvements across
+                    your Kubernetes deployments and Helm charts.
+                </p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Quick stats
+    col1, col2, col3 = st.columns(3)
+
+    try:
+        unified_service = get_unified_service()
+        scanner_count = len(unified_service.create_evaluation_summary_dataframe())
+        scan_runs = unified_service.db.get_scan_runs()
+        total_scans = len(scan_runs)
+
+        with col1:
+            st.metric("📊 Scanner Results", scanner_count, help="Number of scanner evaluations available")
+        with col2:
+            st.metric("🔄 Total Scans", total_scans, help="Total scans performed")
+        with col3:
+            st.metric(
+                "📊 Database", "✅ Connected" if scanner_count > 0 else "⚠️ No Data", help="Database connection status"
+            )
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        st.error(f"❌ Database connection issue: {e}")
+
     st.markdown("---")
 
+    # Analysis sections
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown(
+            """
+            ### 📊 Benchmark Analysis
+            **Scanner Effectiveness Evaluation**
+
+            Compare security scanners against 235+ vulnerable Kubernetes manifests to measure:
+            - F1 scores and accuracy metrics
+            - Coverage across security categories
+            - False positive/negative rates
+            - Scanner selection guidance
+
+            *Perfect for: Security teams evaluating "Which scanner should we adopt?"*
+            """
+        )
+
+    with col2:
+        st.markdown(
+            """
+            ### ⚓ Helm Chart Security
+            **Deployment Security Analysis**
+
+            Analyze security posture of your Helm chart deployments with:
+            - Risk scoring and trending
+            - Finding distribution analysis
+            - Scanner detection comparison
+            - Security improvement tracking
+
+            *Perfect for: DevOps teams asking "How secure is our nginx deployment?"*
+            """
+        )
+
+    st.markdown("---")
+
+    # Footer
     st.markdown(
         """
-    <div style="text-align: center; margin: 1rem 0;">
-        <a href="https://github.com/dynatrace-oss/Kalm-Benchmark" target="_blank" style="text-decoration: none; color: #1f77b4; margin: 0 2rem;">📚 Documentation</a>
-        <a href="https://github.com/dynatrace-oss/Kalm-Benchmark/issues" target="_blank" style="text-decoration: none; color: #1f77b4; margin: 0 2rem;">🐛 Report Issue</a>
-    </div>
-    """,
+        <div style="text-align: center; margin: 2rem 0;">
+            <p style="color: #666; font-size: 0.9rem;">
+                Developed with ❤️ by <strong>Dynatrace</strong> •
+                <a href="https://github.com/dynatrace-oss/Kalm-Benchmark" target="_blank">📚 Documentation</a> •
+                <a href="https://github.com/dynatrace-oss/Kalm-Benchmark/issues" target="_blank">🐛 Report Issue</a>
+            </p>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-    <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #f0f0f0; color: #999; font-size: 0.85rem;">
-        Developed with ❤️ by <strong>Dynatrace</strong> • Open Source Security Tools
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
 
-
-def main() -> None:
-    """
-    Entrypoint for the UI
-    """
+def main():
+    """Main application using st.navigation."""
     configure_page()
-
     init()
 
     data_dir = Path("./data")
     init_logging(data_dir)
 
-    show_settings()
+    # Define pages
+    pages = [
+        st.Page(show_home_page, title="Home", icon="🏠", url_path="home"),
+        st.Page(show_overview, title="Scanner Overview", icon="📊", url_path="scanner_overview"),
+        st.Page(show_scanner_comparison, title="Scanner Comparison", icon="⚖️", url_path="scanner_comparison"),
+        st.Page(show_scanner_details, title="Scanner Details", icon="🔍", url_path="scanner_details"),
+        st.Page(show_benchmark_comparison, title="Benchmark Analysis", icon="📈", url_path="benchmark_analysis"),
+        st.Page(show_helm_scanner_analysis, title="Helm Scanner Analysis", icon="🔬", url_path="helm_scanner_analysis"),
+        st.Page(show_helm_security_trends, title="Security Trends", icon="📊", url_path="helm_security_trends"),
+        st.Page(show_ccss_overview, title="CCSS Alignment", icon="🎯", url_path="ccss_alignment"),
+    ]
 
-    page = show_page_navigation()
-
-    page.show()
-
-    show_footer()
+    pg = st.navigation(pages)
+    pg.run()
 
 
 if __name__ == "__main__":

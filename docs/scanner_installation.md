@@ -494,13 +494,13 @@ poetry run cli db-stats
 
 # Or use direct SQLite query
 sqlite3 data/kalm.db "
-SELECT 
-  scanner_name, 
+SELECT
+  scanner_name,
   COUNT(*) as total_results,
   COUNT(CASE WHEN severity IS NOT NULL AND severity <> '' THEN 1 END) as with_severity,
   ROUND(100.0 * COUNT(CASE WHEN severity IS NOT NULL AND severity <> '' THEN 1 END) / COUNT(*), 1) as severity_percentage
-FROM scanner_results 
-GROUP BY scanner_name 
+FROM scanner_results
+GROUP BY scanner_name
 ORDER BY severity_percentage DESC;
 "
 ```

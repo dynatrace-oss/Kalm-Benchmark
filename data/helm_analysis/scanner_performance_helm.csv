@@ -1,0 +1,4 @@
+scanner_name,charts_scanned,total_findings,findings_with_severity,with_severity_count,resource_types_detected,severity_coverage_pct,findings_per_chart
+checkov,3,210,0,0,11,0.0,70.0
+trivy,3,178,178,178,0,100.0,59.3
+snyk,3,103,103,103,8,100.0,34.3

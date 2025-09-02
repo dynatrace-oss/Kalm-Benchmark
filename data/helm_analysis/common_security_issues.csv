@@ -1,0 +1,43 @@
+scanner_check_name,kind,charts_affected,total_instances,common_severity
+The default namespace should not be used,ConfigMap,3,33,UNKNOWN
+The default namespace should not be used,ServiceAccount,3,14,UNKNOWN
+Role or ClusterRole with dangerous permissions,ClusterRole,3,11,high
+The default namespace should not be used,Service,3,11,UNKNOWN
+Container could be running with outdated image,Deployment,3,9,low
+Container has no CPU limit,Deployment,3,9,low
+Container is running without memory limit,Deployment,3,9,low
+Role that grant permissions to system reserved namespace,RoleBinding,3,9,medium
+CPU limits should be set,Deployment,3,7,UNKNOWN
+Container's or Pod's  UID could clash with host's UID,Deployment,3,7,low
+Ensure that Service Account Tokens are only mounted where necessary,Deployment,3,7,UNKNOWN
+Memory limits should be set,Deployment,3,7,UNKNOWN
+The default namespace should not be used,Deployment,3,7,UNKNOWN
+The default namespace should not be used,Role,3,7,UNKNOWN
+The default namespace should not be used,RoleBinding,3,7,UNKNOWN
+Containers should run as a high UID to avoid host conflict,Deployment,3,5,UNKNOWN
+Memory limits should be set,Job,3,5,UNKNOWN
+The default namespace should not be used,Job,3,5,UNKNOWN
+Role or ClusterRole with dangerous permissions,Role,3,4,medium
+Container is running with multiple open ports,Deployment,3,3,low
+Minimize ClusterRoles that grant control over validating or mutating admission webhook configurations,ClusterRole,3,3,UNKNOWN
+Role or ClusterRole with too wide permissions,ClusterRole,3,3,high
+Image Pull Policy should be Always,Deployment,2,6,UNKNOWN
+Image should use digest,Deployment,2,6,UNKNOWN
+CPU limits should be set,Job,2,5,UNKNOWN
+Container has no CPU limit,Job,2,5,low
+Container is running without memory limit,Job,2,5,low
+Ensure that Service Account Tokens are only mounted where necessary,Job,2,5,UNKNOWN
+CPU requests should be set,Deployment,2,4,UNKNOWN
+Container is running with writable root filesystem,Deployment,2,4,low
+Memory requests should be set,Deployment,2,4,UNKNOWN
+CPU requests should be set,Job,2,3,UNKNOWN
+Container is running without liveness probe,Deployment,2,3,low
+Container's or Pod's  UID could clash with host's UID,Job,2,3,low
+Containers should run as a high UID to avoid host conflict,Job,2,3,UNKNOWN
+Image Pull Policy should be Always,Job,2,3,UNKNOWN
+Image should use digest,Job,2,3,UNKNOWN
+Memory requests should be set,Job,2,3,UNKNOWN
+Readiness Probe Should be Configured,Deployment,2,3,UNKNOWN
+Liveness Probe Should be Configured,Deployment,2,2,UNKNOWN
+The default namespace should not be used,Secret,2,2,UNKNOWN
+Use read-only filesystem for containers where possible,Deployment,2,2,UNKNOWN

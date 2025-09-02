@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from constructs import Construct
 
 from kalm_benchmark.manifest_generator.gen_namespaces import NamespaceCheck
@@ -49,7 +47,7 @@ class PodSecurityAdmissionCheck(Check):
         PodSecurityPolicy(self, self.name, self.meta, **kwargs)
 
 
-def _parse_id_range(id_range: Tuple[int, int] | None) -> dict:
+def _parse_id_range(id_range: tuple[int, int] | None) -> dict:
     if id_range is not None:
         return {"ranges": [k8s.IdRangeV1Beta1(min=id_range[0], max=id_range[1])]}
     return {}
@@ -62,7 +60,7 @@ def _set_hardening_profile(
     Sets the annotation in the meta object so the tool has to specified profile configured
     :param meta: the meta object, in which the profile will be configured for the corresponding tool.
     :param profile_name: the profile which will be set
-    :param tool: either 'apparmor' or 'seccomp'
+    :param is_apparmor: whether this is an AppArmor profile (vs seccomp)
     :param is_allowed_field: if try the field 'allowedProfileNames' is set, otherwise 'defaultProfileName' is set
     :return: the updated meta object
     """
@@ -99,13 +97,13 @@ class PodSecurityPolicy(Construct):
         apparmor_profile_name: str | None = AppArmorProfile.RuntimeDefault,
         allowed_apparmor_profile_names: str | bool | None = None,
         fs_group_rule: str = FsGroupRule.RunAsAny,
-        gid_range: Tuple[int, int] | None = None,  # [min, max]
+        gid_range: tuple[int, int] | None = None,  # [min, max]
         host_ipc: bool | None = False,
         host_pid: bool | None = False,
         host_network: bool | None = False,
         run_as_group_rule: str | None = None,  # can be MayRunAs, MustRunAs, RunAsAny
         run_as_user_rule: str | None = RunAsUserRule.MustRunAsNonRoot,
-        uid_range: Tuple[int, int] | None = None,  # [min, max]
+        uid_range: tuple[int, int] | None = None,  # [min, max]
         read_only_root_filesystem: bool | None = False,
         drop_capabilities: list[str] | str | None = "ALL",
         privileged: bool | None = False,
@@ -196,7 +194,7 @@ class PodSecurityPolicy(Construct):
 def gen_pod_security_admission_checks(app) -> None:
     """Generates manifests to check for use of used Pod Security Standards within a namespace.
     :param app: the cdk8s app which represent the scope of the checks.
-    :returns nothing, the resources will be created directly in the provided app
+    :return: nothing, the resources will be created directly in the provided app
     """
     NamespaceCheck(
         app,
@@ -241,7 +239,7 @@ def gen_psps(app) -> None:
 
     Generates PodSecurityPolicy manifests for corresponding benchmark checks.
     :param app: the cdk8s app which represent the scope of the checks.
-    :returns nothing, the resources will be created directly in the provided app
+    :return: nothing, the resources will be created directly in the provided app
     """
     PodSecurityAdmissionCheck(
         app,

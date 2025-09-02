@@ -1,9 +1,9 @@
 scanner_name,severity_std,severity_mean,total_results,unique_categories,consistency_score,coverage_score,reliability_score
-trivy,0.62,2.25,561,4,0.617,1.0,0.77
 kics,0.65,2.4,399,4,0.606,1.0,0.764
+trivy,0.74,2.35,739,4,0.575,1.0,0.745
 kubelinter,0.5,2.64,1199,3,0.667,0.75,0.7
 kubiscan,0.56,4.6,80,3,0.641,0.75,0.685
-snyk,0.56,2.25,208,3,0.641,0.75,0.685
+snyk,0.63,2.34,311,3,0.613,0.75,0.668
 terrascan,0.71,2.89,87,3,0.585,0.75,0.651
 kubescape,0.39,3.19,3781,2,0.719,0.5,0.631
 polaris,0.48,3.36,4110,2,0.676,0.5,0.606

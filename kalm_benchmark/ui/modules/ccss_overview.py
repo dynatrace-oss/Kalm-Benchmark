@@ -1,42 +1,44 @@
-from typing import List, Optional
-
 import altair as alt
 import pandas as pd
 import streamlit as st
 
 from kalm_benchmark.evaluation.ccss.ccss_service import CCSSService
-from kalm_benchmark.ui.utils.gen_utils import get_unified_service
+from kalm_benchmark.ui.interface.gen_utils import get_unified_service
 
 
 def show():
-    """Show the CCSS overview page"""
+    """Display the main CCSS overview page with scanner alignment analysis.
+
+    :return: None
+    """
 
     # CCSS Overview Header with rich Dynatrace gradient palette
     st.markdown(
         """
-        <div style="text-align: center; padding: 3.5rem 0 2.5rem 0; 
-                    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 20%, #74b9ff 40%, #00cec9 60%, #55efc4 80%, #6c5ce7 100%); 
-                    border-radius: 20px; margin-bottom: 2rem; 
-                    box-shadow: 0 15px 40px rgba(108, 92, 231, 0.5); 
+        <div style="text-align: center; padding: 3.5rem 0 2.5rem 0;
+                    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 20%,\
+                      #74b9ff 40%, #00cec9 60%, #55efc4 80%, #6c5ce7 100%);
+                    border-radius: 20px; margin-bottom: 2rem;
+                    box-shadow: 0 15px 40px rgba(108, 92, 231, 0.5);
                     position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                        background: radial-gradient(circle at 15% 25%, rgba(162, 155, 254, 0.4) 0%, transparent 50%), 
-                                    radial-gradient(circle at 85% 75%, rgba(116, 185, 255, 0.4) 0%, transparent 50%), 
-                                    radial-gradient(circle at 50% 15%, rgba(0, 206, 201, 0.3) 0%, transparent 45%), 
-                                    radial-gradient(circle at 25% 85%, rgba(85, 239, 196, 0.3) 0%, transparent 45%); 
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                        background: radial-gradient(circle at 15% 25%, rgba(162, 155, 254, 0.4) 0%, transparent 50%),
+                                    radial-gradient(circle at 85% 75%, rgba(116, 185, 255, 0.4) 0%, transparent 50%),
+                                    radial-gradient(circle at 50% 15%, rgba(0, 206, 201, 0.3) 0%, transparent 45%),
+                                    radial-gradient(circle at 25% 85%, rgba(85, 239, 196, 0.3) 0%, transparent 45%);
                         pointer-events: none;"></div>
             <div style="max-width: 800px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1;">
-                <h1 style="color: #FFFFFF; margin-bottom: 0.5rem; font-size: 3.2rem; font-weight: 800; 
+                <h1 style="color: #FFFFFF; margin-bottom: 0.5rem; font-size: 3.2rem; font-weight: 800;
                            text-shadow: 0 4px 15px rgba(0,0,0,0.4); letter-spacing: -0.02em;">
                     🎯 CCSS Alignment Overview
                 </h1>
-                <h3 style="color: rgba(255,255,255,0.95); font-weight: 500; margin-bottom: 1.5rem; 
+                <h3 style="color: rgba(255,255,255,0.95); font-weight: 500; margin-bottom: 1.5rem;
                           font-size: 1.6rem; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                     Common Configuration Scoring System Analysis
                 </h3>
-                <p style="color: rgba(255,255,255,0.9); max-width: 650px; margin: 0 auto; 
+                <p style="color: rgba(255,255,255,0.9); max-width: 650px; margin: 0 auto;
                          line-height: 1.7; font-size: 1.15rem; text-shadow: 0 2px 6px rgba(0,0,0,0.25);">
-                    Analyze how security scanners align with the official CCSS scores. 
+                    Analyze how security scanners align with the official CCSS scores.
                     Higher alignment scores indicate better agreement with standardized security scoring methodologies.
                 </p>
             </div>
@@ -96,8 +98,12 @@ def show():
     show_category_performance(summary["scanner_rankings"])
 
 
-def show_scanner_rankings(alignments: List):
-    """Show scanner rankings by CCSS alignment"""
+def show_scanner_rankings(alignments: list):
+    """Display scanner rankings table and chart based on CCSS alignment scores.
+
+    :param alignments: List of scanner alignment data objects
+    :return: None
+    """
     st.subheader("📊 Scanner Rankings by CCSS Alignment")
 
     rankings_data = []
@@ -152,8 +158,13 @@ def show_scanner_rankings(alignments: List):
     st.altair_chart(chart, use_container_width=True)
 
 
-def show_alignment_distribution(ccss_service: CCSSService, evaluation_run_id: Optional[str]):
-    """Show distribution of alignment scores"""
+def show_alignment_distribution(ccss_service: CCSSService, evaluation_run_id: str | None):
+    """Display histogram and statistics for alignment score distribution.
+
+    :param ccss_service: CCSS service instance for data access
+    :param evaluation_run_id: Optional evaluation run ID for filtering
+    :return: None
+    """
     st.subheader("📈 Alignment Score Distribution")
 
     findings = ccss_service.db.get_misconfiguration_findings(evaluation_run_id=evaluation_run_id)
@@ -189,14 +200,17 @@ def show_alignment_distribution(ccss_service: CCSSService, evaluation_run_id: Op
     with col2:
         st.metric("Median Alignment", f"{sorted(alignment_scores)[len(alignment_scores)//2]:.3f}")
     with col3:
-        st.metric(
-            "Std Deviation",
-            f"{(sum((x - sum(alignment_scores)/len(alignment_scores))**2 for x in alignment_scores) / len(alignment_scores))**0.5:.3f}",
-        )
+        mean = sum(alignment_scores) / len(alignment_scores)
+        variance = sum((x - mean) ** 2 for x in alignment_scores) / len(alignment_scores)
+        st.metric("Std Deviation", f"{variance**0.5:.3f}")
 
 
-def show_category_performance(alignments: List):
-    """Show performance matrix by category"""
+def show_category_performance(alignments: list):
+    """Display performance matrix showing scanner effectiveness by security category.
+
+    :param alignments: List of scanner alignment data objects
+    :return: None
+    """
     st.subheader("🎯 Category Performance Matrix")
 
     all_categories = set()
@@ -243,7 +257,10 @@ def show_category_performance(alignments: List):
 
 
 def show_research_insights():
-    """Show insights from research evaluation"""
+    """Display research insights and recommendations based on CCSS analysis.
+
+    :return: None
+    """
     st.subheader("🔬 Research Insights")
 
     st.markdown(
@@ -252,7 +269,7 @@ def show_research_insights():
     - **Scanner Variability**: Different scanners show significant variation in CCSS alignment
     - **Category Specialization**: Some scanners excel in specific security categories
     - **Correlation Patterns**: Strong correlation indicates consistent scoring methodology
-    
+
     ### Recommendations:
     - Use multiple scanners for comprehensive coverage
     - Consider scanner strengths for specific security domains

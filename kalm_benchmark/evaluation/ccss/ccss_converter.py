@@ -1,13 +1,16 @@
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from ..scanner.scanner_evaluator import CheckResult
 from .ccss_models import MisconfigurationFinding, SourceType
 
 
 class CCSSConverter:
-    """Converts between existing CheckResult format and new CCSS data models"""
+    """Converts between existing CheckResult format and new CCSS data models.
+
+    Provides static methods for transforming scanner output data into standardized
+    CCSS format for storage and analysis.
+    """
 
     @staticmethod
     def checkresult_to_misconfiguration_finding(
@@ -17,18 +20,24 @@ class CCSSConverter:
         manifest_source: str = "",
         is_research_dataset: bool = False,
     ) -> MisconfigurationFinding:
-        """Convert a CheckResult to MisconfigurationFinding format"""
+        """Convert a CheckResult to MisconfigurationFinding format.
+
+        :param check_result: The scanner check result to convert
+        :param scanner_name: Name of the scanner that produced the result
+        :param source_type: Type of source (manifest, helm chart, etc.). Defaults to Manifest
+        :param manifest_source: Source identifier for the manifest or chart
+        :param is_research_dataset: Whether this finding is part of a research dataset
+        :return: Converted finding in CCSS format
+        """
 
         finding_id = str(uuid.uuid4())
 
         title = check_result.scanner_check_name or check_result.check_id or "Unknown Check"
         description = check_result.details or f"Check {check_result.check_id or 'unknown'} on {check_result.obj_name}"
 
-        # Determine resource type from kind or object name
         resource_type = check_result.kind or "Unknown"
         resource_name = check_result.obj_name or "Unknown"
 
-        # Map severity to native score if possible
         native_score = CCSSConverter._severity_to_score(check_result.severity)
 
         category = check_result.check_id.split("-")[0].lower() if check_result.check_id else "unknown"
@@ -50,13 +59,21 @@ class CCSSConverter:
 
     @staticmethod
     def batch_convert_check_results(
-        check_results: List[CheckResult],
+        check_results: list[CheckResult],
         scanner_name: str,
         source_type: SourceType = SourceType.Manifest,
         manifest_source: str = "",
         is_research_dataset: bool = False,
-    ) -> List[MisconfigurationFinding]:
-        """Convert a batch of CheckResults to MisconfigurationFindings"""
+    ) -> list[MisconfigurationFinding]:
+        """Convert a batch of CheckResults to MisconfigurationFindings.
+
+        :param check_results: list of scanner check results to convert
+        :param scanner_name: Name of the scanner that produced the results
+        :param source_type: Type of source (manifest, helm chart, etc.). Defaults to Manifest
+        :param manifest_source: Source identifier for the manifest or chart
+        :param is_research_dataset: Whether these findings are part of a research dataset
+        :return: list of converted findings in CCSS format
+        """
 
         findings = []
         for check_result in check_results:
@@ -72,8 +89,17 @@ class CCSSConverter:
         return findings
 
     @staticmethod
-    def _severity_to_score(severity: Optional[str]) -> Optional[float]:
-        """Convert text severity to numeric score"""
+    def _severity_to_score(severity: str | None) -> float | None:
+        """Convert text severity to numeric score.
+
+        Handles various severity formats from different scanners including:
+        - Standard levels (CRITICAL, HIGH, MEDIUM, LOW, INFO)
+        - kube-score format with parenthetical scores
+        - Scanner-specific terms (danger, warning, ok, skip)
+
+        :param severity: Text severity level from scanner output
+        :return: Numeric score (0-10 scale) or None if unmappable
+        """
         if not severity:
             return None
 
@@ -118,12 +144,17 @@ class CCSSConverter:
         return None
 
     @staticmethod
-    def extract_chart_info_from_path(file_path: str) -> Dict[str, str]:
-        """Extract chart name and version from Helm chart file path"""
+    def extract_chart_info_from_path(file_path: str) -> dict[str, str]:
+        """Extract chart name and version from Helm chart file path.
+
+        Attempts to parse chart information from common Helm chart directory structures
+        like '/charts/nginx/1.2.3/templates/deployment.yaml'.
+
+        :param file_path: Path to a file within a Helm chart
+        :return: dictionary containing 'chart_name', 'chart_version', and 'file_name'
+        """
         path = Path(file_path)
 
-        # Try to extract chart info from path structure
-        # e.g., /charts/nginx/1.2.3/templates/deployment.yaml
         parts = path.parts
 
         chart_name = "unknown"
@@ -139,23 +170,34 @@ class CCSSConverter:
                     chart_name = parts[i + 1]
                     break
 
-        return {"chart_name": chart_name, "chart_version": chart_version, "file_name": path.name}
+        return {
+            "chart_name": chart_name,
+            "chart_version": chart_version,
+            "file_name": path.name,
+        }
 
     @staticmethod
     def create_research_finding_from_result(
-        check_result: CheckResult, scanner_name: str, chart_info: Dict[str, str]
+        check_result: CheckResult, scanner_name: str, chart_info: dict[str, str]
     ) -> MisconfigurationFinding:
-        """Create a dataset finding with enriched chart information"""
+        """Create a research dataset finding with enriched chart information.
+
+        Creates a MisconfigurationFinding specifically for research datasets,
+        enriching the description with chart context and metadata.
+
+        :param check_result: The scanner check result to convert
+        :param scanner_name: Name of the scanner that produced the result
+        :param chart_info: dictionary containing chart metadata (name, version, file_name)
+        :return: Research dataset finding with enhanced metadata
+        """
 
         finding = CCSSConverter.checkresult_to_misconfiguration_finding(
             check_result=check_result,
             scanner_name=scanner_name,
             source_type=SourceType.Helm,
-            manifest_source=f"{chart_info['chart_name']}:{chart_info['chart_version']}",
+            manifest_source=f"{chart_info['chart_name']}: {chart_info['chart_version']}",
             is_research_dataset=True,
         )
-
-        # Enhance description with chart context
         finding.description = (
             f"Chart: {chart_info['chart_name']} v{chart_info['chart_version']} - {finding.description}"
         )

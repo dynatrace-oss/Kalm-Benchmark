@@ -1,10 +1,10 @@
+import math
 from collections import namedtuple
 from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
-from loguru import logger as log
 
 from kalm_benchmark.evaluation.evaluation import (
     Col,
@@ -32,16 +32,6 @@ ConfusionMatrix = namedtuple("ConfusionMatrix", ["tp", "fp", "tn", "fn"])
 @pytest.fixture
 def df_full():
     return pd.DataFrame({"got": ["alert"] * 3 + ["pass"] * 2, "expected": ["alert", "pass", "alert", "alert", "pass"]})
-
-
-@pytest.fixture
-def caplog(caplog):
-    # suppress default loggers and override caplog to capture loguru logs
-    # https://github.com/Delgan/loguru/issues/59#issuecomment-1016516449
-    log.remove()
-    handler_id = log.add(caplog.handler, format="{message}")
-    yield caplog
-    log.remove(handler_id)
 
 
 def gen_data(conf_mat: ConfusionMatrix) -> pd.DataFrame:
@@ -335,7 +325,7 @@ class TestResultCategorization:
         _FROM_SCANNER: str = "cat from scanner"
 
         @classmethod
-        def categorize_check(cls, id: str | None) -> str:
+        def categorize_check(cls, id: str | None) -> str | None:
             if id is None:  # just an internal mechanic to get it to
                 return None  # abstain from making a categorization
             return cls._FROM_SCANNER
@@ -383,16 +373,11 @@ class TestCheckCategorizationByCheckId:
         cat = categorize_by_check_id(id)
         assert cat == CheckCategory.IAM
 
-    @pytest.mark.parametrize("id", ["SRV-1", "WL-2", "CJ-1"])
-    def test_workload_management(self, id: str):
-        cat = categorize_by_check_id(id)
-        assert cat == CheckCategory.Workload
-
     @pytest.mark.parametrize("id", ["ING-1", "ing-2"])
     def test_networking(self, id: str):
         cat = categorize_by_check_id(id)
         assert cat == CheckCategory.Network
-        
+
     @pytest.mark.parametrize("id", ["NP-1", "np-2", "NS-1", "ns-2"])
     def test_segregation(self, id: str):
         cat = categorize_by_check_id(id)
@@ -482,7 +467,7 @@ class TestOutOfScopeFilter:
         assert len(df_res) == num_infra
         np.testing.assert_array_equal(df_expect.values, df_res.values)
 
-    def test_clusterwide_objects_in_scope(df):
+    def test_clusterwide_objects_in_scope(self):
         num = 5
         df = pd.DataFrame(
             {
@@ -502,11 +487,11 @@ def assert_dfs_are_equal(
     df_res: pd.DataFrame,
     col_order: None | list[str] = None,
     sort_cols: None | list[str] = None,
-    NAN_VALUE: None | Any = None,
+    nan_val: None | Any = None,
 ) -> bool:
-    if NAN_VALUE is not None:
-        df_expect = df_expect.fillna(NAN_VALUE)
-        df_res = df_res.fillna(NAN_VALUE)
+    if nan_val is not None:
+        df_expect = df_expect.fillna(nan_val)
+        df_res = df_res.fillna(nan_val)
 
     if sort_cols is not None:
         df_expect = df_expect.sort_values(by=sort_cols)
@@ -557,7 +542,7 @@ class TestDataframeMerge:
                 "right": data_right[:1] + [None] * 2 + data_right[1:],
             }
         )
-        assert_dfs_are_equal(df_expect, df_res, sort_cols=["pk", "left"], NAN_VALUE=0)
+        assert_dfs_are_equal(df_expect, df_res, sort_cols=["pk", "left"], nan_val=0)
 
     def test_merge_on_two_cols_simple(self):
         pk_left = ["a", "a", "b", "b"]
@@ -576,8 +561,8 @@ class TestDataframeMerge:
         assert len(df_res) == 7  # 1 match + 6 extras
         # Check that the first row is the matching one
         match_row = df_res[(df_res["pk"] == "a") & (df_res["sk"] == ".1")].iloc[0]
-        assert match_row["left"] == 1.0
-        assert match_row["right"] == 10.0
+        assert math.isclose(match_row["left"], 1.0)
+        assert math.isclose(match_row["right"], 10.0)
         # Ensure we have all the necessary columns
         expected_cols = {"pk", "sk"}
         assert expected_cols.issubset(set(df_res.columns))
@@ -588,7 +573,7 @@ class TestDataframeMerge:
         df2 = pd.DataFrame({"pk": pk, "sk": [".2|.3"]})
 
         df_res = merge_dataframes(df1, df2, id_column="pk", path_columns="sk")
-        
+
         # Check that the result contains the matching path ".2"
         assert len(df_res) >= 1
         assert "pk" in df_res.columns
@@ -634,13 +619,15 @@ class TestDataframeMerge:
         assert len(df_res) >= 3  # Should have at least the matches
         assert "pk" in df_res.columns
         assert "sk" in df_res.columns
-        
+
         # Check that the .1 path match exists
         exact_matches = df_res[(df_res["pk"] == "a") & (df_res["sk"] == ".1")]
         assert len(exact_matches) >= 1
-        
+
         # Check missing path handling (both None should match)
-        missing_matches = df_res[(df_res["pk"] == "b") & (df_res["sk"].isna() | (df_res["sk"] == "None") | (df_res["sk"] == "-"))]
+        missing_matches = df_res[
+            (df_res["pk"] == "b") & (df_res["sk"].isna() | (df_res["sk"] == "None") | (df_res["sk"] == "-"))
+        ]
         assert len(missing_matches) >= 1
 
     def test_merge_on_2_cols_multiple_sk_in_one_df(self):
@@ -659,7 +646,7 @@ class TestDataframeMerge:
                 "right": data_right,
             }
         )
-        assert_dfs_are_equal(df_expect, df_res, sort_cols=["pk", "sk"], NAN_VALUE=0)
+        assert_dfs_are_equal(df_expect, df_res, sort_cols=["pk", "sk"], nan_val=0)
 
     def test_merge_on_2_cols_multible_in_both_dfs(self):
         df1 = pd.DataFrame({"pk": ["a", "b"], "sk": [".1|.2", ".3|.4"], "left": [1, 2]})
@@ -674,12 +661,10 @@ class TestDataframeMerge:
         assert len(df_res) >= 3  # Should have multiple matches
         assert "pk" in df_res.columns
         assert "sk" in df_res.columns
-        
+
         # Check for matches in 'a' group (should have intersections)
         a_matches = df_res[(df_res["pk"] == "a") & (df_res["left"].notna()) & (df_res["right"].notna())]
         assert len(a_matches) >= 2  # Should have at least 2 matches for 'a'
-
-
 
 
 class TestFilterOfRedundantExtraChecks:

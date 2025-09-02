@@ -1,5 +1,3 @@
-from typing import Optional
-
 from constructs import Construct
 from loguru import logger
 
@@ -16,10 +14,10 @@ class NetworkPolicy(Construct):
         scope: Construct,
         name: str,
         meta: k8s.ObjectMeta,
-        egress: Optional[list[dict]] = None,
-        ingress: Optional[list[dict]] = None,
-        pod_selector: Optional[dict] = None,
-        policy_types: Optional[list[str]] = None,
+        egress: list[dict] | None = None,
+        ingress: list[dict] | None = None,
+        pod_selector: dict | None = None,
+        policy_types: list[str] | None = None,
     ):
         """
         Instantiates a new NetworkPolicy with the specified parameters.

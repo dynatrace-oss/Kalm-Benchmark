@@ -9,16 +9,13 @@ os.environ.setdefault("JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION", "1")
 import typer
 
 from kalm_benchmark import benchmark
-from kalm_benchmark.config import get_config
 from kalm_benchmark.evaluation import evaluation
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS, ScannerBase
-from kalm_benchmark.evaluation.service import EvaluationService
-from kalm_benchmark.exceptions import (
-    DatabaseError,
-    ScannerNotFoundError,
-)
+from kalm_benchmark.evaluation.scanner_service import EvaluationService
 from kalm_benchmark.manifest_generator.gen_manifests import create_manifests
+from kalm_benchmark.utils.config import get_config
 from kalm_benchmark.utils.constants import UpdateType
+from kalm_benchmark.utils.exceptions import DatabaseError, ScannerNotFoundError
 
 app = typer.Typer(name="kalm-benchmark", no_args_is_help=True)
 
@@ -104,8 +101,6 @@ def evaluate(
 
         df = evaluation.evaluate_scanner(scanner, results)
         summary = evaluation.create_summary(df)
-
-        # Save summary to database
         scan_runs = service.db.get_scan_runs(scanner_name=scanner.NAME.lower())
         if scan_runs:
             latest_scan = scan_runs[0]
@@ -117,16 +112,16 @@ def evaluate(
             )
             typer.echo("Saved evaluation summary to database")
 
-        typer.echo(f"Here are the results of the evaluation of {tool}:")
+        typer.echo(f"Here are the results of the evaluation of {tool}: ")
         typer.echo(f"Scanner: {scanner.NAME}")
         typer.echo(f"Version: {summary.version or 'Unknown'}")
-        typer.echo(f"Score: {summary.score:.3f}")
-        typer.echo(f"Coverage: {summary.coverage:.3f}")
+        typer.echo(f"Score: {summary.score: .3f}")
+        typer.echo(f"Coverage: {summary.coverage: .3f}")
         typer.echo(f"Extra checks: {summary.extra_checks}")
         typer.echo(f"Missing checks: {summary.missing_checks}")
 
         if summary.ccss_alignment_score:
-            typer.echo(f"CCSS Alignment: {summary.ccss_alignment_score:.3f}")
+            typer.echo(f"CCSS Alignment: {summary.ccss_alignment_score: .3f}")
 
     except Exception as e:
         typer.echo(f"Evaluation failed: {e}")
@@ -174,7 +169,6 @@ def scan(
         This is mutually-exclusive with the `-c` argument.
     :param out: if set, the results of the scan will be stored in the specified folder.
     """
-    # Note: handling of the scanner selection can lead to the process being aborted
     scanner = _handle_scanner_selection(tool)
 
     gen = benchmark.scan(scanner, context=kubecontext, target_path=files)
@@ -369,7 +363,7 @@ def show_database_stats(
         if stats["recent_activity"]:
             typer.echo("\nRecent scanner activity:")
             for activity in stats["recent_activity"]:
-                typer.echo(f"  - {activity['scanner']}: {activity['last_activity']}")
+                typer.echo(f" - {activity['scanner']}: {activity['last_activity']}")
 
         typer.echo("=" * 50)
 

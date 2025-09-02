@@ -1,6 +1,12 @@
 import re
 
+from loguru import logger
+
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
+
+# Bind logger to scan component for proper log filtering
+logger = logger.bind(component="scan")
+
 
 CHECK_MAPPING = {
     "access-to-create-pods": (
@@ -27,7 +33,11 @@ CHECK_MAPPING = {
     ),
     "cluster-admin-role-binding": (
         CheckCategory.IAM,
-        ["RoleBinding.roleRef.name", "ClusterRoleBinding.roleRef.name", ".roleRef.name"],
+        [
+            "RoleBinding.roleRef.name",
+            "ClusterRoleBinding.roleRef.name",
+            ".roleRef.name",
+        ],
     ),
     "dangling-horizontalpodautoscaler": (
         CheckCategory.Workload,
@@ -76,7 +86,12 @@ CHECK_MAPPING = {
     ),
     "exposed-services": (
         CheckCategory.Workload,
-        ["Service.spec.type", "Service.spec.ports[].nodePort", ".spec.type", ".spec.ports[].nodePort"],
+        [
+            "Service.spec.type",
+            "Service.spec.ports[].nodePort",
+            ".spec.type",
+            ".spec.ports[].nodePort",
+        ],
     ),
     "host-ipc": (
         CheckCategory.Workload,
@@ -168,7 +183,10 @@ CHECK_MAPPING = {
     ),
     "run-as-non-root": (
         CheckCategory.Workload,
-        [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
+        [
+            ".spec.securityContext.runAsNonRoot",
+            ".spec.containers[].securityContext.runAsNonRoot",
+        ],
     ),
     "sensitive-host-mounts": (
         CheckCategory.Workload,
@@ -196,11 +214,17 @@ CHECK_MAPPING = {
     ),
     "unset-cpu-requirements": (
         CheckCategory.Reliability,
-        [".spec.containers[].resources.requests.cpu", ".spec.containers[].resources.limits.cpu"],
+        [
+            ".spec.containers[].resources.requests.cpu",
+            ".spec.containers[].resources.limits.cpu",
+        ],
     ),
     "unset-memory-requirements": (
         CheckCategory.Network,
-        [".spec.containers[].resources.requests.memory", ".spec.containers[].resources.limits.memory"],
+        [
+            ".spec.containers[].resources.requests.memory",
+            ".spec.containers[].resources.limits.memory",
+        ],
     ),
     "use-namespace": (
         CheckCategory.Network,
@@ -219,7 +243,10 @@ CHECK_MAPPING = {
     ),
     "writable-host-mount": (
         CheckCategory.Workload,
-        [".spec.containers[].volumesMounts[].readOnly", ".spec.volumes[].hostPath"],
+        [
+            ".spec.containers[].volumesMounts[].readOnly",
+            ".spec.volumes[].hostPath",
+        ],
     ),
 }
 
@@ -228,7 +255,13 @@ class Scanner(ScannerBase):
     NAME = "KubeLinter"
     IMAGE_URL = "https://github.com/stackrox/kube-linter/raw/main/images/logo/KubeLinter-horizontal.svg"
     FORMATS = ["Plain", "JSON", "SARIF"]
-    SCAN_MANIFESTS_CMD = ["kube-linter", "lint", "--add-all-built-in", "--format", "json"]
+    SCAN_MANIFESTS_CMD = [
+        "kube-linter",
+        "lint",
+        "--add-all-built-in",
+        "--format",
+        "json",
+    ]
     CUSTOM_CHECKS = "based on existing templates"
     CI_MODE = True
     RUNS_OFFLINE = True
@@ -245,66 +278,75 @@ class Scanner(ScannerBase):
         :param results: the results which will be parsed
         :returns: the list of check results
         """
+        reports = results.get("Reports", [])
+        logger.debug(f"KubeLinter: Processing {len(reports)} reports")
+
         check_results = []
         check_id_pattern = re.compile(r"^(\w+(?:-\d+)+)")  # match the first letters and then the numbers following it
 
-        for report in results["Reports"]:
-            scanner_check_id = report["Check"]
+        for report in reports:
+            try:
+                scanner_check_id = report["Check"]
 
-            obj = report["Object"]["K8sObject"]
-            obj_name = obj["Name"]
-            ns = obj["Namespace"]
-            kind = obj["GroupVersionKind"]["Kind"]
+                obj = report["Object"]["K8sObject"]
+                obj_name = obj["Name"]
+                ns = obj["Namespace"]
+                kind = obj["GroupVersionKind"]["Kind"]
 
-            m = check_id_pattern.search(obj_name)
-            check_id = m.group(1) if m is not None else None
+                m = check_id_pattern.search(obj_name)
+                check_id = m.group(1) if m is not None else None
 
-            checked_path = cls.get_checked_path(scanner_check_id)
-            status = CheckStatus.Alert
+                checked_path = cls.get_checked_path(scanner_check_id)
+                status = CheckStatus.Alert
 
-            # KubeLinter doesn't provide explicit severity levels in JSON output
-            # All failures are treated as errors, but we can infer severity based on check type
-            severity = "MEDIUM"  # Default severity for most security/best practice checks
+                # KubeLinter doesn't provide explicit severity levels in JSON output
+                # All failures are treated as errors, but we can infer severity based on check type
+                severity = "MEDIUM"  # Default severity for most security/best practice checks
 
-            # Assign higher severity to critical security checks
-            high_severity_checks = [
-                "privileged-container",
-                "run-as-non-root",
-                "host-network",
-                "host-pid",
-                "host-ipc",
-                "docker-sock",
-                "cluster-admin-role-binding",
-                "access-to-secrets",
-            ]
-            if scanner_check_id in high_severity_checks:
-                severity = "HIGH"
+                # Assign higher severity to critical security checks
+                high_severity_checks = [
+                    "privileged-container",
+                    "run-as-non-root",
+                    "host-network",
+                    "host-pid",
+                    "host-ipc",
+                    "docker-sock",
+                    "cluster-admin-role-binding",
+                    "access-to-secrets",
+                ]
+                if scanner_check_id in high_severity_checks:
+                    severity = "HIGH"
 
-            # Assign lower severity to non-security checks
-            low_severity_checks = [
-                "required-annotation-email",
-                "required-label-owner",
-                "latest-tag",
-                "minimum-three-replicas",
-                "hpa-minimum-three-replicas",
-            ]
-            if scanner_check_id in low_severity_checks:
-                severity = "LOW"
+                # Assign lower severity to non-security checks
+                low_severity_checks = [
+                    "required-annotation-email",
+                    "required-label-owner",
+                    "latest-tag",
+                    "minimum-three-replicas",
+                    "hpa-minimum-three-replicas",
+                ]
+                if scanner_check_id in low_severity_checks:
+                    severity = "LOW"
 
-            check_results.append(
-                CheckResult(
-                    check_id=check_id,
-                    obj_name=obj_name,
-                    scanner_check_id=scanner_check_id,
-                    got=status,
-                    checked_path=checked_path,
-                    kind=kind,
-                    namespace=ns,
-                    details=report["Diagnostic"]["Message"],
-                    extra=report["Remediation"],
-                    severity=severity,
+                check_results.append(
+                    CheckResult(
+                        check_id=check_id,
+                        obj_name=obj_name,
+                        scanner_check_id=scanner_check_id,
+                        got=status,
+                        checked_path=checked_path,
+                        kind=kind,
+                        namespace=ns,
+                        details=report["Diagnostic"]["Message"],
+                        extra=report["Remediation"],
+                        severity=severity,
+                    )
                 )
-            )
+            except Exception as e:
+                logger.warning(f"KubeLinter: Failed to parse report for check {report.get('Check', 'unknown')}: {e}")
+                continue
+
+        logger.info(f"KubeLinter: Successfully parsed {len(check_results)} check results from {len(reports)} reports")
         return check_results
 
     @classmethod

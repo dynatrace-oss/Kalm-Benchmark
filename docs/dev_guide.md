@@ -33,15 +33,33 @@ Directory Structure
 │   │   ├── ...
 │   │   └── workload                    # definition of workload related manifests
 │   └── ui                              # module for the visualization of the evaluation
-│       ├── _pages                      # UI page modules (overview, scanner details, CCSS)
-│       │   ├── overview.py             # main overview page
-│       │   ├── scanner_details.py      # individual scanner analysis page
-│       │   └── ccss_overview.py        # CCSS alignment analysis page
-│       ├── scanner_details             # scanner-specific UI components
+│       ├── analytics/                  # analytics utilities and data processing
+│       │   ├── coverage_utils.py       # coverage analysis utilities
+│       │   ├── helm_analytics.py       # helm chart analysis functions
+│       │   ├── historical_analysis.py  # time-series and trend analysis
+│       │   ├── performance_utils.py    # scanner performance metrics
+│       │   └── scanner_evaluation.py   # evaluation and comparison logic
+│       ├── interface/                  # UI interface utilities
+│       │   ├── gen_utils.py            # general UI utility functions
+│       │   ├── overview_utils.py       # overview page utilities
+│       │   ├── scanner_ui.py           # scanner interface components
+│       │   └── source_filter.py        # data filtering components
+│       ├── modules/                    # modular UI pages
+│       │   ├── benchmark_comparison.py # benchmark comparison module
+│       │   ├── benchmark_scanner.py    # scanner benchmarking module
+│       │   ├── ccss_overview.py        # CCSS alignment analysis
+│       │   ├── helm_scanner_analysis.py # helm scanner analysis
+│       │   ├── helm_security_trends.py # helm security trend analysis
+│       │   └── overview.py             # main overview module
+│       ├── scanner_details/            # scanner-specific UI components
+│       ├── visualization/              # charting and visualization utilities
+│       │   ├── chart_utils.py          # chart generation and styling
+│       │   └── icon_utils.py           # scanner icons and visual elements
 │       ├── app.py                      # main Streamlit application entry point
-│       ├── constants.py                # UI constants and session keys
+│       ├── components.py               # reusable UI components
+│       ├── data_processing.py          # UI data processing utilities
 │       ├── logging_config.py           # centralized logging configuration
-│       └── utils.py                    # UI utility functions
+│       └── utils/                      # UI utility modules (migrated from old location)
 │
 ├── manifests                                # (generated) the target directory for generated manifests
 ├── notebooks                           # folder containing all notebooks used for the analysis
@@ -148,3 +166,63 @@ oos --> fill_na[Fill NAs]
 fill_na --> classify[Classify Benchmark Result]
 classify --> Z([Done])
 ```
+
+## UI Development & Troubleshooting
+
+### Recent UI Architecture Changes
+
+The UI structure has been reorganized for better maintainability:
+
+- **`_pages/`**: Internal page logic modules (backend processing)
+- **`pages/`**: Streamlit page files (frontend UI)
+- **`utils/`**: Utility modules (migrated from old `ui/utils/` location)
+
+### Common UI Issues & Fixes
+
+**Data Loading Issues**:
+
+- **Problem**: "'int' object has no attribute 'get'" errors
+- **Cause**: Mixed data types in database summaries (integers vs dictionaries)
+- **Solution**: Implemented robust type checking in `_get_category_ratio()` and `_safe_merge_categories()`
+
+**Column Name Mismatches**:
+
+- **Problem**: UI not displaying data despite database containing results
+- **Cause**: UI code looking for capitalized column names ('Score', 'Coverage') while DataFrame uses lowercase ('score', 'coverage')
+- **Solution**: Implemented proper column mapping system in benchmark overview page
+
+**Helm Chart Detection**:
+
+- **Problem**: "No Helm chart scan data available" despite having data
+- **Cause**: Incorrect filtering logic not recognizing `helm-chart:` prefix
+- **Solution**: Updated `get_available_helm_charts()` to properly parse `source_type` field
+
+### Testing UI Changes
+
+Always run comprehensive tests after UI modifications:
+
+```bash
+# Run all UI tests
+poetry run pytest tests/ui/ -v
+
+# Run specific test categories  
+poetry run pytest tests/ui/test_overview_fixes.py -v
+poetry run pytest tests/ui/test_helm_scanner_analysis_fixes.py -v
+poetry run pytest tests/ui/test_security_trends_fixes.py -v
+
+# Run full evaluation tests to ensure no regressions
+poetry run pytest tests/evaluation/ --maxfail=5
+```
+
+### Debugging UI Issues
+
+1. **Check logs**: UI actions are logged in `logs/ui_YYYYMMDD.log`
+2. **Enable debug mode**: Add debugging code to see data structures:
+
+   ```python
+   st.code(f"DataFrame columns: {df.columns.tolist()}")
+   st.code(f"DataFrame shape: {df.shape}")
+   st.code(f"First row: {df.iloc[0].to_dict() if not df.empty else 'Empty'}")
+   ```
+
+3. **Database inspection**: Use `poetry run cli db-stats` to check database content

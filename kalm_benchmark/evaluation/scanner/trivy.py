@@ -3,6 +3,9 @@ from pathlib import Path
 
 from loguru import logger
 
+# Bind logger to scan component for proper log filtering
+logger = logger.bind(component="scan")
+
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 CHECK_MAPPING = {
@@ -44,7 +47,7 @@ CHECK_MAPPING = {
     "KSV022": (
         CheckCategory.Workload,
         [".spec.containers[].securityContext.capabilities.add"],
-    ),  #  specific capabilities added
+    ),  # specific capabilities added
     "KSV023": (CheckCategory.Workload, [".spec.volumes[].hostPath"]),
     "KSV024": (
         CheckCategory.Workload,
@@ -368,9 +371,17 @@ class Scanner(ScannerBase):
         """
         check_id_pattern = re.compile(r"^(\w+(?:-\d+)+)")  # match the first letters and then the numbers following it
 
+        total_files = len(results.get("Results", []))
+        logger.debug(f"Trivy: Processing results from {total_files} files/targets")
+
         check_results = []
-        for result in results["Results"]:
-            for misconfig in result.get("Misconfigurations", []):
+        for file_idx, result in enumerate(results["Results"]):
+            misconfigs = result.get("Misconfigurations", [])
+            if misconfigs:
+                logger.debug(
+                    f"Trivy: Processing {len(misconfigs)} misconfigurations from {result.get('Target', 'unknown')}"
+                )
+            for misconfig in misconfigs:
                 obj_name = Path(result["Target"]).stem
 
                 m = check_id_pattern.search(obj_name)
@@ -379,20 +390,25 @@ class Scanner(ScannerBase):
                 status = CheckStatus.Alert if misconfig["Status"] == "FAIL" else CheckStatus.Pass
                 checked_path = cls.get_checked_path(misconfig["ID"])
 
-                check_results.append(
-                    CheckResult(
-                        check_id=check_id,
-                        obj_name=obj_name,
-                        scanner_check_id=misconfig["ID"],
-                        scanner_check_name=misconfig["Title"],
-                        checked_path=checked_path,
-                        severity=misconfig["Severity"],
-                        got=status,
-                        details=misconfig["Description"],
-                        extra=misconfig["Message"],
+                try:
+                    check_results.append(
+                        CheckResult(
+                            check_id=check_id,
+                            obj_name=obj_name,
+                            scanner_check_id=misconfig["ID"],
+                            scanner_check_name=misconfig["Title"],
+                            checked_path=checked_path,
+                            severity=misconfig["Severity"],
+                            got=status,
+                            details=misconfig["Description"],
+                            extra=misconfig["Message"],
+                        )
                     )
-                )
+                except Exception as e:
+                    logger.warning(f"Trivy: Failed to parse misconfiguration {misconfig.get('ID', 'unknown')}: {e}")
+                    continue
 
+        logger.info(f"Trivy: Successfully parsed {len(check_results)} check results from {total_files} files")
         return check_results
 
     @classmethod
@@ -411,7 +427,7 @@ class Scanner(ScannerBase):
             return "|".join(paths)
 
         if paths is None:
-            logger.warning(f"{cls.NAME} check '{check_id}' not found in the mapping")
+            logger.debug(f"Trivy: Check '{check_id}' not found in the mapping")
         return ""
 
     def get_version(self) -> str:
@@ -419,7 +435,11 @@ class Scanner(ScannerBase):
         The tool returns the version in the format "Version: <version>"
         :return: the version number of the tool
         """
-        raw_version = super().get_version()
-        version_line, *_ = raw_version.split("\n")
-        label, version = version_line.split(" ")
-        return version
+        try:
+            raw_version = super().get_version()
+            version_line, *_ = raw_version.split("\n")
+            _, version = version_line.split(" ")
+            return version
+        except Exception as e:
+            logger.warning(f"Trivy: Failed to parse version: {e}")
+            return "unknown"

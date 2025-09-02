@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: black
         name: "Format files with black"
-        language_version: python3.10
+        language_version: python3.13
         exclude: manifest_generator/cdk8s_imports
   - repo: "https://github.com/PyCQA/flake8"
     rev: 6.0.0

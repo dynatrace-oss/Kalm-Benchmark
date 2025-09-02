@@ -161,6 +161,143 @@ class MissingCheck:
     expected: str | None = "alert"
 
 
+@dataclass
+class ResourceQuotaConfig:
+    """Configuration for ResourceQuota settings"""
+
+    enabled: bool = True
+    kwargs: dict | None = None
+
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
+
+
+@dataclass
+class LimitRangeConfig:
+    """Configuration for LimitRange settings"""
+
+    enabled: bool = True
+    kwargs: dict | None = None
+
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
+
+
+@dataclass
+class NetworkPolicyConfig:
+    """Configuration for NetworkPolicy settings"""
+
+    enabled: bool = True
+    kwargs: dict | None = None
+
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
+
+
+@dataclass
+class SubjectConfig:
+    """Configuration for RBAC Subject settings"""
+
+    name: str | None = None
+    type: str | None = None  # Using str to avoid circular import
+
+    def __post_init__(self):
+        # Import here to avoid circular dependency
+        from .rbac import SubjectType
+
+        if self.name and not self.type:
+            self.type = SubjectType.SA
+
+
+@dataclass
+class RoleConfig:
+    """Configuration for RBAC Role settings"""
+
+    name: str | list[str] | None = None
+    exists: bool = False
+    is_cluster_role: bool = False
+    resources: list[str] | str | None = None
+    verbs: list[str] | str | None = None
+    api_groups: list[str] | str | None = None
+
+    def __post_init__(self):
+        if self.name is None:
+            self.name = []
+
+
+@dataclass
+class RBACBindingConfig:
+    """Configuration for RBAC Binding settings"""
+
+    is_cluster_binding: bool = False
+
+
+@dataclass
+class ContainerResourceConfig:
+    """Configuration for container resource requests and limits"""
+
+    request_cpu: str | None = "1m"
+    limits_cpu: str | None = "1m"
+    request_memory: str | None = "1Mi"
+    limits_memory: str | None = "1Mi"
+    request_ephemeral_storage: str | None = "1Mi"
+    limits_ephemeral_storage: str | None = "1Mi"
+
+
+@dataclass
+class ContainerConfig:
+    """Configuration for container settings"""
+
+    image: str = "nginx"
+    image_tag: str | None = "@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa"
+    image_pull_policy: str | None = "Always"
+    container_port: int = 8080
+    env_vars: list | None = None
+    security_context: dict | bool | None = True
+    security_context_kwargs: dict | None = None
+    resources: ContainerResourceConfig | None = None
+
+    def __post_init__(self):
+        if self.resources is None:
+            self.resources = ContainerResourceConfig()
+        if self.env_vars is None:
+            self.env_vars = []
+
+
+@dataclass
+class PodSecurityConfig:
+    """Configuration for pod security settings"""
+
+    service_account_name: str | None = "<POD>-dedicated-sa"
+    service_account: str | None = None
+    automount_sa_token: bool | None = False
+    host_ipc: bool | None = False
+    host_pid: bool | None = False
+    host_network: bool | None = False
+    pod_security_context: dict | bool | None = True
+    pod_security_context_kwargs: dict | None = None
+
+    def __post_init__(self):
+        if self.pod_security_context_kwargs is None:
+            self.pod_security_context_kwargs = {}
+
+
+@dataclass
+class PodSchedulingConfig:
+    """Configuration for pod scheduling settings"""
+
+    node_selector: dict | None = None
+    node_affinity: dict | bool | None = None
+    priority_class: str | None = "default-priority"
+
+    def __post_init__(self):
+        if self.node_selector is None:
+            self.node_selector = {"kubernetes.io/arch": "amd64"}
+
+
 MISSING_CHECKS = [
     MissingCheck(
         "RBAC-011",

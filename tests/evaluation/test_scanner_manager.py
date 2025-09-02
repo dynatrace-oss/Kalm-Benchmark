@@ -2,7 +2,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from loguru import logger
 
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS as real_manager
 from kalm_benchmark.evaluation.scanner_manager import (
@@ -10,16 +9,6 @@ from kalm_benchmark.evaluation.scanner_manager import (
     ScannerManager,
     scanner_ns,
 )
-
-
-@pytest.fixture
-def caplog(caplog):
-    # suppress default loggers and override caplog to capture loguru logs
-    # https://github.com/Delgan/loguru/issues/59#issuecomment-1016516449
-    logger.remove()
-    handler_id = logger.add(caplog.handler, format="{message}")
-    yield caplog
-    logger.remove(handler_id)
 
 
 class _MockScanner(ScannerBase):
@@ -93,7 +82,7 @@ class TestClosestScannerLookup:
         assert res == [name]
 
     def test_multiple_close_matches_returns_list(self, manager):
-        close_matches = set(["my-scanner", "my-scar"])
+        close_matches = {"my-scanner", "my-scar"}
         for s in close_matches:
             manager.scanners[s] = _MockScanner
 

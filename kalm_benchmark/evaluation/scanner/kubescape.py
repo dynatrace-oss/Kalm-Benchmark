@@ -4,8 +4,8 @@ from pathlib import Path
 from loguru import logger
 
 from kalm_benchmark.utils.constants import RunUpdateGenerator
+from kalm_benchmark.utils.path_normalization import normalize_general_path
 
-from ..utils import normalize_path
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
 
 CONTROL_CATEGORY = {
@@ -162,7 +162,7 @@ CONTROL_CATEGORY = {
         CheckCategory.IAM,
         ["ClusterRoleBinding.subjects[].name", "RoleBinding.subjects[].name", ".subjects[].name"],
     ),  # Access container service account
-    "C-0054": (CheckCategory.Segregation, "NetworkPolicy.metadata.namespace"),  #  Cluster internal networking
+    "C-0054": (CheckCategory.Segregation, "NetworkPolicy.metadata.namespace"),  # Cluster internal networking
     "C-0055": (
         CheckCategory.Workload,
         [
@@ -203,7 +203,7 @@ CONTROL_CATEGORY = {
             "Role.rules[].verbs",
         ],
     ),  # No impersonation
-    "C-0066": (CheckCategory.Infrastructure, "etcd"),  #  Secret/etcd encryption enabled
+    "C-0066": (CheckCategory.Infrastructure, "etcd"),  # Secret/etcd encryption enabled
     "C-0067": (CheckCategory.Infrastructure, ""),  # Audit logs enabled
     "C-0068": (CheckCategory.AdmissionControl, ""),  # PSP enabled?
     "C-0069": (CheckCategory.Infrastructure, "kubelet"),  # Disable anonymous access to Kubelet service
@@ -211,11 +211,11 @@ CONTROL_CATEGORY = {
     # "C-0071": (CheckCategory.Infrastructure, ""),  # gone?
     "C-0073": (CheckCategory.Workload, ".metadata.ownerReferences"),  # Naked pods
     "C-0074": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Container runtime socket mounted
-    "C-0075": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),  #  Image pull policy on latest tag
+    "C-0075": (CheckCategory.Workload, ".spec.containers[].imagePullPolicy"),  # Image pull policy on latest tag
     "C-0076": (CheckCategory.Workload, ".metadata.labels"),  # Label usage for resources
     "C-0077": (CheckCategory.Workload, ".metadata.labels"),  # K8s common labels usage
     "C-0078": (CheckCategory.Workload, ".spec.containers[].image"),  # Images from allowed registry
-    "C-0079": (CheckCategory.Infrastructure, "Node"),  #  CVE-2022-0185-linux-kernel-container-escape
+    "C-0079": (CheckCategory.Infrastructure, "Node"),  # CVE-2022-0185-linux-kernel-container-escape
     # "C-0080"(: CheckCategory.SupplyChain,""),  # gone?
     "C-0081": (CheckCategory.Infrastructure, "Node"),  # CVE-2022-24348-argocddirtraversal
     # "C-0082": (CheckCategory.Infrastructure, ""), # gone?
@@ -368,7 +368,9 @@ def get_checked_path(ctrl_id: str, paths: list | None = None, k8s_object: dict |
             if (failed_path := p.get("failedPath", None)) is not None:
                 # keys in data are treated as array index -> convert them to valid JSON Path
                 failed_path = re.sub(r"data\[(.*)\]", r"data.\1", failed_path)
-                normalized_path = normalize_path(failed_path, k8s_object)
+                normalized_path = normalize_general_path(
+                    failed_path, k8s_object.get("relatedObjects"), is_relative=True
+                )
                 checked_paths.append(normalized_path)
 
     # fallback: derive checked path from control mapping, which may be less accurate
@@ -445,7 +447,7 @@ def _parse_api_object(obj: dict) -> dict:
 #     if fix_paths is not None:
 #         paths += [fix_path["path"] for fix_path in fix_paths]
 
-#     normalized_paths = [normalize_path(p, related_objects) for p in paths]
+#     normalized_paths = [normalize_general_path(p, related_objects, is_relative=True) for p in paths]
 #     return "|".join(set(normalized_paths))
 
 

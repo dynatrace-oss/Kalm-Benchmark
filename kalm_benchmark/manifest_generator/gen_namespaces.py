@@ -3,11 +3,18 @@ from typing import Optional
 from cdk8s import App, Chart
 from constructs import Construct
 
+from ..utils.data.validation import sanitize_kubernetes_name as sanitize_name
 from .cdk8s_imports import k8s
 from .check import Check, Meta
-from .constants import CheckStatus, PodSecurityAdmissionMode, PodSecurityLevel
+from .constants import (
+    CheckStatus,
+    LimitRangeConfig,
+    NetworkPolicyConfig,
+    PodSecurityAdmissionMode,
+    PodSecurityLevel,
+    ResourceQuotaConfig,
+)
 from .network_policy import NetworkPolicy
-from .utils import sanitize_name
 from .workload.pod_base import Workload
 
 
@@ -39,6 +46,7 @@ class ConfiguredNamespace(Construct):
     ) -> None:
         """
         Instantiates a new Namespace with all relevant kubernetes resources.
+
         :param quota_kwargs: keyword arguments forwarded to the ResourceQuota created for the namespace
             Can be either dict or boolean. If boolean is True then the default arguments will be used.
         :param limit_range_kwargs: keyword arguments forwarded to the LimitRange created for the namespace.
@@ -201,14 +209,11 @@ class NamespaceCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
-        has_quota: bool = True,
-        quota_kwargs: dict = None,
-        has_limit_range: bool = True,
-        limit_range_kwargs: dict = None,
+        resource_quota: ResourceQuotaConfig = None,
+        limit_range: LimitRangeConfig = None,
+        network_policy: NetworkPolicyConfig = None,
         pod_security_level: PodSecurityLevel = PodSecurityLevel.Restricted,
         pod_security_admission_mode: PodSecurityAdmissionMode = PodSecurityAdmissionMode.Enforce,
-        has_network_policy: bool = True,
-        network_policy_kwargs: dict = None,
         **kwargs,
     ):
         """
@@ -219,27 +224,32 @@ class NamespaceCheck(Check):
         :param expect: the expected outcome of the check
         :param descr: an optional description for the check
         :param check_path: the path(s) which is the essence of the check
-        :param has_quota: boolean flag if a ResourceQuota object will be created for the namespace
-        :param quota_kwargs: keyword arguments forwarded to the generated ResourceQuota
-        :param has_limit_range: : boolean flag if a LimitRange object will be created for the namespace
-        :param limit_range_kwargs: keyword arguments forwarded to the generated LimitRange
+        :param resource_quota: configuration for ResourceQuota creation
+        :param limit_range: configuration for LimitRange creation
+        :param network_policy: configuration for NetworkPolicy creation
         :param pod_security_level: the PSS level for pod security admission in the namespace
         :param pod_security_admission_mode: the enforcement mode violations against the selected PSS
-        :param has_network_policy: boolean flag if a NetworkPolicy object will be created for the namespace
-        :param network_policy_kwargs: keywoard arguments forwarded to the generated NetworkPolicy
         """
         # label names may at most have 63 characters, thus it restricts the namespace length
         # see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
         ns_name = sanitize_name(f"{check_id}-{name}", max_len=63)
         super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, namespace=ns_name)
 
+        # Use default configurations if None provided
+        if resource_quota is None:
+            resource_quota = ResourceQuotaConfig()
+        if limit_range is None:
+            limit_range = LimitRangeConfig()
+        if network_policy is None:
+            network_policy = NetworkPolicyConfig()
+
         ConfiguredNamespace(
             self,
             ns_name,
             meta=self.meta,
-            quota_kwargs=quota_kwargs or has_quota,
-            limit_range_kwargs=limit_range_kwargs or has_limit_range,
-            network_policy_kwargs=network_policy_kwargs or has_network_policy,
+            quota_kwargs=resource_quota.kwargs if resource_quota.enabled else False,
+            limit_range_kwargs=limit_range.kwargs if limit_range.enabled else False,
+            network_policy_kwargs=network_policy.kwargs if network_policy.enabled else False,
             pod_security_level=pod_security_level,
             pod_security_admission_mode=pod_security_admission_mode,
             **kwargs,
@@ -250,34 +260,34 @@ def gen_namespace_resource_checks(app: App) -> None:
     """
     Generate namespace manifests with resource quotas and limits for corresponding benchmark checks.
     :param app: the cdk8s app which represent the scope of the checks.
-    :returns nothing, the resources will be created directly in the provided app
+    :return: nothing, the resources will be created directly in the provided app
     """
     NamespaceCheck(
         app,
         "RES-007-0",
         "no LimitRange object for namespace",
-        has_limit_range=False,
+        limit_range=LimitRangeConfig(enabled=False),
         check_path=["LimitRange.metadata.namespace"],
     )
     NamespaceCheck(
         app,
         "RES-007-1",
         "no default cpu request for namespace",
-        limit_range_kwargs={"default_cpu_request": None},
+        limit_range=LimitRangeConfig(kwargs={"default_cpu_request": None}),
         check_path=["LimitRange.spec.limits.defaultRequest.cpu", ".spec.limits.defaultRequest.cpu"],
     )
     NamespaceCheck(
         app,
         "RES-007-2",
         "no default cpu limits for namespace",
-        limit_range_kwargs={"default_cpu_limit": None},
+        limit_range=LimitRangeConfig(kwargs={"default_cpu_limit": None}),
         check_path=["LimitRange.spec.limits.default.cpu", ".spec.limits.default.cpu"],
     )
     NamespaceCheck(
         app,
         "RES-007-3",
         "no cpu limits for namespace",
-        limit_range_kwargs={"min_cpu": None, "max_cpu": None},
+        limit_range=LimitRangeConfig(kwargs={"min_cpu": None, "max_cpu": None}),
         check_path=[
             "LimitRange.spec.limits.min.cpu",
             "LimitRange.spec.limits.max.cpu",
@@ -290,21 +300,21 @@ def gen_namespace_resource_checks(app: App) -> None:
         app,
         "RES-008-1",
         "no default memory request for namespace",
-        limit_range_kwargs={"default_memory_request": None},
+        limit_range=LimitRangeConfig(kwargs={"default_memory_request": None}),
         check_path=["LimitRange.spec.limits.defaultRequest.memory", ".spec.limits.defaultRequest.memory"],
     )
     NamespaceCheck(
         app,
         "RES-008-2",
         "no default memory limits for namespace",
-        limit_range_kwargs={"default_memory_limit": None},
+        limit_range=LimitRangeConfig(kwargs={"default_memory_limit": None}),
         check_path=["LimitRange.spec.limits.default.memory", ".spec.limits.default.memory"],
     )
     NamespaceCheck(
         app,
         "RES-008-3",
         "no default memory limits for namespace",
-        limit_range_kwargs={"min_memory": None, "max_memory": None},
+        limit_range=LimitRangeConfig(kwargs={"min_memory": None, "max_memory": None}),
         check_path=[
             "LimitRange.spec.limits.min.memory",
             "LimitRange.spec.limits.max.memory",
@@ -317,14 +327,14 @@ def gen_namespace_resource_checks(app: App) -> None:
         app,
         "RES-009-1",
         "no resource quota applied to namespace",
-        has_quota=False,
+        resource_quota=ResourceQuotaConfig(enabled=False),
         check_path=["ResourceQuota.metadata.namespace"],
     )
     NamespaceCheck(
         app,
         "RES-009-2",
         "no hard quotas defined in ResourceQuota for namespace",
-        quota_kwargs={"cpu": None, "memory": None, "pods": None},
+        resource_quota=ResourceQuotaConfig(kwargs={"cpu": None, "memory": None, "pods": None}),
         check_path=[
             "ResourceQuota.spec.hard.cpu",
             "ResourceQuota.spec.hard.memory",
@@ -345,7 +355,7 @@ def gen_network_policy_checks(app) -> None:
         app,
         "NP-001",
         "namespace without network policy",
-        has_network_policy=False,
+        network_policy=NetworkPolicyConfig(enabled=False),
         use_default_deny_all_network_policy=False,
         check_path=["NetworkPolicy.metadata.namespace"],
     )
@@ -355,7 +365,7 @@ def gen_network_policy_checks(app) -> None:
             app,
             f"NP-002-{i}",
             f"only {policy_type.lower()} is blocked",
-            network_policy_kwargs={"policy_types": [policy_type]},
+            network_policy=NetworkPolicyConfig(kwargs={"policy_types": [policy_type]}),
             check_path=["NetworkPolicy.spec.policyTypes[]", ".spec.policyTypes[]"],
         )
 
@@ -364,10 +374,12 @@ def gen_network_policy_checks(app) -> None:
         "NP-003",
         "network policy allows access to cloud metadata API",
         use_default_deny_all_network_policy=True,
-        network_policy_kwargs={
-            "egress": [{"to": [{"ipBlock": {"cidr": "169.254.169.254/32"}}]}],
-            "policy_types": ["Egress"],
-        },
+        network_policy=NetworkPolicyConfig(
+            kwargs={
+                "egress": [{"to": [{"ipBlock": {"cidr": "169.254.169.254/32"}}]}],
+                "policy_types": ["Egress"],
+            }
+        ),
         check_path=["NetworkPolicy.egress[].to[].ipBlock", ".egress[].to[].ipBlock"],
     )
 
@@ -376,10 +388,12 @@ def gen_network_policy_checks(app) -> None:
         "NP-004",
         "network policy allows access to kubelet",
         use_default_deny_all_network_policy=True,
-        network_policy_kwargs={
-            "egress": [{"ports": [{"port": 10250}], "to": [{"namespace_selector": {}}]}],
-            "policy_types": ["Egress"],
-        },
+        network_policy=NetworkPolicyConfig(
+            kwargs={
+                "egress": [{"ports": [{"port": 10250}], "to": [{"namespace_selector": {}}]}],
+                "policy_types": ["Egress"],
+            }
+        ),
         check_path=["NetworkPolicy.spec.egress[].ports[].port", ".spec.egress[].ports[].port"],
     )
 
@@ -387,6 +401,6 @@ def gen_network_policy_checks(app) -> None:
         app,
         "NP-005",
         "network policy refers no valid workload",
-        network_policy_kwargs={"pod_selector": {"match_labels": {"app": "does-not-exist"}}},
+        network_policy=NetworkPolicyConfig(kwargs={"pod_selector": {"match_labels": {"app": "does-not-exist"}}}),
         check_path=["NetworkPolicy.spec.podSelector", ".spec.podSelector"],
     )

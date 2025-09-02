@@ -1,12 +1,19 @@
 import os
 import re
 from pathlib import Path
-from typing import Generator, Optional, Tuple, Union
+from typing import Generator
 
 from loguru import logger
 
+from .constants import (
+    INDENT_CHARS,
+    MAX_FILENAME_LENGTH,
+    SAFE_DIRECTORY_PATTERNS,
+    YAML_DOCUMENT_SEPARATOR,
+)
 
-def normalize_path(path: str, related_objects: Optional[list[dict]] = None, is_relative: bool = True) -> str:
+
+def normalize_path(path: str, related_objects: list[dict] | None = None, is_relative: bool = True) -> str:
     if related_objects is not None and path.startswith("relatedObjects"):
         match = re.search(r"\[(\d+)\]", path)
         if match is None:
@@ -25,13 +32,12 @@ def normalize_path(path: str, related_objects: Optional[list[dict]] = None, is_r
     # pod related checks start with pod-spec and not the template in the managing object
     if "spec.template" in path:
         path = path.replace("spec.template", "")
-    elif is_relative and not path.startswith("."):  # relative paths start with '.';
+    elif is_relative and not path.startswith("."):
         path = "." + path
 
     if path.startswith(".."):
         path = path[1:]
 
-    # ensure 'containers' is correctly spelled in path (e.g. it's wrong in C-0013)
     if "container[" in path:
         path = path.replace("container", "containers")
 
@@ -52,7 +58,6 @@ def _update_hierarchy(parent_path: list[str], indent_per_level: list[int], block
         while sum(indent_per_level) > curr_indent:
             num_levels += 1
             indent_per_level.pop()
-        # Remove the corresponding parent levels
         for _ in range(num_levels):
             if parent_path:
                 parent_path.pop()
@@ -60,7 +65,7 @@ def _update_hierarchy(parent_path: list[str], indent_per_level: list[int], block
 
 def _is_yaml_document_separator(line: str) -> bool:
     """Check if line is a YAML document separator."""
-    return line.strip() == "---"
+    return line.strip() == YAML_DOCUMENT_SEPARATOR
 
 
 def _is_list_element_line(line: str, parent_is_list: bool) -> bool:
@@ -72,14 +77,12 @@ def _process_yaml_field(
     line: str, lines: list[str], line_index: int, indent_chars: str, parent_path: list[str]
 ) -> bool:
     """Process a YAML field and update parent path if needed.
-
     Returns True if this field is a parent (has child elements).
     """
     key, val = line.split(":", maxsplit=1)
 
     if val.strip() == "":
         field = key.strip(indent_chars)
-        # Check if next line indicates this is a list
         if line_index < len(lines) and "-" in lines[line_index]:
             field += "[]"
         parent_path.append(field)
@@ -96,7 +99,6 @@ def get_path_to_line(lines: list[str], line_nr: int, separator: str = ".") -> st
     :param separator: the character used to separate the parts of a path
     :return: the full path to the line at the given line number
     """
-    INDENT_CHARS = " -"
     parent_path = []
     indent_per_level = []
 
@@ -137,15 +139,14 @@ def _is_safe_path(file_path: Path) -> bool:
 
 def _is_valid_filename(filename: str) -> bool:
     """Check if a filename is valid and not too long."""
-    return bool(filename) and len(filename) <= 255
+    return bool(filename) and len(filename) <= MAX_FILENAME_LENGTH
 
 
 def _find_in_safe_directories(cwd: Path, filename: str) -> list[Path]:
     """Search for a filename in predefined safe directories."""
-    safe_patterns = ["data", "manifests", "results", "output"]
     matching_paths = []
 
-    for pattern in safe_patterns:
+    for pattern in SAFE_DIRECTORY_PATTERNS:
         safe_dir = cwd / pattern
         if not (safe_dir.exists() and safe_dir.is_dir()):
             continue
@@ -194,7 +195,7 @@ def fix_path_to_current_environment(file_path: Path) -> str:
     return ""
 
 
-def get_difference_in_parent_path(path1: str, path2: str) -> Optional[Tuple[str, str]]:
+def get_difference_in_parent_path(path1: str, path2: str) -> tuple[str, str] | None:
     """Find the parts of each path which are not the same and return the different parents.
 
     :param path1: the first path for the comparison
@@ -231,7 +232,12 @@ class GeneratorWrapper:
         self.value = yield from self._gen
 
 
-def get_version_from_result_file(file_name: Union[str, Path]) -> Optional[str]:
+def get_version_from_result_file(file_name: (str | Path)) -> str | None:
+    """Extracts versions from temporarily saved scan results file
+
+    :param file_name: Name of the file where the scan result is saved for a given scanner
+    :return: Version number in string format
+    """
     file_name_str = str(file_name)
 
     from pathlib import Path
@@ -255,7 +261,6 @@ def get_version_from_result_file(file_name: Union[str, Path]) -> Optional[str]:
             and any(c.isdigit() for c in date_part)
             and (version.startswith("v") or any(c.isdigit() or c == "." for c in version))
         ):
-
             if version.startswith("v"):
                 return version[1:]
             return version

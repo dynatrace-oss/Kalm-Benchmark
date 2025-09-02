@@ -46,7 +46,7 @@ This design enables **precise measurement** of scanner accuracy, false positive 
 
 ### Web UI
 
-The web application consists of three pages:
+The web application provides multiple analysis views:
 
 - an overview of various scanners checked with this benchmark  
    ![overview](docs/images/overview_page.png)
@@ -54,13 +54,14 @@ The web application consists of three pages:
    ![analysis](docs/images/analysis_page.png)
 - a CCSS alignment page to compare scanner performance against standardized scoring
 
-**Recent UI Updates:**
+**Key Features:**
 
-- Settings panel with better organization and visual structure
-- Logging system with centralized log management
-- Automatic result saving to data directory after scans
-- Real-time scan progress monitoring
-- Session state management
+- **Modular architecture**: Dedicated analysis modules for helm scanning, benchmark comparison, and CCSS alignment
+- **Helm analytics**: Per-chart deployment analysis, security profiles, and interactive filtering
+- **Interactive visualizations**: Charts, pivot tables, and grouped security comparisons
+- **Unified database**: SQLite backend with automatic result persistence
+- **Real-time monitoring**: Live scan progress updates and centralized logging
+- **Settings management**: Configurable data directories and display options
 
 ### CCSS Integration
 
@@ -98,16 +99,9 @@ Key features:
 - **Standards Alignment**: Optimize scanner output to align with CCSS and industry scoring standards
 - **Regression Testing**: Validate that updates don't break existing detection capabilities
 
-### **For Security Researchers & Analysts:**
-
-- **Academic Research**: Generate publication-ready data on scanner effectiveness and accuracy trends
-- **Market Analysis**: Analyze detection consistency across different security scanning solutions
-- **Standards Development**: Contribute to security scanning methodology and scoring improvements
-- **Large-Scale Studies**: Evaluate scanner performance across diverse Kubernetes security scenarios
-
 ## Prerequisites
 
-- Python >= 3.9
+- Python >= 3.10
 - The manifests are generated using [cdk8s](https://cdk8s.io/), which depends on **[nodeJS](https://nodejs.org/en/)**
   - Please ensure **nodeJS** is installed on your system
 - Any **scanner** for which a scan should be triggered must be installed manually

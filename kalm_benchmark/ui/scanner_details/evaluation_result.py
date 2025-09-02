@@ -1,6 +1,5 @@
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional
 
 import altair as alt
 import numpy as np
@@ -17,15 +16,16 @@ from kalm_benchmark.evaluation.evaluation import (
     evaluate_scanner,
 )
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS
-from kalm_benchmark.evaluation.utils import get_version_from_result_file
-from kalm_benchmark.ui.utils.gen_utils import (
+from kalm_benchmark.ui.interface.gen_utils import (
     get_result_files_of_scanner,
+    get_unified_service,
     load_scan_result,
 )
 from kalm_benchmark.utils.constants import SELECTED_RESULT_FILE, Color
+from kalm_benchmark.utils.eval_utils import get_version_from_result_file
 
 
-def show_result_selection_ui(tool_name: str) -> Optional[str]:
+def show_result_selection_ui(tool_name: str) -> str | None:
     """Shows UI elements to select the source with the data for the evaluation
 
     :param tool_name: the name of the tool for which the results will be shown
@@ -60,13 +60,11 @@ def show_tool_evaluation_results(tool_name: str) -> None:
         st.warning(f"No results are available for {tool_name}")
 
         with st.expander("🔍 Debug Information", expanded=False):
-            from kalm_benchmark.ui.utils.gen_utils import get_unified_service
-
             unified_service = get_unified_service()
             scan_runs = unified_service.db.get_scan_runs(scanner_name=tool_name.lower())
 
-            st.markdown(f"**Scanner name used for lookup:** `{tool_name.lower()}`")
-            st.markdown(f"**Number of scan runs found:** {len(scan_runs)}")
+            st.markdown(f"**Scanner name used for lookup: ** `{tool_name.lower()}`")
+            st.markdown(f"**Number of scan runs found: ** {len(scan_runs)}")
 
             if scan_runs:
                 st.markdown("**Available scan runs:**")
@@ -137,7 +135,7 @@ def calculate_score(df: pd.DataFrame, metric: Metric = Metric.F1) -> float:
 
 @st.cache_data
 def load_scanner_results(
-    scanner_name: str, result_source: Optional[Path] = None, keep_redundant_results: bool = False
+    scanner_name: str, result_source: Path | None = None, keep_redundant_results: bool = False
 ) -> pd.DataFrame:
     """Load the results of the scanner evaluated on the benchmark instances in a tabular format
 
@@ -155,7 +153,7 @@ def load_scanner_results(
 
 
 @st.cache_data
-def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: Optional[str] = None) -> EvaluationSummary:
+def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: str | None = None) -> EvaluationSummary:
     """Load the evaluation summary of the given dataframe with check results.
 
     :param df: the dataframe which will be summarized
@@ -166,7 +164,7 @@ def load_evaluation_summary(df: pd.DataFrame, metric: Metric, version: Optional[
     return evaluation.create_summary(df, metric, version=version)
 
 
-def show_results(scanner_name: str, result_file: Optional[Path] = None) -> None:
+def show_results(scanner_name: str, result_file: Path | None = None) -> None:
     """
     Display the overview and detail
     :param scanner_name: the name of the scanner whose results will be shown
@@ -178,21 +176,19 @@ def show_results(scanner_name: str, result_file: Optional[Path] = None) -> None:
         st.error(f"'{scanner_name}' did not yield any alerts")
 
         with st.expander("🔍 Debug Information", expanded=False):
-            st.markdown(f"**Scanner name:** `{scanner_name}`")
-            st.markdown(f"**Result file:** `{result_file}`")
+            st.markdown(f"**Scanner name: ** `{scanner_name}`")
+            st.markdown(f"**Result file: ** `{result_file}`")
 
             try:
-                from kalm_benchmark.ui.utils.gen_utils import get_unified_service
-
                 unified_service = get_unified_service()
                 raw_results = unified_service.load_scanner_results(scanner_name, result_file)
-                st.markdown(f"**Raw results count:** {len(raw_results) if raw_results else 0}")
+                st.markdown(f"**Raw results count: ** {len(raw_results) if raw_results else 0}")
 
                 if raw_results:
                     st.markdown("**Sample raw result:**")
                     st.json(raw_results[0].__dict__ if hasattr(raw_results[0], "__dict__") else str(raw_results[0]))
             except Exception as e:
-                st.markdown(f"**Error loading raw results:** {e}")
+                st.markdown(f"**Error loading raw results: ** {e}")
 
         return
 
@@ -255,7 +251,7 @@ def _create_results_per_scanner_check_histogram(df: pd.DataFrame, id_col: str) -
     )
 
 
-def show_detailed_check_overview(df: pd.DataFrame, result_types: Optional[list[ResultType]] = None) -> None:
+def show_detailed_check_overview(df: pd.DataFrame, result_types: list[ResultType] | None = None) -> None:
     """
     Show the full details of the checks results in a table. The shown check can be filtered
      to show only specific types of results.

@@ -4,10 +4,10 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from ...utils.config import get_config
 from .ccss_models import (
     CCSSEvaluationRun,
     MisconfigurationFinding,
@@ -17,12 +17,28 @@ from .ccss_models import (
 
 
 class CCSSDatabase:
-    def __init__(self, db_path: str = "./data/ccss_evaluation.db"):
-        self.db_path = Path(db_path)
+    """Database interface for CCSS evaluation data storage and retrieval.
+
+    Manages SQLite database operations for storing scanner findings, evaluation runs,
+    and alignment metrics for the Common Configuration Scoring System (CCSS).
+    """
+
+    def __init__(self, db_path: str = None):
+        """Initialize the CCSS database.
+
+        :param db_path: Path to the SQLite database file. If None, uses path from config.
+        """
+        if db_path is None:
+            config = get_config()
+            self.db_path = config.ccss_database_path
+        else:
+            self.db_path = Path(db_path)
+
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_database()
 
     def _init_database(self):
+        """Initialize the database schema with all required tables and indexes."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -99,21 +115,21 @@ class CCSSDatabase:
 
             cursor.execute(
                 """
-                CREATE INDEX IF NOT EXISTS idx_findings_scanner 
+                CREATE INDEX IF NOT EXISTS idx_findings_scanner
                 ON misconfiguration_findings(scanner_name)
             """
             )
 
             cursor.execute(
                 """
-                CREATE INDEX IF NOT EXISTS idx_findings_research 
+                CREATE INDEX IF NOT EXISTS idx_findings_research
                 ON misconfiguration_findings(is_research_dataset)
             """
             )
 
             cursor.execute(
                 """
-                CREATE INDEX IF NOT EXISTS idx_findings_run 
+                CREATE INDEX IF NOT EXISTS idx_findings_run
                 ON misconfiguration_findings(evaluation_run_id)
             """
             )
@@ -122,6 +138,10 @@ class CCSSDatabase:
 
     @contextmanager
     def _get_connection(self):
+        """Get a database connection with proper row factory and cleanup.
+
+        :return: Database connection with row factory enabled
+        """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         try:
@@ -132,10 +152,18 @@ class CCSSDatabase:
     def create_evaluation_run(
         self,
         source_type: SourceType,
-        total_charts_scanned: Optional[int] = None,
-        scanners_evaluated: Optional[List[str]] = None,
-        configuration: Optional[dict] = None,
+        total_charts_scanned: int | None = None,
+        scanners_evaluated: list[str] | None = None,
+        configuration: dict | None = None,
     ) -> str:
+        """Create a new CCSS evaluation run record.
+
+        :param source_type: Type of source being evaluated (manifest, helm chart, etc.)
+        :param total_charts_scanned: Total number of charts scanned in this run
+        :param scanners_evaluated: list of scanner names used in this evaluation
+        :param configuration: Additional configuration parameters for the run
+        :return: Unique identifier for the created evaluation run
+        """
         run_id = str(uuid.uuid4())
         timestamp = datetime.now().isoformat()
 
@@ -143,7 +171,7 @@ class CCSSDatabase:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO ccss_evaluation_runs 
+                INSERT INTO ccss_evaluation_runs
                 (id, timestamp, source_type, total_charts_scanned, scanners_evaluated, configuration)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -162,15 +190,22 @@ class CCSSDatabase:
         return run_id
 
     def save_misconfiguration_findings(
-        self, findings: List[MisconfigurationFinding], evaluation_run_id: Optional[str] = None
+        self,
+        findings: list[MisconfigurationFinding],
+        evaluation_run_id: str | None = None,
     ):
+        """Save misconfiguration findings to the database.
+
+        :param findings: list of misconfiguration findings to save
+        :param evaluation_run_id: Optional ID to associate findings with a specific run
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
             for finding in findings:
                 cursor.execute(
                     """
-                    INSERT OR REPLACE INTO misconfiguration_findings 
+                    INSERT OR REPLACE INTO misconfiguration_findings
                     (id, title, description, resource_type, resource_name, scanner_name,
                      native_severity, native_score, ccss_score, alignment_score,
                      manifest_source, category, source_type, is_research_dataset, evaluation_run_id)
@@ -199,14 +234,23 @@ class CCSSDatabase:
 
         logger.info(f"Saved {len(findings)} misconfiguration findings")
 
-    def save_scanner_alignment(self, alignment: ScannerCCSSAlignment, evaluation_run_id: Optional[str] = None):
+    def save_scanner_alignment(
+        self,
+        alignment: ScannerCCSSAlignment,
+        evaluation_run_id: str | None = None,
+    ):
+        """Save scanner CCSS alignment metrics to the database.
+
+        :param alignment: Scanner alignment metrics and statistics
+        :param evaluation_run_id: Optional ID to associate alignment with a specific run
+        """
         alignment_id = str(uuid.uuid4())
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO scanner_ccss_alignment 
+                INSERT INTO scanner_ccss_alignment
                 (id, scanner_name, total_findings, avg_alignment_score, score_variance,
                  best_aligned_categories, worst_aligned_categories, overall_ccss_correlation, evaluation_run_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -229,10 +273,17 @@ class CCSSDatabase:
 
     def get_misconfiguration_findings(
         self,
-        scanner_name: Optional[str] = None,
+        scanner_name: str | None = None,
         research_dataset_only: bool = False,
-        evaluation_run_id: Optional[str] = None,
-    ) -> List[MisconfigurationFinding]:
+        evaluation_run_id: str | None = None,
+    ) -> list[MisconfigurationFinding]:
+        """Retrieve misconfiguration findings from the database.
+
+        :param scanner_name: Filter by specific scanner name
+        :param research_dataset_only: If True, only return research dataset findings
+        :param evaluation_run_id: Filter by specific evaluation run ID
+        :return: list of matching misconfiguration findings
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -275,7 +326,12 @@ class CCSSDatabase:
 
             return findings
 
-    def get_scanner_alignment_summary(self, evaluation_run_id: Optional[str] = None) -> List[ScannerCCSSAlignment]:
+    def get_scanner_alignment_summary(self, evaluation_run_id: str | None = None) -> list[ScannerCCSSAlignment]:
+        """Retrieve scanner alignment summaries ordered by alignment score.
+
+        :param evaluation_run_id: Filter by specific evaluation run ID
+        :return: list of scanner alignment summaries ordered by score
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -307,13 +363,18 @@ class CCSSDatabase:
 
             return alignments
 
-    def get_evaluation_runs(self, limit: int = 10) -> List[CCSSEvaluationRun]:
+    def get_evaluation_runs(self, limit: int = 10) -> list[CCSSEvaluationRun]:
+        """Retrieve recent evaluation runs.
+
+        :param limit: Maximum number of runs to return. Defaults to 10
+        :return: list of evaluation runs ordered by creation time (newest first)
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT * FROM ccss_evaluation_runs 
-                ORDER BY created_at DESC 
+                SELECT * FROM ccss_evaluation_runs
+                ORDER BY created_at DESC
                 LIMIT ?
             """,
                 (limit,),
@@ -335,18 +396,23 @@ class CCSSDatabase:
 
             return runs
 
-    def get_alignment_statistics(self, evaluation_run_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_alignment_statistics(self, evaluation_run_id: str | None = None) -> dict[str, any]:
+        """Get aggregate alignment statistics across all findings.
+
+        :param evaluation_run_id: Filter by specific evaluation run ID
+        :return: Dictionary containing total_findings, avg_alignment, min_alignment, max_alignment, and total_scanners
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
             query_base = """
-                SELECT 
+                SELECT
                     COUNT(*) as total_findings,
                     AVG(alignment_score) as avg_alignment,
                     MIN(alignment_score) as min_alignment,
                     MAX(alignment_score) as max_alignment,
                     COUNT(DISTINCT scanner_name) as total_scanners
-                FROM misconfiguration_findings 
+                FROM misconfiguration_findings
                 WHERE alignment_score IS NOT NULL
             """
 
@@ -367,13 +433,17 @@ class CCSSDatabase:
             }
 
     def cleanup_old_runs(self, keep_latest: int = 50):
+        """Clean up old evaluation runs and associated data to manage database size.
+
+        :param keep_latest: Number of latest runs to retain. Defaults to 50
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
             cursor.execute(
                 """
-                SELECT id FROM ccss_evaluation_runs 
-                ORDER BY created_at DESC 
+                SELECT id FROM ccss_evaluation_runs
+                ORDER BY created_at DESC
                 LIMIT -1 OFFSET ?
             """,
                 (keep_latest,),
@@ -384,13 +454,21 @@ class CCSSDatabase:
             if old_runs:
                 placeholders = ",".join(["?"] * len(old_runs))
                 cursor.execute(
-                    f"DELETE FROM misconfiguration_findings WHERE evaluation_run_id IN ({placeholders})", old_runs
+                    f"DELETE FROM misconfiguration_findings WHERE evaluation_run_id IN ({placeholders})",
+                    old_runs,
                 )
                 cursor.execute(
-                    f"DELETE FROM scanner_ccss_alignment WHERE evaluation_run_id IN ({placeholders})", old_runs
+                    f"DELETE FROM scanner_ccss_alignment WHERE evaluation_run_id IN ({placeholders})",
+                    old_runs,
                 )
-                cursor.execute(f"DELETE FROM category_alignment WHERE evaluation_run_id IN ({placeholders})", old_runs)
-                cursor.execute(f"DELETE FROM ccss_evaluation_runs WHERE id IN ({placeholders})", old_runs)
+                cursor.execute(
+                    f"DELETE FROM category_alignment WHERE evaluation_run_id IN ({placeholders})",
+                    old_runs,
+                )
+                cursor.execute(
+                    f"DELETE FROM ccss_evaluation_runs WHERE id IN ({placeholders})",
+                    old_runs,
+                )
 
                 conn.commit()
                 logger.info(f"Cleaned up {len(old_runs)} old evaluation runs")

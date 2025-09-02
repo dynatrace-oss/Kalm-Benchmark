@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from kalm_benchmark.evaluation.utils import (
+from kalm_benchmark.utils.eval_utils import (
     fix_path_to_current_environment,
     get_difference_in_parent_path,
     get_path_to_line,
@@ -298,11 +298,12 @@ class TestFixPathToCurrentEnvironment:
         res = fix_path_to_current_environment(file_path)
         # Security check should return empty string for absolute paths
         assert res == ""
-    
+
     def test_relative_paths_work(self):
         # Test that valid relative paths are processed correctly
-        import tempfile
         import os
+        import tempfile
+
         with tempfile.TemporaryDirectory() as temp_dir:
             original_cwd = os.getcwd()
             try:
@@ -312,7 +313,7 @@ class TestFixPathToCurrentEnvironment:
                 manifests_dir.mkdir(exist_ok=True)
                 test_file = manifests_dir / "test-file.yaml"
                 test_file.write_text("test content")
-                
+
                 # Use relative path - this should work
                 rel_path = Path("manifests/test-file.yaml")
                 res = fix_path_to_current_environment(rel_path)

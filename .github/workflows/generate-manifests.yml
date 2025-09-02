@@ -1,17 +1,17 @@
 name: Generate Benchmark manifests
 
-on: 
+on:
   workflow_dispatch:
   # make it only a manual workflow for now
   # push:
   #   branches: ["main"]
   #   paths:
   #     #regenerate manifests whenever the IaC was modified
-  #     - '**/manifest_generator/**/*.py'  
+  #     - '**/manifest_generator/**/*.py'
 
 env:
   BIN_NAME: 'kalm-benchmark.whl'
-  
+
 jobs:
   build-kalm-benchmark:
     uses: ./.github/workflows/build.yml
@@ -30,10 +30,10 @@ jobs:
         with:
           node-version: 18
           #cache: 'npm'
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.13"
       - name: Install Kalm-Benchmark
         run: pip install ./kalm_benchmark*.whl
       - uses: actions/checkout@v3

@@ -1,0 +1,4 @@
+chart_name,total_findings,with_severity,critical,high,medium,low,scanners,resource_types,risk_score
+ingress-nginx,79,79,5,4,13,37,3,9,1.9493670886075949
+cert-manager,95,95,5,7,12,35,3,8,1.6736842105263159
+kube-prometheus-stack,107,107,6,5,15,34,3,11,1.5233644859813085

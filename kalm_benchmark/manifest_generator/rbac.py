@@ -3,7 +3,13 @@ from strenum import StrEnum
 
 from .cdk8s_imports import k8s
 from .check import Check
-from .constants import MAIN_NS, CheckStatus
+from .constants import (
+    MAIN_NS,
+    CheckStatus,
+    RBACBindingConfig,
+    RoleConfig,
+    SubjectConfig,
+)
 from .utils import ensure_list
 
 
@@ -59,84 +65,133 @@ class RBACCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
-        subject: str | None = None,
-        subject_type: SubjectType | None = None,
-        resources: list[str] | str | None = None,  # if empty string, then role is created without rules
-        role_name: str | list[str] | None = None,  # both for role-ref and (cluster-) role object
-        role_exists: bool = False,
-        is_cluster_binding: bool = False,
-        is_cluster_role: bool = False,
-        verbs: list[str] | str | None = None,
-        api_groups: list[str] | str | None = None,
+        subject: SubjectConfig = None,
+        role: RoleConfig = None,
+        binding: RBACBindingConfig = None,
         **kwargs,
     ):
         """
-        Instantiates a new PodSecurityPolicy check with all relevant kubernetes resources.
+        Instantiates a new RBAC check with all relevant kubernetes resources.
         :param scope: the cdk8s scope in which the resources will be placed
         :param check_id: the id of the check. This is the prefix of the resulting file name
         :param name: the name of the check. This will be part of the resulting file name.
         :param expect: the expected outcome of the check
         :param descr: an optional description for the check
         :param check_path: the path(s) which is the essence of the check
-        :param subject: the name of the subject
-        :param subject_type: the subject type. Can be one of "user", "group" or "serviceaccount"
-        :param resources: the resources addressed in the role's policy
-        :param role_name: the name of the role
-        :param role_exists: boolean flag indicating if the role exists. If so, no additional role will be created.
-        :param is_cluster_binding: boolean flag indicating if the created role binding is cluster wide
-        :param is_cluster_role: boolean flag indicating if the created role is a ClusterRole
-        :param verbs: the verbs used by the role's policy
-        :param api_groups: the apiGroups used by the role's policy
-        :param kwargs: any additional keyword arguments will be passed on to the resource
+        :param subject: configuration for the RBAC subject (user, group, or service account)
+        :param role: configuration for the RBAC role settings
+        :param binding: configuration for the RBAC binding settings
         """
         super().__init__(scope, check_id, name, expect, descr, check_path)
 
-        # subjects are only used by role bindings;
-        # having not subject type means there is no binding required
-        subj_name = subject or f"{self.name}-sa"
-        if subject_type == SubjectType.SA and subj_name != "default":
+        subject, role, binding = self._get_configurations(subject, role, binding)
+        subj_name = self._create_service_account_if_needed(subject)
+        self._create_roles_and_bindings(check_id, subject, role, binding, subj_name, **kwargs)
+
+    def _get_configurations(self, subject, role, binding):
+        """
+        Get configuration objects with defaults if None provided
+        :param subject: configuration for the RBAC subject
+        :param role: configuration for the RBAC role settings
+        :param binding: configuration for the RBAC binding settings
+        :return: tuple of (subject, role, binding) configurations
+        """
+        if subject is None:
+            subject = SubjectConfig()
+        if role is None:
+            role = RoleConfig()
+        if binding is None:
+            binding = RBACBindingConfig()
+        return subject, role, binding
+
+    def _create_service_account_if_needed(self, subject):
+        """
+        Create a ServiceAccount if needed based on subject configuration
+        :param subject: the subject configuration
+        :return: the subject name to use
+        """
+        subj_name = subject.name or f"{self.name}-sa"
+        if subject.type == SubjectType.SA and subj_name != "default":
             # default service account is created automatically by kubernetes
             ServiceAccount(self, subj_name, self.meta)
+        return subj_name
 
-        if role_name is not None:
-            # it's possible to bind a subject to multiple roles
-            role_names = [role_name] if isinstance(role_name, str) else role_name
-            for role_name in role_names:
-                if not role_exists:
-                    # prefix it with the id, so it can be recovered from the results
-                    role_name = f"{check_id.lower()}-{role_name}"
+    def _create_roles_and_bindings(self, check_id, subject, role, binding, subj_name, **kwargs):
+        """
+        Create roles and role bindings based on configurations
+        :param check_id: the check ID for prefixing role names
+        :param subject: the subject configuration
+        :param role: the role configuration
+        :param binding: the binding configuration
+        :param subj_name: the subject name to use
+        """
+        if role.name is None:
+            return
 
-                if subject_type is not None:
-                    role_type = RoleType.ClusteRole if is_cluster_role else RoleType.Role
-                    role_ref = k8s.RoleRef(
-                        name=role_name,
-                        kind=role_type,
-                        api_group="rbac.authorization.k8s.io",
-                    )
+        role_names = [role.name] if isinstance(role.name, str) else role.name
+        for role_name in role_names:
+            final_role_name = self._get_final_role_name(check_id, role_name, role.exists)
 
-                    RoleBinding(
-                        self,
-                        f"{self.name}-rb-{role_name}",
-                        self.meta,
-                        is_cluster=is_cluster_binding,
-                        role_ref=role_ref,
-                        subject_name=subj_name,
-                        subject_type=subject_type,
-                        **kwargs,
-                    )
+            if subject.type is not None:
+                self._create_role_binding(final_role_name, role, binding, subject, subj_name, **kwargs)
 
-                # roles set the rules for the interaction with resources;
-                # when no resources are defined roles are not needed
-                if not role_exists:
-                    Role(
-                        self,
-                        role_name,
-                        self.meta,
-                        is_cluster=is_cluster_role,
-                        resources=ensure_list(resources),
-                        verbs=ensure_list(verbs),
-                        api_groups=ensure_list(api_groups),
-                    )
+            if not role.exists:
+                self._create_role(final_role_name, role)
+
+    def _get_final_role_name(self, check_id, role_name, role_exists):
+        """
+        Get the final role name, potentially prefixed with check_id
+        :param check_id: the check ID
+        :param role_name: the original role name
+        :param role_exists: whether the role already exists
+        :return: the final role name
+        """
+        if not role_exists:
+            return f"{check_id.lower()}-{role_name}"
+        return role_name
+
+    def _create_role_binding(self, role_name, role, binding, subject, subj_name, **kwargs):
+        """
+        Create a role binding
+        :param role_name: the role name
+        :param role: the role configuration
+        :param binding: the binding configuration
+        :param subject: the subject configuration
+        :param subj_name: the subject name
+        """
+        role_type = RoleType.ClusteRole if role.is_cluster_role else RoleType.Role
+        role_ref = k8s.RoleRef(
+            name=role_name,
+            kind=role_type,
+            api_group="rbac.authorization.k8s.io",
+        )
+
+        RoleBinding(
+            self,
+            f"{self.name}-rb-{role_name}",
+            self.meta,
+            is_cluster=binding.is_cluster_binding,
+            role_ref=role_ref,
+            subject_name=subj_name,
+            subject_type=subject.type,
+            **kwargs,
+        )
+
+    def _create_role(self, role_name, role):
+        """
+        Create a role with the specified configuration
+        :param role_name: the role name
+        :param role: the role configuration
+        """
+        Role(
+            self,
+            role_name,
+            self.meta,
+            is_cluster=role.is_cluster_role,
+            resources=ensure_list(role.resources),
+            verbs=ensure_list(role.verbs),
+            api_groups=ensure_list(role.api_groups),
+        )
 
 
 class RoleBinding(Construct):
@@ -158,6 +213,7 @@ class RoleBinding(Construct):
     ):
         """
         Instantiate a new (Cluster-)RoleBinding
+
         :param scope: the cdk8s scope in which the resources will be placed
         :param name: the name of the resource.
         :param meta: the metadata of the parent object. Will be used to create the metadata of this role binding.
@@ -234,7 +290,7 @@ def gen_rbac(app) -> None:
     """
     Generates manifests containing RBAC related resources for the corresponding benchmark checks.
     :param app: the cdk8s app which represent the scope of the checks.
-    :returns nothing, the resources will be created directly in the provided app
+    :return: nothing, the resources will be created directly in the provided app
     """
     for i, is_cluster in enumerate([False, True]):
         pfx = "cluster-" if is_cluster else ""
@@ -245,11 +301,9 @@ def gen_rbac(app) -> None:
             descr="The role cluster-admin provides wide-ranging powers over the environment "
             "and should be used only where and when needed",
             check_path=["RoleBinding.roleRef.name", "ClusterRoleBinding.roleRef.name", ".roleRef.name"],
-            is_cluster_binding=is_cluster,
-            is_cluster_role=True,
-            role_name="cluster-admin",
-            role_exists=True,
-            subject_type=SubjectType.Group,  # type is not relevant for this check
+            subject=SubjectConfig(type=SubjectType.Group),
+            role=RoleConfig(name="cluster-admin", exists=True, is_cluster_role=True),
+            binding=RBACBindingConfig(is_cluster_binding=is_cluster),
         )
 
         # wildcards for both resource and verbs affect this as well, but it will be covered in RBAC-003
@@ -260,10 +314,9 @@ def gen_rbac(app) -> None:
                 "read access to secrets",
                 descr="Attackers who have permissions to retrieve the secrets can access sensitive information",
                 check_path=["ClusterRole.rules[].resources", "Role.rules[].resources", ".rules[].resources"],
-                is_cluster_role=is_cluster,
-                role_name=f"secret-read-{verb}",
-                resources="secrets",
-                verbs=verb,
+                role=RoleConfig(
+                    name=f"secret-read-{verb}", is_cluster_role=is_cluster, resources="secrets", verbs=verb
+                ),
             )
 
         RBACCheck(
@@ -272,10 +325,7 @@ def gen_rbac(app) -> None:
             f"{pfx}role use resource wildcard",
             descr="Allowing wildcards violates principle of least privilege",
             check_path=["ClusterRole.rules[].resources", "Role.rules[].resources", ".rules[].resources"],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}all-resource-reader",
-            resources="*",
-            verbs="get",
+            role=RoleConfig(name=f"{pfx}all-resource-reader", is_cluster_role=is_cluster, resources="*", verbs="get"),
         )
         RBACCheck(
             app,
@@ -283,10 +333,7 @@ def gen_rbac(app) -> None:
             f"{pfx}role use verb wildcard",
             descr="Allowing wildcards violates principle of least privilege",
             check_path=["ClusterRole.rules[].verbs", "Role.rules[].verbs", ".rules[].verbs"],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}all-ns-verbs",
-            resources="jobs",
-            verbs="*",
+            role=RoleConfig(name=f"{pfx}all-ns-verbs", is_cluster_role=is_cluster, resources="jobs", verbs="*"),
         )
         RBACCheck(
             app,
@@ -294,11 +341,9 @@ def gen_rbac(app) -> None:
             f"{pfx}role use verb wildcard",
             descr="Allowing wildcards violates principle of least privilege",
             check_path=["ClusterRole.rules[].verbs", "Role.rules[].verbs", ".rules[].verbs"],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}all-ns-verbs",
-            resources="jobs",
-            verbs="get",
-            apiGroups="*",
+            role=RoleConfig(
+                name=f"{pfx}all-ns-verbs", is_cluster_role=is_cluster, resources="jobs", verbs="get", api_groups="*"
+            ),
         )
 
         # wildcard variants are covered with RBAC-003
@@ -316,10 +361,7 @@ def gen_rbac(app) -> None:
                     ".rules[].verbs",
                     ".rules[].resources",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}pod-{verb}",
-                resources="pod",
-                verbs=verb,
+                role=RoleConfig(name=f"{pfx}pod-{verb}", is_cluster_role=is_cluster, resources="pod", verbs=verb),
             )
 
         RBACCheck(
@@ -332,10 +374,9 @@ def gen_rbac(app) -> None:
                 "Role.rules[].resources",
                 ".rules[].resources",
             ],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}pod-attach",
-            resources="pods/attach",
-            verbs="create",
+            role=RoleConfig(
+                name=f"{pfx}pod-attach", is_cluster_role=is_cluster, resources="pods/attach", verbs="create"
+            ),
         )
 
         RBACCheck(
@@ -348,10 +389,7 @@ def gen_rbac(app) -> None:
                 "Role.rules[].resources",
                 ".rules[].resources",
             ],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}pod-exec",
-            resources="pods/exec",
-            verbs="create",
+            role=RoleConfig(name=f"{pfx}pod-exec", is_cluster_role=is_cluster, resources="pods/exec", verbs="create"),
         )
 
         RBACCheck(
@@ -364,12 +402,13 @@ def gen_rbac(app) -> None:
                 "RoleBinding.subjects[].name",
                 ".subjects[].name",
             ],
-            is_cluster_binding=is_cluster,
-            is_cluster_role=is_cluster,
-            subject="default",
-            subject_type=SubjectType.SA,
-            role_name=f"{pfx}role-bind-default-sa",
-            resources=[],  # create roles without rules
+            subject=SubjectConfig(name="default", type=SubjectType.SA),
+            role=RoleConfig(
+                name=f"{pfx}role-bind-default-sa",
+                is_cluster_role=is_cluster,
+                resources=[],  # create roles without rules
+            ),
+            binding=RBACBindingConfig(is_cluster_binding=is_cluster),
         )
 
         for j, verb in enumerate(["get", "list", "watch"]):
@@ -384,10 +423,9 @@ def gen_rbac(app) -> None:
                     "Role.rules[].resources",
                     ".rules[].resources",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}pod-forward",
-                resources="pods/portforward",
-                verbs="create",
+                role=RoleConfig(
+                    name=f"{pfx}pod-forward", is_cluster_role=is_cluster, resources="pods/portforward", verbs="create"
+                ),
             )
 
         RBACCheck(
@@ -403,10 +441,12 @@ def gen_rbac(app) -> None:
                 "Role.rules[].verbs",
                 ".rules[].verbs",
             ],
-            is_cluster_role=is_cluster,
-            role_name=f"{pfx}role-bind-default-sa",
-            resources=["users", "groups", "serviceaccounts"],
-            verbs="impersonate",
+            role=RoleConfig(
+                name=f"{pfx}role-bind-default-sa",
+                is_cluster_role=is_cluster,
+                resources=["users", "groups", "serviceaccounts"],
+                verbs="impersonate",
+            ),
         )
 
         for j, res in enumerate(["rolebindings", "clusterrolebindings", "roles", "clusterroles"]):
@@ -423,10 +463,9 @@ def gen_rbac(app) -> None:
                     ".rules[].resources",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}role-destroy-resources",
-                resources=res,
-                verbs="bind",
+                role=RoleConfig(
+                    name=f"{pfx}role-destroy-resources", is_cluster_role=is_cluster, resources=res, verbs="bind"
+                ),
             )
 
         for j, res in enumerate(["rolebindings", "clusterrolebindings", "roles", "clusterroles"]):
@@ -443,10 +482,9 @@ def gen_rbac(app) -> None:
                     ".rules[].resources",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}role-escalate-resources",
-                resources=res,
-                verbs="escalate",
+                role=RoleConfig(
+                    name=f"{pfx}role-escalate-resources", is_cluster_role=is_cluster, resources=res, verbs="escalate"
+                ),
             )
 
         for j, verb in enumerate(["get", "list", "watch"]):
@@ -463,20 +501,22 @@ def gen_rbac(app) -> None:
                     ".rules[].resources",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}role-disclose-info",
-                resources=[
-                    "secrets",
-                    "pods",
-                    "services",
-                    "deployments",
-                    "replicasets",
-                    "daemonsets",
-                    "statefulsets",
-                    "jobs",
-                    "cronjobs",
-                ],
-                verbs=verb,
+                role=RoleConfig(
+                    name=f"{pfx}role-disclose-info",
+                    is_cluster_role=is_cluster,
+                    resources=[
+                        "secrets",
+                        "pods",
+                        "services",
+                        "deployments",
+                        "replicasets",
+                        "daemonsets",
+                        "statefulsets",
+                        "jobs",
+                        "cronjobs",
+                    ],
+                    verbs=verb,
+                ),
             )
 
         for j, verb in enumerate(["delete", "deletecollection"]):
@@ -490,20 +530,22 @@ def gen_rbac(app) -> None:
                     "Role.rules[].verbs",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}role-destroy-resources",
-                resources=[
-                    "secrets",
-                    "pods",
-                    "services",
-                    "deployments",
-                    "replicasets",
-                    "daemonsets",
-                    "statefulsets",
-                    "jobs",
-                    "cronjobs",
-                ],
-                verbs=verb,
+                role=RoleConfig(
+                    name=f"{pfx}role-destroy-resources",
+                    is_cluster_role=is_cluster,
+                    resources=[
+                        "secrets",
+                        "pods",
+                        "services",
+                        "deployments",
+                        "replicasets",
+                        "daemonsets",
+                        "statefulsets",
+                        "jobs",
+                        "cronjobs",
+                    ],
+                    verbs=verb,
+                ),
             )
 
         for j, verb in enumerate(["delete", "deletecollection"]):
@@ -517,10 +559,9 @@ def gen_rbac(app) -> None:
                     "Role.rules[].verbs",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}-destroy-events",
-                resources="events",
-                verbs=verb,
+                role=RoleConfig(
+                    name=f"{pfx}-destroy-events", is_cluster_role=is_cluster, resources="events", verbs=verb
+                ),
             )
 
         for j, verb in enumerate(["update", "patch"]):
@@ -534,10 +575,9 @@ def gen_rbac(app) -> None:
                     "Role.rules[].verbs",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}role-poison-dns",
-                resources="configmaps",
-                verbs=verb,
+                role=RoleConfig(
+                    name=f"{pfx}role-poison-dns", is_cluster_role=is_cluster, resources="configmaps", verbs=verb
+                ),
             )
 
         for j, verb in enumerate(["create", "update", "patch"]):
@@ -546,7 +586,6 @@ def gen_rbac(app) -> None:
                 f"RBAC-021-{(j+1) + (i*3)}",
                 name=f"only admins should be able to {verb} persistent volumes",
                 descr="",
-                role_name=f"pv-{verb}",
                 check_path=[
                     "ClusterRole.rules[].resources",
                     "ClusterRole.rules[].verbs",
@@ -555,10 +594,10 @@ def gen_rbac(app) -> None:
                     ".rules[].resources",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                resources="persistentvolumes",
-                subject=f"rbac-021-pv-{verb}",
-                verbs=verb,
+                subject=SubjectConfig(name=f"rbac-021-pv-{verb}"),
+                role=RoleConfig(
+                    name=f"pv-{verb}", is_cluster_role=is_cluster, resources="persistentvolumes", verbs=verb
+                ),
             )
 
         for j, verb in enumerate(["create", "update", "patch"]):
@@ -575,10 +614,9 @@ def gen_rbac(app) -> None:
                     ".rules[].resources",
                     ".rules[].verbs",
                 ],
-                is_cluster_role=is_cluster,
-                role_name=f"{pfx}role-{verb}-netpol",
-                resources="networkpolicies",
-                verbs=verb,
+                role=RoleConfig(
+                    name=f"{pfx}role-{verb}-netpol", is_cluster_role=is_cluster, resources="networkpolicies", verbs=verb
+                ),
             )
 
     RBACCheck(
@@ -586,14 +624,13 @@ def gen_rbac(app) -> None:
         "RBAC-016",
         "serviceaccount without binding",
         descr="all service accounts should be bound to roles",
-        role_name=None,
-        subject_type=SubjectType.SA,
         check_path=[
             "ClusterRoleBinding.subjects[].name",
             "RoleBinding.subjects[].name",
             ".subjects[].name",
         ],
-        subject="rbac-016-ronin-sa",
+        subject=SubjectConfig(name="rbac-016-ronin-sa", type=SubjectType.SA),
+        role=RoleConfig(name=None),
     )
 
     roles = [f"role-{i}-too-much" for i in range(10)]
@@ -602,16 +639,13 @@ def gen_rbac(app) -> None:
         "RBAC-017",
         "too many roles per subject",
         descr="",
-        role_name=roles,
-        subject_type=SubjectType.User,
         check_path=[
             "ClusterRoleBinding.subjects[].name",
             "RoleBinding.subjects[].name",
             ".subjects[].name",
         ],
-        subject="poly-role-sa",
-        resources="services",
-        verbs="get",
+        subject=SubjectConfig(name="poly-role-sa", type=SubjectType.User),
+        role=RoleConfig(name=roles, resources="services", verbs="get"),
     )
 
     # for subject_ns in ["default", "kube-system"]:

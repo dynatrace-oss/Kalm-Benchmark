@@ -1,11 +1,9 @@
-from typing import Optional
-
 from cdk8s import Chart
 from constructs import Construct
 
+from ..utils.data.validation import sanitize_kubernetes_name as sanitize_name
 from .cdk8s_imports import k8s
 from .constants import MAIN_NS, CheckKey, CheckStatus
-from .utils import sanitize_name
 
 
 class Check(Chart):
@@ -24,7 +22,7 @@ class Check(Chart):
         check_path: str | list[str] | None = None,
         forwarded_kwargs: dict | None = None,  # don't process other kwargs for the resources
         namespace: str = MAIN_NS,
-        annotations: Optional[dict | bool] = True,
+        annotations: dict | bool = True,
     ):
         """
         Initialize a new check with the specified meta information
@@ -34,10 +32,11 @@ class Check(Chart):
         :param expect: the expected outcome. Either "ok" or "fail".
         :param descr: an optional description
         :param check_path: the path(s) which is the essence of the check
+        :param forwarded_kwargs: don't process other kwargs for the resources
         :param namespace: the optional namespace of the generated resources.
         By default, they will be placed in the main namespace for the benchmark.
         If a resource is not namespaced, this field will be ignored.
-        :param kwargs: any additional keyword arguments will be ignored
+        :param annotations: optional annotations for the check
         """
         # avoid duplicate check id prefix, if name already is constructed outside
         _name = f"{check_id}-{name}" if not name.startswith(check_id.lower()) else name
@@ -67,10 +66,10 @@ class Meta(k8s.ObjectMeta):
     def __init__(
         self,
         *,
-        annotations: Optional[dict] = None,
-        name: Optional[str] = None,
-        labels: Optional[dict] = None,
-        namespace: Optional[str] = None,
+        annotations: dict | None = None,
+        name: str | None = None,
+        labels: dict | None = None,
+        namespace: str | None = None,
         **kwargs,
     ) -> None:
         if labels is None:

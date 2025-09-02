@@ -1,42 +1,26 @@
-from typing import Dict, List, Optional
-
 import pandas as pd
+from loguru import logger
+
+from kalm_benchmark.evaluation.ccss.ccss_converter import CCSSConverter
+from kalm_benchmark.utils.data.normalization import normalize_scanner_name
+
+logger = logger.bind(component="ui")
 
 
-def normalize_scanner_names_in_dataframe(df: pd.DataFrame, name_column: str = "scanner_name") -> pd.DataFrame:
-    """Standardize scanner name normalization across all UI functions.
-
-    Args:
-        df: DataFrame containing scanner names
-        name_column: Column name containing scanner names
-
-    Returns:
-        DataFrame with normalized scanner names
-    """
-    from kalm_benchmark.ui._pages.scanner_comparison import normalize_scanner_name
-
-    df = df.copy()
-    df[name_column] = df[name_column].apply(normalize_scanner_name)
-    return df
-
-
-def group_scanner_summaries(summaries: List[Dict]) -> pd.DataFrame:
+def group_scanner_summaries(summaries: list[dict]) -> pd.DataFrame:
     """Common pattern for processing evaluation summaries.
 
-    Args:
-        summaries: List of evaluation summary dictionaries
-
-    Returns:
-        DataFrame with grouped and normalized scanner metrics
+    : param summaries: list of evaluation summary dictionaries
+    :return: DataFrame with grouped and normalized scanner metrics
     """
     if not summaries:
+        logger.warning("No summaries provided to group_scanner_summaries")
         return pd.DataFrame()
 
-    # Normalize scanner names
+    logger.debug(f"Processing {len(summaries)} scanner summaries for grouping")
+
     summary_list = []
     for summary in summaries:
-        from kalm_benchmark.ui._pages.scanner_comparison import normalize_scanner_name
-
         normalized_name = normalize_scanner_name(summary.get("scanner_name", ""))
         summary_normalized = summary.copy()
         summary_normalized["scanner_name"] = normalized_name
@@ -44,7 +28,6 @@ def group_scanner_summaries(summaries: List[Dict]) -> pd.DataFrame:
 
     perf_df = pd.DataFrame(summary_list)
 
-    # Group by normalized scanner names and take the best metrics for each
     perf_df = (
         perf_df.groupby("scanner_name")
         .agg(
@@ -58,19 +41,19 @@ def group_scanner_summaries(summaries: List[Dict]) -> pd.DataFrame:
         .reset_index()
     )
 
+    logger.info(f"Successfully grouped {len(perf_df)} unique scanner summaries")
     return perf_df
 
 
-def fetch_severity_data(unified_service, has_ccss_column: bool) -> List[Dict]:
-    """Extract severity data fetching and normalization.
+def fetch_severity_data(unified_service, has_ccss_column: bool) -> list[dict]:
+    """Severity data fetching and normalization.
 
-    Args:
-        unified_service: Service for database access
-        has_ccss_column: Whether CCSS scoring column exists
-
-    Returns:
-        List of severity data records
+    :param unified_service: Service for database access
+    :param has_ccss_column: Whether CCSS scoring column exists
+    :return: list of severity data records
     """
+    logger.debug(f"Fetching severity data, CCSS column available: {has_ccss_column}")
+
     with unified_service.db._get_connection() as conn:
         cursor = conn.cursor()
 
@@ -78,13 +61,13 @@ def fetch_severity_data(unified_service, has_ccss_column: bool) -> List[Dict]:
         if has_ccss_column:
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     UPPER(TRIM(scanner_name)) as scanner_name,
                     severity,
                     COUNT(*) as finding_count,
                     AVG(CASE WHEN ccss_score IS NOT NULL THEN ccss_score END) as avg_ccss_score
-                FROM scanner_results 
-                WHERE severity IS NOT NULL 
+                FROM scanner_results
+                WHERE severity IS NOT NULL
                     AND severity != ''
                     AND severity != 'UNKNOWN'
                 GROUP BY UPPER(TRIM(scanner_name)), severity
@@ -94,12 +77,12 @@ def fetch_severity_data(unified_service, has_ccss_column: bool) -> List[Dict]:
         else:
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     UPPER(TRIM(scanner_name)) as scanner_name,
                     severity,
                     COUNT(*) as finding_count
-                FROM scanner_results 
-                WHERE severity IS NOT NULL 
+                FROM scanner_results
+                WHERE severity IS NOT NULL
                     AND severity != ''
                     AND severity != 'UNKNOWN'
                 GROUP BY UPPER(TRIM(scanner_name)), severity
@@ -107,39 +90,18 @@ def fetch_severity_data(unified_service, has_ccss_column: bool) -> List[Dict]:
             """
             )
 
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        logger.info(f"Retrieved {len(result)} severity data records")
+        return result
 
 
-def normalize_severity_dataframe(severity_data: List, has_ccss_column: bool) -> pd.DataFrame:
-    """Extract DataFrame creation and normalization logic.
+def normalize_severity_dataframe(severity_data: list, has_ccss_column: bool) -> pd.DataFrame:
+    """DataFrame creation and normalization logic.
 
-    Args:
-        severity_data: Raw severity data from database
-        has_ccss_column: Whether CCSS scoring is available
-
-    Returns:
-        Normalized DataFrame with severity information
+    :param severity_data: Raw severity data from database
+    :param has_ccss_column: Whether CCSS scoring is available
+    :returns: Normalized DataFrame with severity information
     """
-    try:
-        from kalm_benchmark.evaluation.ccss.ccss_converter import CCSSConverter
-    except ImportError:
-        # Fallback if CCSS module is not available
-        class CCSSConverter:
-            @staticmethod
-            def _severity_to_score(severity: str) -> Optional[float]:
-                severity_map = {
-                    "CRITICAL": 9.0,
-                    "HIGH": 7.0,
-                    "DANGER": 7.0,
-                    "MEDIUM": 4.0,
-                    "WARNING": 2.5,
-                    "LOW": 2.0,
-                    "INFO": 1.0,
-                }
-                return severity_map.get(severity.upper())
-
-    from kalm_benchmark.ui._pages.scanner_comparison import normalize_scanner_name
-
     severity_list = []
     for row in severity_data:
         scanner_name, severity, count = row["scanner_name"], row["severity"], row["finding_count"]
@@ -159,17 +121,17 @@ def normalize_severity_dataframe(severity_data: List, has_ccss_column: bool) -> 
         severity_df.groupby(["Scanner", "Severity", "Score"]).agg({"Count": "sum", "Avg_CCSS": "mean"}).reset_index()
     )
 
+    logger.info(
+        f"Severity dataframe normalized: {len(severity_df)} rows across {severity_df['Scanner'].nunique()} scanners"
+    )
     return severity_df
 
 
 def calculate_severity_percentages(severity_df: pd.DataFrame) -> pd.DataFrame:
-    """Extract percentage calculation logic.
+    """Percentage calculation logic.
 
-    Args:
-        severity_df: DataFrame with severity counts
-
-    Returns:
-        DataFrame with added percentage columns
+    :param severity_df: DataFrame with severity counts
+    :return: DataFrame with added percentage columns
     """
     severity_pct_df = severity_df.copy()
     scanner_totals = severity_pct_df.groupby("Scanner")["Count"].sum().reset_index()
@@ -181,13 +143,10 @@ def calculate_severity_percentages(severity_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_normalized_performance_data(unified_service) -> pd.DataFrame:
-    """Common function for getting normalized performance data.
+    """Get normalized performance data.
 
-    Args:
-        unified_service: Service for accessing evaluation summaries
-
-    Returns:
-        Normalized performance DataFrame
+    :param unified_service: Service for accessing evaluation summaries
+    return: Normalized performance DataFrame
     """
     summaries = unified_service.create_evaluation_summary_dataframe()
     if not summaries:

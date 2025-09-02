@@ -1,10 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from enum import auto
 from functools import lru_cache
-
-# itertools.product import removed - no longer needed after merge simplification
 from pathlib import Path
-from typing import Optional
 
 import cdk8s
 import pandas as pd
@@ -18,9 +15,20 @@ from kalm_benchmark.manifest_generator.constants import (
     CheckStatus,
 )
 from kalm_benchmark.manifest_generator.gen_manifests import generate_manifests
+from kalm_benchmark.utils.constants import (
+    MAX_EXPECTED_CHECKS,
+    MAX_EXPECTED_RESOURCES,
+    MAX_RISK_SCORE,
+    SEVERITY_WEIGHTS,
+)
 
-from .category_mapping import get_category_by_prefix, get_category_by_specific_check
+from ..utils.category_mapping import (
+    get_category_by_prefix,
+    get_category_by_specific_check,
+)
 from .scanner.scanner_evaluator import CheckCategory, CheckResult, ScannerBase
+
+pd.set_option("future.no_silent_downcasting", True)
 
 
 class Metric(StrEnum):
@@ -54,8 +62,8 @@ class Col(SnakeCaseStrEnum):
 class ScannerInfo:
     # note: the order of the fields dictates the initial order of the columns in the UI
     name: str
-    image: Optional[str] = None
-    version: Optional[str] = None
+    image: str | None = None
+    version: str | None = None
     score: float = 0.0
     coverage: float = 0.0
     cat_admission_ctrl: str = "0/0"
@@ -112,6 +120,7 @@ def calculate_score(df: pd.DataFrame, metric: Metric = Metric.F1) -> float:
     Calculate a score from the confusion matrix of the expected and actual check results.
     This calculation excludes missing check results or expected checks and focuses only
     on cases where both the expected and actual values are known.
+
     :param df: the dataframe from which the confusion matrix will be determined
     :param metric: the type of metric used as the score.
     Currently, F1-score (default) and accuracy are supported.
@@ -140,6 +149,7 @@ def calculate_score(df: pd.DataFrame, metric: Metric = Metric.F1) -> float:
 def classify_result(row: pd.Series) -> ResultType:
     """
     Classify if a result (represented as pandas series) is a "covered", "missing" or "extra" check.
+
     :param row: a check result represented as a row (i.e. a pandas Series)
     :returns: the type of result
     """
@@ -154,6 +164,7 @@ def classify_result(row: pd.Series) -> ResultType:
 def classify_results(df: pd.DataFrame) -> pd.DataFrame:
     """
     Classify every result in a dataframe with the execution results into one of the ResultType
+
     :param df: the dataframe containing the execution results
     :returns: the same dataframe with the additional column "result_type"
     """
@@ -164,6 +175,7 @@ def classify_results(df: pd.DataFrame) -> pd.DataFrame:
 def calculate_coverage(df: pd.DataFrame) -> float:
     """
     Calculate the coverage of the checks implemented by a scanner against the benchmark manifests.
+
     :param df: the dataframe containing the results of the execution.
     :returns: the coverage as a single numerical value
     """
@@ -192,10 +204,11 @@ def evaluate_scanner(
     scanner: ScannerBase,
     results: list[CheckResult],
     keep_redundant_checks: bool = False,
-):
+) -> pd.DataFrame | None:
     """
     Loads the results of the specified scanner from the `data` folder. It's expected, that the scanner results
     is named after the scanner itself. Optionally a file format can be specified.
+
     :param scanner: the name of the scanner and consequently the name of the result file
     :param results: the collection of scan results of the scanner
     :param keep_redundant_checks: if false then all checks that pass, yet have no 'expected' status will be removed
@@ -205,24 +218,20 @@ def evaluate_scanner(
         return None
     df_scanner = pd.DataFrame(results)
 
-    # Ensure column name consistency for merge operation
-    # CheckResult objects create columns that match field names
-    # The merge function expects both DataFrames to have consistent column naming
-
     # use the check id derived from the object name as fallback if none could be extracted from scanner
-    check_id_pattern = r"^(\w+(?:-\d+)+)"  # match the first letters and then the numbers following it
+    check_id_pattern = r"^(\w+(?:-\d+)+)"
     extracted_check_id = df_scanner["obj_name"].str.extract(check_id_pattern, expand=False)
-    df_scanner["check_id"] = df_scanner["check_id"].fillna(extracted_check_id).str.upper()
 
-    # use outer join to ensure coverage can be properly analysed
+    df_scanner["check_id"] = df_scanner["check_id"].infer_objects(copy=False).fillna(extracted_check_id)
+    df_scanner["check_id"] = df_scanner["check_id"].astype(str).str.upper().replace("NONE", None)
+
     df_bench = load_benchmark()
     df = merge_dataframes(df_bench, df_scanner, id_column=Col.CheckId)
 
-    # Ensure all expected columns exist for downstream processing
     required_cols = [Col.PathToCheck, Col.CheckedPath, Col.ScannerCheckId, Col.ScannerCheckName]
     for col in required_cols:
         if col not in df.columns:
-            df[col] = None  # Add missing columns with null values
+            df[col] = None
 
     if not keep_redundant_checks:
         df = _filter_redundant_extra_checks(df)
@@ -244,8 +253,7 @@ def merge_dataframes(
     df1: pd.DataFrame,
     df2: pd.DataFrame,
     id_column: str | tuple[str, str],
-    path_columns: Optional[str | list[str, str]] = None,
-    keep_matched_paths: bool = False,
+    path_columns: str | list[str] | None = None,
 ) -> pd.DataFrame:
     """Merge two dataframes on check ID with path matching support.
 
@@ -257,15 +265,10 @@ def merge_dataframes(
     :return: merged dataframe
     """
     if path_columns is not None and isinstance(path_columns, str):
-        # Handle path-aware merging
         return _merge_with_path_matching(df1, df2, id_column, path_columns)
 
-    # Simple merge without path matching
     if isinstance(id_column, str):
-        # Use suffixes to avoid column conflicts
         df = df1.merge(df2, on=id_column, how="outer", suffixes=("_bench", "_scanner"))
-
-        # Find all columns that got suffixed due to conflicts
         all_suffixed_cols = [col for col in df.columns if col.endswith(("_bench", "_scanner"))]
         base_col_names = set()
         for col in all_suffixed_cols:
@@ -274,21 +277,17 @@ def merge_dataframes(
             elif col.endswith("_scanner"):
                 base_col_names.add(col[:-8])  # Remove '_scanner'
 
-        # Coalesce overlapping columns: prefer scanner data, fallback to benchmark
         for base_col in base_col_names:
             bench_col = f"{base_col}_bench"
             scanner_col = f"{base_col}_scanner"
 
             if bench_col in df.columns and scanner_col in df.columns:
-                # Both columns exist - combine them (prefer scanner data)
                 df[base_col] = df[scanner_col].combine_first(df[bench_col])
                 df = df.drop(columns=[bench_col, scanner_col])
             elif bench_col in df.columns:
-                # Only benchmark column exists
                 df[base_col] = df[bench_col]
                 df = df.drop(columns=[bench_col])
             elif scanner_col in df.columns:
-                # Only scanner column exists
                 df[base_col] = df[scanner_col]
                 df = df.drop(columns=[scanner_col])
 
@@ -300,7 +299,16 @@ def merge_dataframes(
 
 
 def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: str, path_column: str) -> pd.DataFrame:
-    """Merge dataframes with path matching logic for pipe-separated paths."""
+    """Merge dataframes with path matching logic for pipe-separated paths.
+    Performs intelligent matching based on both ID and path columns,
+    handling cases where paths are pipe-separated lists.
+
+    :param df1: the first dataframe to merge
+    :param df2: the second dataframe to merge
+    :param id_column: the column name to use for initial grouping
+    :param path_column: the column name containing paths for matching
+    :return: the merged dataframe with matched rows combined
+    """
     results = []
 
     # Get all unique check IDs from both dataframes
@@ -311,15 +319,12 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
         df2_rows = df2[df2[id_column] == check_id]
 
         if df1_rows.empty and not df2_rows.empty:
-            # Only in df2
             for _, row2 in df2_rows.iterrows():
                 results.append(_combine_rows(None, row2, path_column))
         elif not df1_rows.empty and df2_rows.empty:
-            # Only in df1
             for _, row1 in df1_rows.iterrows():
                 results.append(_combine_rows(row1, None, path_column))
         elif not df1_rows.empty and not df2_rows.empty:
-            # In both - need path matching
             matched_pairs = set()
 
             for _, row1 in df1_rows.iterrows():
@@ -328,12 +333,10 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
                         results.append(_combine_rows(row1, row2, path_column))
                         matched_pairs.add((row1.name, row2.name))
 
-            # Add unmatched rows from df1
             for _, row1 in df1_rows.iterrows():
                 if not any(pair[0] == row1.name for pair in matched_pairs):
                     results.append(_combine_rows(row1, None, path_column))
 
-            # Add unmatched rows from df2
             for _, row2 in df2_rows.iterrows():
                 if not any(pair[1] == row2.name for pair in matched_pairs):
                     results.append(_combine_rows(None, row2, path_column))
@@ -342,18 +345,22 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
 
 
 def _paths_match(path1, path2):
-    """Check if two paths match, handling pipe-separated multiple paths."""
+    """Check if two paths match, handling pipe-separated multiple paths.
+    Supports exact matching and cross-matching of pipe-separated path lists.
+
+    :param path1: the first path or pipe-separated list of paths
+    :param path2: the second path or pipe-separated list of paths
+    :return: True if any path from path1 matches any path from path2
+    """
     if pd.isna(path1) or pd.isna(path2):
         return pd.isna(path1) and pd.isna(path2)
 
     if path1 == path2:
         return True
 
-    # Handle pipe-separated paths
     paths1 = str(path1).split("|") if "|" in str(path1) else [str(path1)]
     paths2 = str(path2).split("|") if "|" in str(path2) else [str(path2)]
 
-    # Check if any path from paths1 matches any path from paths2
     for p1 in paths1:
         for p2 in paths2:
             if p1.strip() == p2.strip():
@@ -363,19 +370,25 @@ def _paths_match(path1, path2):
 
 
 def _combine_rows(row1, row2, path_column):
-    """Combine two rows from different dataframes."""
+    """Combine two rows from different dataframes, handling missing values.
+    Merges row data by preferring non-null values from either row,
+    with special handling for the specified path column.
+
+    :param row1: the first row (pandas Series) or None
+    :param row2: the second row (pandas Series) or None
+    :param path_column: the name of the path column that needs special handling
+    :return: a dictionary containing the combined row data
+    """
     if row1 is None:
         return row2.to_dict()
     elif row2 is None:
         return row1.to_dict()
     else:
-        # Both exist - combine them (prefer row2 for conflicts, row1 for path)
         combined = row1.to_dict()
         for col, val in row2.items():
             if col not in combined or pd.isna(combined[col]):
                 combined[col] = val
             elif col == path_column:
-                # For path column, use the more specific path
                 combined[col] = val if not pd.isna(val) else combined[col]
         return combined
 
@@ -394,12 +407,14 @@ def _filter_redundant_extra_checks(df: pd.DataFrame) -> pd.DataFrame:
     return df[~(no_expectation & no_scanner_alert)]
 
 
-# Path comparison functions removed - simplified merge no longer needs complex path matching
-
-
 def _add_comparison_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Add temporary comparison columns for analysis purposes.
+    The comparison columns are used for internal analysis and are expected to be removed later.
+
+    :param df: the dataframe to which comparison columns will be added
+    :return: the dataframe with additional comparison columns
+    """
     # the 2 "compare" columns columns are temporary analysis instruments and are bound to be removed
-    # Since we simplified the merge, expected_2 no longer exists - just check if expected column exists
     compare_name = df["obj_name"] == df["name"] if "name" in df.columns else pd.Series([False] * len(df))
     compare_expected = pd.Series([True] * len(df))  # Always true since we only have one expected column now
     return df.assign(compare_name=compare_name, compare_expected=compare_expected)
@@ -431,8 +446,19 @@ def _coalesce_columns(
     df: pd.DataFrame,
     primary_col: str,
     secondary_col: str,
-    result_name: Optional[str] = None,
+    result_name: str | None = None,
 ) -> pd.DataFrame:
+    """Merge two columns by preferring values from the primary column over the secondary column.
+    Creates a new column that takes non-null values from the primary column first,
+    falling back to the secondary column if the primary is null or empty.
+
+    :param df: the dataframe containing the columns to merge
+    :param primary_col: the name of the primary column (preferred values)
+    :param secondary_col: the name of the secondary column (fallback values)
+    :param result_name: optional name for the result column (defaults to primary_col)
+    :return: the dataframe with the merged column and original columns removed
+    """
+
     def _pick_value(row: pd.Series, primary: str, secondary: str) -> str:
         if row[primary] and not pd.isnull(row[primary]):
             return row[primary]
@@ -485,7 +511,7 @@ def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     return df_dedup
 
 
-def categorize_by_check_id(check_id: Optional[str]) -> str:
+def categorize_by_check_id(check_id: str | None) -> str | None:
     """
     Assign a category to the check depending on the prefix of the check id (i.e. the first part of the id)
     Uses configuration-driven approach to reduce cognitive complexity.
@@ -531,6 +557,7 @@ def tabulate_manifests(manifests: list[cdk8s.Chart]) -> pd.DataFrame:
 
 def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Re-order the most important columns in the given dataframe.
+
     :param df: the dataframe whose columns will be re-ordered
     :return: a copy of the dataframe with the columns in a predefined order.
     """
@@ -548,7 +575,7 @@ def order_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df[ordered_cols + remaining_cols]
 
 
-@lru_cache
+@lru_cache(maxsize=128)
 def load_benchmark(with_categories: bool = False) -> pd.DataFrame:
     """
     Load the checks from the generated manifests, along with their id and additional meta information
@@ -572,9 +599,9 @@ class EvaluationSummary:
     coverage: float
     extra_checks: int
     missing_checks: int
-    ccss_alignment_score: Optional[float] = None
-    ccss_correlation: Optional[float] = None
-    total_ccss_findings: Optional[int] = None
+    ccss_alignment_score: float | None = None
+    ccss_correlation: float | None = None
+    total_ccss_findings: int | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -584,9 +611,10 @@ class EvaluationSummary:
         return EvaluationSummary(**data)
 
 
-def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: Optional[str] = None) -> EvaluationSummary:
+def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | None = None) -> EvaluationSummary:
     """
     Create a summary of the evaluation results.
+
     :param df: the dataframe containing the execution results
     :param metric: the metrics used for the calculation of the score
     :param version: the version of the tool when the results were created
@@ -621,6 +649,13 @@ def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: Option
 
 
 def _consolidate_conflicting_checks(df: pd.DataFrame):
+    """Consolidate conflicting check results by selecting the worst case scenario.
+    When multiple results exist for the same check, prioritize cases where
+    the expected result differs from the actual result (i.e., false positives/negatives).
+
+    :param df: the dataframe containing potentially conflicting check results
+    :return: a single row representing the consolidated result
+    """
     if len(df) == 1:
         return df
     else:
@@ -628,8 +663,8 @@ def _consolidate_conflicting_checks(df: pd.DataFrame):
 
 
 def check_summary_per_category(df: pd.DataFrame) -> dict:
-    """
-    Show the distribution of checks result types per category
+    """Show the distribution of checks result types per category
+
     :param df: the dataframe which will be displayed
     :return: the summary of checks per category as dictionary
     """
@@ -695,6 +730,10 @@ def create_benchmark_overview(dest_dir: Path) -> list[str]:
 
 
 def create_benchmark_overview_latex_table() -> str:
+    """Create a LaTeX table with an overview of all benchmark checks grouped by categories.
+
+    :return: a LaTeX table string with benchmark check overview
+    """
     df_bench = load_benchmark(with_categories=True)
 
     tbl = df_bench.to_latex(
@@ -723,6 +762,14 @@ def get_category_sum(category_summary: pd.Series | None, show_extra: bool = True
 
 
 def _determine_misclassified_checks(df_bench: pd.DataFrame, df_missing_checks: pd.DataFrame):
+    """Identify checks that are marked as missing but are actually implemented.
+    This quality check helps detect inconsistencies between the benchmark checks
+    and the missing checks configuration.
+
+    :param df_bench: the dataframe containing implemented benchmark checks
+    :param df_missing_checks: the dataframe containing supposedly missing checks
+    :return: a list of check IDs that are misclassified as missing
+    """
     missing_ids = tuple(df_missing_checks[Col.CheckId].unique())
     implemented_ids = df_bench[Col.CheckId].unique()
     misclassified_checks = [c for c in implemented_ids if c.startswith(missing_ids)]
@@ -738,3 +785,131 @@ def snake_case_to_title(text: str) -> str:
     :return: the transformed text
     """
     return " ".join([t.title() for t in text.split("_")])
+
+
+def evaluate_helm_chart_scanner(
+    scanner: ScannerBase,
+    results: list[CheckResult],
+) -> EvaluationSummary | None:
+    """
+    Evaluate scanner results specifically for Helm chart scans.
+    Unlike benchmark evaluation, this focuses on findings distribution and coverage.
+
+    :param scanner: the scanner instance
+    :param results: the collection of helm chart scan results
+    :return: evaluation summary adapted for helm chart context
+    """
+    if len(results) == 0:
+        return None
+
+    # Convert CheckResult objects to DataFrame
+    result_data = []
+    for result in results:
+        result_data.append(
+            {
+                "scanner_check_id": getattr(result, "scanner_check_id", ""),
+                "scanner_check_name": getattr(result, "scanner_check_name", ""),
+                "severity": getattr(result, "severity", ""),
+                "kind": getattr(result, "kind", ""),
+                "obj_name": getattr(result, "obj_name", ""),
+                "got": getattr(result, "got", "alert"),
+            }
+        )
+
+    df_scanner = pd.DataFrame(result_data)
+
+    # Calculate meaningful coverage based on Kubernetes resource types covered
+    total_findings = len(results)
+    unique_check_types = (
+        df_scanner["scanner_check_name"].nunique() if not df_scanner["scanner_check_name"].isna().all() else 0
+    )
+    unique_resource_types = df_scanner["kind"].nunique() if not df_scanner["kind"].isna().all() else 0
+
+    # Coverage based on check diversity and resource type diversity
+    # Normalize to 0-1 scale: more unique checks and resource types = better coverage
+    check_diversity = min(1.0, unique_check_types / MAX_EXPECTED_CHECKS)
+    resource_diversity = min(1.0, unique_resource_types / MAX_EXPECTED_RESOURCES)
+    coverage = (check_diversity + resource_diversity) / 2.0  # Average of both factors
+
+    checks_per_category = _check_category(df_scanner, scanner)
+
+    # Calculate a risk-based score (0-1 scale, lower risk = higher score)
+    high_severity_count = sum(
+        1
+        for r in results
+        if getattr(r, "severity", "") and getattr(r, "severity", "").upper() in ["HIGH", "CRITICAL", "DANGER"]
+    )
+    medium_severity_count = sum(
+        1 for r in results if getattr(r, "severity", "") and getattr(r, "severity", "").upper() in ["MEDIUM", "WARNING"]
+    )
+
+    risk_penalty = (high_severity_count * SEVERITY_WEIGHTS["HIGH"]) + (
+        medium_severity_count * SEVERITY_WEIGHTS["MEDIUM"]
+    )
+    risk_score = max(0.0, MAX_RISK_SCORE - risk_penalty) / MAX_RISK_SCORE
+
+    return EvaluationSummary(
+        version=getattr(scanner, "NAME", "unknown"),
+        checks_per_category=checks_per_category if checks_per_category is not None else {},
+        score=risk_score,
+        coverage=coverage,
+        extra_checks=total_findings,  # All helm findings are "extra" compared to benchmark
+        missing_checks=0,  # Not applicable for helm charts
+        ccss_alignment_score=None,  # Compute later when CCSS data available
+        ccss_correlation=None,
+        total_ccss_findings=total_findings,
+    )
+
+
+def _check_category(df_scanner: pd.DataFrame, scanner: ScannerBase):
+    """Categorize scanner findings by check category and count occurrences.
+    Uses the scanner's categorization method if available, otherwise falls back
+    to pattern-based categorization.
+
+    :param df_scanner: the dataframe containing scanner results
+    :param scanner: the scanner instance used for categorization
+    :return: a dictionary mapping categories to finding counts and unique check counts
+    """
+    checks_per_category = {}
+    for category in CheckCategory:
+        category_findings = []
+        for _, result in df_scanner.iterrows():
+            if hasattr(scanner, "categorize_check"):
+                check_category = scanner.categorize_check(result.get("scanner_check_id", ""))
+                if check_category == category.value:
+                    category_findings.append(result)
+            else:
+                # Fallback categorization based on check name patterns
+                check_name = result.get("scanner_check_name", "").lower()
+                if _categorize_by_pattern(check_name, category):
+                    category_findings.append(result)
+
+        checks_per_category[category.value] = {
+            "findings": len(category_findings),
+            "unique_checks": len(([r.get("scanner_check_name", "") for r in category_findings])),
+        }
+    return checks_per_category
+
+
+def _categorize_by_pattern(check_name: str, category: CheckCategory) -> bool:
+    """Categorize a check by matching patterns in the check name.
+    Uses predefined patterns for each category to determine if a check belongs to that category.
+
+    :param check_name: the name of the check to categorize
+    :param category: the category to test against
+    :return: True if the check name matches patterns for the given category
+    """
+    patterns = {
+        CheckCategory.AdmissionControl: ["admission", "policy", "psp", "securitycontext"],
+        CheckCategory.DataSecurity: ["secret", "configmap", "sensitive", "credential", "token"],
+        CheckCategory.IAM: ["rbac", "serviceaccount", "role", "permission", "access"],
+        CheckCategory.Network: ["network", "ingress", "service", "port", "traffic"],
+        CheckCategory.Reliability: ["resource", "limit", "probe", "readiness", "liveness"],
+        CheckCategory.Segregation: ["namespace", "isolation", "tenant"],
+        CheckCategory.Vulnerability: ["cve", "vulnerability", "image", "scan"],
+        CheckCategory.Workload: ["pod", "deployment", "container", "workload"],
+        CheckCategory.Infrastructure: ["node", "cluster", "storage", "volume"],
+    }
+
+    category_patterns = patterns.get(category, [])
+    return any(pattern in check_name for pattern in category_patterns)

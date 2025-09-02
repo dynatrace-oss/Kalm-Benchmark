@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import auto
-from typing import List, Optional
 
 from strenum import StrEnum
 
@@ -20,9 +19,9 @@ class MisconfigurationFinding:
     resource_name: str
     scanner_name: str
     native_severity: str
-    native_score: Optional[float] = None
-    ccss_score: Optional[float] = None
-    alignment_score: Optional[float] = None
+    native_score: float | None = None
+    ccss_score: float | None = None
+    alignment_score: float | None = None
     manifest_source: str = ""
     category: str = ""
     source_type: SourceType = SourceType.Manifest
@@ -73,10 +72,10 @@ class ScannerCCSSAlignment:
     total_findings: int
     avg_alignment_score: float
     score_variance: float
-    best_aligned_categories: List[str]
-    worst_aligned_categories: List[str]
+    best_aligned_categories: list[str]
+    worst_aligned_categories: list[str]
     overall_ccss_correlation: float
-    evaluation_run_id: Optional[str] = None
+    evaluation_run_id: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -109,9 +108,9 @@ class CCSSEvaluationRun:
     id: str
     timestamp: str
     source_type: SourceType
-    total_charts_scanned: Optional[int] = None
-    scanners_evaluated: Optional[List[str]] = None
-    configuration: Optional[dict] = None
+    total_charts_scanned: int | None = None
+    scanners_evaluated: list[str] | None = None
+    configuration: dict | None = None
 
     def to_dict(self) -> dict:
         return {

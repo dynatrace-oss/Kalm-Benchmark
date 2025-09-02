@@ -4,12 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from kalm_benchmark.utils.constants import UpdateType
 from kalm_benchmark.evaluation.scanner.scanner_evaluator import (
     RunUpdateGenerator,
     ScannerBase,
     subprocess,
 )
+from kalm_benchmark.utils.constants import UpdateType
 
 
 def _consume_updates(gen: RunUpdateGenerator):
@@ -113,5 +113,4 @@ class TestRunProcess:
         lvls, msgs = zip(*messages)
         assert set(lvls) == {UpdateType.Info}
         assert expected_messages == list(msgs)
-        # all messages are part of the final result
         assert all((m in result for m in msgs))

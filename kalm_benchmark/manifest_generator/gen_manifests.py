@@ -26,6 +26,7 @@ class DefaultLowPriorityClass(Chart):
     def __init__(self, scope: Construct, name: str):
         """
         Creates a PriorityClass in the provided scope with the given name
+
         :param scope: the scope of the resource
         :param name: the name of the resource
         """
@@ -47,8 +48,9 @@ class DefaultLowPriorityClass(Chart):
 def generate_manifests(app: App) -> list[Chart]:
     """
     Collects all the preconfigured manifests and places them in the same cdk8s "app".
+
     :param app: the cdk8s app which represent the scope of the checks.
-    :returns: list of charts, which is also set on the app instance.
+    :return: list of charts, which is also set on the app instance.
     """
     DefaultLowPriorityClass(app, "default-priority")
     SetupBenchmarkNamespace(app, MAIN_NS)
@@ -69,6 +71,7 @@ def create_manifests(out_dir: Path | str | None = "manifests", file_per_check: b
     In total, one file per check and several auxiliary manifests will be created.
     The name of the generated files is made up of the check id, name provided in the check
     and the general output file extension.
+
     :param out_dir: the folder where the generated manifests will be written to.
     Defaults to the `manifests` folder in the working directory.
     :param file_per_check: flag specifying if a dedicated file will be created per check.

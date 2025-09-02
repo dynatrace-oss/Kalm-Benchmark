@@ -6,8 +6,9 @@ from typing import Optional
 import pandas as pd
 
 from kalm_benchmark.utils.constants import UpdateType
+from kalm_benchmark.utils.path_normalization import normalize_kics_path
 
-from ..utils import get_path_to_line, normalize_path
+from ...utils.eval_utils import get_path_to_line
 from .scanner_evaluator import (
     CheckCategory,
     CheckResult,
@@ -105,9 +106,9 @@ class Scanner(ScannerBase):
             "docker",
             "run",
             "-v",
-            f"{str(path.resolve())}:/manifests",
+            f"{str(path.resolve())}:/manifests",  # noqa: E231
             "-v",
-            f"/tmp/z_kics_result.json:/tmp/{result_file_name}",
+            f"/tmp/z_kics_result.json:/tmp/{result_file_name}",  # noqa: E231
             "checkmarx/kics:latest",
             "scan",
             "--ci",
@@ -188,7 +189,7 @@ class Scanner(ScannerBase):
 
                 if checked_path == "" or checked_path is None:
                     checked_path = get_path_to_line_from_file(f["file_name"], f["line"])
-                    checked_path = normalize_path(checked_path)
+                    checked_path = normalize_kics_path(checked_path)
 
                 check_results.append(
                     CheckResult(
@@ -200,7 +201,7 @@ class Scanner(ScannerBase):
                         checked_path=checked_path,
                         severity=query["severity"],
                         details=query["description"],
-                        extra=f'{query["category"]}:{f["issue_type"]}',
+                        extra=f'{query["category"]}:{f["issue_type"]}',  # noqa: E231
                     )
                 )
 
@@ -270,52 +271,8 @@ def _merge_paths(paths: list[str]) -> str:
     return ""
 
 
-def _is_fs_path_value(string: str) -> bool:
-    # a FS path contains at least one path seperator (i.e. '/') and
-    # is wrapped in quotes because it's a value in anothert string
-    return "/" in string and string[0] == "'" and string[-1] == "'"
-
-
 def _normalize_path(path: str) -> str:
-    # a path is a token which contains a '.' but no '/' (this would be a path)
-    if "." in path:
-        tokens = [t for t in path.split(" ") if "." in t and not _is_fs_path_value(t)]
-
-        if len(tokens) == 0:
-            return ""
-        # always take the first token as the path
-        # if there are multiple tokens then the other are most likely values
-        path = tokens[0]
-    else:
-        # if the path is describe as attribute the actual field is in quotes
-        if path.startswith("Attribute"):
-            return QUOTED_PATH_PATTERN.sub(r".\1", path)
-        return ""
-
-    # if a path is within quotes extract it
-    path = QUOTED_PATH_PATTERN.sub(r"\1", path)
-
-    # drop '.*.spec.template' prefix
-    path = re.sub(r".?spec.template", "", path)
-
-    # drop metadata name prefix as it's not a valid path
-    path = META_NAME_PATTERN.sub("", path)
-
-    # drop name or index information in arrays
-    path = ARRAY_INDEX_PATTERN.sub("[]", path)
-
-    # arrays with the '<obj>.name={{...}}' will be turned into just the braces '<obj>[]'
-    path = ARRAY_NAME_PATTERN.sub(r"\1[]", path)  # re.sub(r"().name={{.*?}}", ".name", path)
-
-    # ignore value specification (i.e. value after '=')
-    # this shold be after conversion of ARRAY_NAME_PATTERN to array because of overlapping patterns
-    path = ASSIGNED_VALUE_PATTERN.sub("", path)
-
-    # ensure that paths not starting with uppercase (i.e. kind name) are relative
-    if not path[0].isupper() and path[0] != ".":
-        path = "." + path
-
-    return path
+    return normalize_kics_path(path)
 
 
 def get_path_to_line_from_file(file_name: str, line_nr: int) -> str:

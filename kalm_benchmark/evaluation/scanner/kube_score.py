@@ -226,6 +226,6 @@ class Scanner(ScannerBase):
         # only the version number itself is relevant, which will be extracted
         raw_version = super().get_version()
         version_entry, *_ = raw_version.split(",", maxsplit=1)
-        label, version = version_entry.split(":")
+        _, version = version_entry.split(":")
 
         return version.strip()

@@ -10,6 +10,10 @@ from ..constants import (
     SENSITIVE_KEYS,
     SENSITIVE_VALUES,
     CheckStatus,
+    ContainerConfig,
+    ContainerResourceConfig,
+    PodSchedulingConfig,
+    PodSecurityConfig,
 )
 from .pod_base import Pod, Workload
 
@@ -32,6 +36,7 @@ class PodCheck(Check):
     ):
         """
         Instantiates a new Pod check with all relevant kubernetes resources.
+
         :param scope: the cdk8s scope in which the resources will be placed
         :param check_id: the id of the check. This is the prefix of the resulting file name
         :param name: the name of the check. This will be part of the resulting file name.
@@ -58,6 +63,7 @@ class NakedPodIsBad(Check):
     ):
         """
         Instantiates a new Pod check with all relevant kubernetes resources.
+
         :param scope: the cdk8s scope in which the resources will be placed
         :param args: any arguments for the generic check
         :param kwargs: any keyword arguments for the generic check
@@ -88,6 +94,7 @@ class VolumeMountCheck(Check):
     ):
         """
         Instantiates a new volume/volumeMount check with all relevant kubernetes resources.
+
         :param scope: the cdk8s scope in which the resources will be placed
         :param check_id: the id of the check. This is the prefix of the resulting file name
         :param name: the name of the check. This will be part of the resulting file name.
@@ -159,6 +166,7 @@ class EnvVarCheck(Check):
         Instantiates a new check misconfigurations of an environment variable.
         The provided `env_keys` will be used as environment variable and their
         corresponding values is predefined list of sensitive values.
+
         :param scope: the cdk8s scope in which the resources will be placed
         :param args: any additional arguments will be passed on the general check
         :param env_keys: the environment variable keys, which will be used for the check.
@@ -167,7 +175,7 @@ class EnvVarCheck(Check):
         env_vars = [k8s.EnvVar(name=name, value=SENSITIVE_VALUES) for name in env_keys]
 
         super().__init__(scope, *args, **kwargs)
-        Workload(self, self.name, self.meta, container_kwargs={"env_vars": env_vars})
+        Workload(self, self.name, self.meta, container=ContainerConfig(env_vars=env_vars))
 
 
 class ConfigMapCheck(Check):
@@ -188,6 +196,7 @@ class ConfigMapCheck(Check):
     ):
         """
         Instantiates a new configMap check to test certain misconfigurations.
+
         :param scope: the cdk8s scope in which the resources will be placed
         :param check_id: the id of the check. This is the prefix of the resulting file name
         :param name: the name of the check. This will be part of the resulting file name.
@@ -215,7 +224,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Explicit Default ServiceAccountName",
         descr="`default` ServiceAccount should never be used. Create a dedicated ServiceAccount when access"
         " to API server is needed when access to API server is needed.",
-        service_account_name="default",
+        security=PodSecurityConfig(service_account_name="default"),
         check_path=".spec.serviceAccountName",
     )
     PodCheck(
@@ -225,7 +234,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="if no service account is specified it defaults to the "
         "`default` ServiceAccount, which should be avoided. "
         "Create a dedicated ServiceAccount without any permissions instead.",
-        service_account_name=None,
+        security=PodSecurityConfig(service_account_name=None),
         check_path=".spec.serviceAccountName",
     )
 
@@ -300,7 +309,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             app,
             f"POD-003-{i + 1}",
             cfg["name"],
-            automount_sa_token=cfg["pod"],
+            security=PodSecurityConfig(automount_sa_token=cfg["pod"]),
             sa_kwargs={"automount_sa_token": cfg["sa"]},
             check_path=[".spec.automountServiceAccountToken", ".automountServiceAccountToken"],
             expect=cfg["expect"],
@@ -312,8 +321,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "REL-004-1",
         "No nodeSelector or nodeAffinity specified",
         descr="Pods with high risk workloads can be assigned to specific node to separate them from other workloads",
-        node_selector=None,
-        node_affinity=False,
+        scheduling=PodSchedulingConfig(node_selector=None, node_affinity=False),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
     )
     PodCheck(
@@ -322,7 +330,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Only nodeAffinity is enough",
         descr="Pods with high risk workloads can be assigned to specific node to separate them from other workloads",
         expect=CheckStatus.Pass,
-        node_selector=None,
+        scheduling=PodSchedulingConfig(node_selector=None),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
     )
     PodCheck(
@@ -331,7 +339,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Only nodeSelector is enough",
         descr="Pods with high risk workloads can be assigned to specific node to separate them from other workloads",
         expect=CheckStatus.Pass,
-        node_affinity=False,
+        scheduling=PodSchedulingConfig(node_affinity=False),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
     )
 
@@ -340,7 +348,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "REL-003",
         "No PriorityClass",
         descr="Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability",
-        priority_class=None,
+        scheduling=PodSchedulingConfig(priority_class=None),
         check_path=".spec.priorityClassName",
     )
 
@@ -350,6 +358,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "No ReadinessProbe defined",
         descr="Configuring a readinessProbe is recommended as it's intended to "
         "ensure that workload is ready to process network traffic",
+        container=ContainerConfig(),  # Will use defaults, need to handle readiness_probe separately
         container_kwargs={"readiness_probe": None},
         check_path=".spec.containers[].readinessProbe",
     )
@@ -360,6 +369,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "No LivenessProbe defined",
         descr="Configuring a livenessProbe is recommended as it's intended to ensure that workload "
         "remains healthy during its entire execution lifecycle, or otherwise restart the container.",
+        container=ContainerConfig(),  # Will use defaults, need to handle liveness_probe separately
         container_kwargs={"liveness_probe": None},
         check_path=".spec.containers[].livenessProbe",
     )
@@ -370,7 +380,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "hostPID flag not set",
         expect=CheckStatus.Pass,
         descr="The hostPID defaults to `false` and thus should be okay",
-        host_pid=None,
+        security=PodSecurityConfig(host_pid=None),
         check_path=".spec.hostPID",
     )
 
@@ -380,7 +390,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "hostPID flag set",
         descr="Containers should be isolated from the host machine as much as possible. `hostPID` pods may allow "
         "cross-container influence and may expose the host itself to potentially malicious or destructive actions",
-        host_pid=True,
+        security=PodSecurityConfig(host_pid=True),
         check_path=".spec.hostPID",
     )
 
@@ -390,7 +400,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "hostIPC flag not set",
         expect=CheckStatus.Pass,
         descr="The hostIPC defaults to `false` and thus should be okay",
-        host_ipc=None,
+        security=PodSecurityConfig(host_ipc=None),
         check_path=".spec.hostIPC",
     )
 
@@ -400,7 +410,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "hostIPC flag set",
         descr="Containers should be isolated from the host machine as much as possible. `hostIPC` on pods may allow"
         " cross-container influence and may expose the host itself to potentially malicious or destructive actions",
-        host_ipc=True,
+        security=PodSecurityConfig(host_ipc=True),
         check_path=".spec.hostIPC",
     )
 
@@ -410,7 +420,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "hostNetwork flag not set",
         expect=CheckStatus.Pass,
         descr="The hostNetwork defaults to `false` and thus should be okay",
-        host_network=None,
+        security=PodSecurityConfig(host_network=None),
         check_path=".spec.hostNetwork",
     )
     PodCheck(
@@ -418,7 +428,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "POD-010-2",
         "hostNetwork flag set",
         descr="Containers should be isolated from the host machine as much as possible.",
-        host_network=True,
+        security=PodSecurityConfig(host_network=True),
         check_path=".spec.hostNetwork",
     )
 
@@ -447,8 +457,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "POD-013",
         "deprecate serviceAccount field used",
         descr="ServiceAccount field is deprecated, ServiceAccountName should be used instead",
-        service_account="deprecated-sa",
-        service_account_name=None,
+        security=PodSecurityConfig(service_account="deprecated-sa", service_account_name=None),
         check_path=".spec.serviceAccount",
     )
 
@@ -482,7 +491,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "POD-016",
         "no PodSecurityContext defined",
         descr="not providing a podSecurityContext leads to the use of too permissive settings for the pod",
-        pod_security_context=None,
+        security=PodSecurityConfig(pod_security_context=None),
         check_path=".spec.securityContext",
     )
 
@@ -560,8 +569,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             cfg["name"],
             expect=cfg.get("expect", CheckStatus.Alert),
             descr=cfg.get("descr", ""),
-            pod_security_context_kwargs=cfg["pod"],  # {"run_as_non_root": True, "run_as_user": None},
-            container_kwargs={"security_context_kwargs": cfg["container"]},
+            security=PodSecurityConfig(pod_security_context_kwargs=cfg["pod"]),
+            container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[
                 ".spec.securityContext.runAsNonRoot",
                 ".spec.securityContext.runAsUser",
@@ -615,8 +624,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             cfg["name"],
             expect=cfg.get("expect", CheckStatus.Alert),
             descr=cfg.get("descr", ""),
-            pod_security_context_kwargs=cfg["pod"],
-            container_kwargs={"security_context_kwargs": cfg["container"]},
+            security=PodSecurityConfig(pod_security_context_kwargs=cfg["pod"]),
+            container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[
                 ".spec.securityContext.runAsUser",
                 ".spec.securityContext.runAsNonRoot",
@@ -668,8 +677,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             cfg["name"],
             expect=cfg.get("expect", CheckStatus.Alert),
             descr=cfg.get("descr", ""),
-            pod_security_context_kwargs=cfg["pod"],
-            container_kwargs={"security_context_kwargs": cfg["container"]},
+            security=PodSecurityConfig(pod_security_context_kwargs=cfg["pod"]),
+            container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[".spec.securityContext.runAsGroup", ".spec.containers[].securityContext.runAsGroup"],
         )
 
@@ -685,7 +694,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"POD-021-{i}",
             f"using sysctl {sysctl}",
             descr="Giving dangerous capabilities to a container increases the impact of a container compromise",
-            pod_security_context_kwargs={"sysctls": [k8s.Sysctl(name=sysctl, value=value)]},
+            security=PodSecurityConfig(pod_security_context_kwargs={"sysctls": [k8s.Sysctl(name=sysctl, value=value)]}),
             check_path=".spec.securityContext.sysctls[]",
         )
 
@@ -697,8 +706,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "POD-022-1",
         "linux is not hardened",
         descr="Not hardening a linux system can increase the impact of a compromise",
-        pod_security_context_kwargs={"seccomp_profile": None, "se_linux_level": None},
-        container_kwargs={"security_context_kwargs": {"seccomp_profile": None, "se_linux_level": None}},
+        security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None, "se_linux_level": None}),
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None, "se_linux_level": None}),
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
@@ -717,7 +726,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "one approach to hardening linux is enough",
         expect=CheckStatus.Pass,
         descr="Not hardening a linux system can increase the impact of a compromise",
-        pod_security_context_kwargs={"seccomp_profile": None},
+        security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None}),
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
@@ -735,7 +744,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "one approach to hardening linux is enough",
         expect=CheckStatus.Pass,
         descr="Not hardening a linux system can increase the impact of a compromise",
-        pod_security_context_kwargs={"se_linux_level": None},
+        security=PodSecurityConfig(pod_security_context_kwargs={"se_linux_level": None}),
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
@@ -753,7 +762,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "POD-023",
         "no seccomp profile defined",
         descr="not providing a seccomp profile allows a process more capabilities than necessary",
-        pod_security_context_kwargs={"seccomp_profile": None},
+        security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None}),
         check_path=[
             ".metadata.annotations",
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",  # deprecated and removed in v1.25
@@ -770,6 +779,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"POD-024-{i}",
             f"usage of {cmd} in container",
             descr="Attackers who can run a cmd/bash script inside a container can use it to execute malicious code",
+            container=ContainerConfig(),
             container_kwargs={"command": [cmd]},
             check_path=[".spec.containers[].command"],
         )
@@ -789,7 +799,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "imagePullPolicy defaults to always",
         expect=CheckStatus.Pass,
         descr="Kubernetes may run older version of the container images without user knowing about this",
-        container_kwargs={"image_pull_policy": None},
+        container=ContainerConfig(image_pull_policy=None),
         check_path=[".spec.containers[].imagePullPolicy"],
     )
     for i, img_pull_policy in enumerate(["Never", "IfNotPresent"]):
@@ -798,7 +808,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"SC-001-{i + 2}",
             "No proper imagePullPolicy set",
             descr="Kubernetes may run older version of the container images without user knowing about this",
-            container_kwargs={"image_pull_policy": img_pull_policy},
+            container=ContainerConfig(image_pull_policy=img_pull_policy),
             check_path=[".spec.containers[].imagePullPolicy"],
         )
 
@@ -808,7 +818,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "tag instead of digest is fine",
         expect=CheckStatus.Pass,
         descr="Specify an explicit tag or digest to have full control over the running container image",
-        container_kwargs={"image_tag": ":1.12.6"},
+        container=ContainerConfig(image_tag=":1.12.6"),
         check_path=[".spec.containers[].image"],
     )
 
@@ -817,7 +827,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "SC-002-2",
         "using latest image tag",
         descr="When using latest image tag the used image can change without the user knowing about this",
-        container_kwargs={"image_tag": ":latest"},
+        container=ContainerConfig(image_tag=":latest"),
         check_path=[".spec.containers[].image"],
     )
 
@@ -826,7 +836,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "SC-002-3",
         "no explicit tag",
         descr="Kubernetes may run older version of the container images without user knowing about this",
-        container_kwargs={"image_tag": None},
+        container=ContainerConfig(image_tag=None),
         check_path=[".spec.containers[].image"],
     )
 
@@ -841,7 +851,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "POD-030",
         "no SecurityContext defined",
         descr="Not providing a securityContext leads to the use of too permissive settings for the containers",
-        container_kwargs={"security_context_kwargs": None},
+        container=ContainerConfig(security_context=None),
         check_path=[".spec.containers[].securityContext"],
     )
 
@@ -851,7 +861,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "allowed privilege escalation by default",
         descr="Avoid using the privileged flag, and if your container does need additional capabilities, "
         "add only the ones you need through the capabilities settings. ",
-        container_kwargs={"security_context_kwargs": {"allow_privilege_escalation": None}},
+        container=ContainerConfig(security_context_kwargs={"allow_privilege_escalation": None}),
         check_path=".spec.containers[].securityContext.allowPrivilegeEscalation",
     )
 
@@ -861,7 +871,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "allowed privilege escalation explicitly",
         descr="Avoid using the privileged flag, and if your container does need additional capabilities, "
         "add only the ones you need through the capabilities settings. ",
-        container_kwargs={"security_context_kwargs": {"allow_privilege_escalation": True}},
+        container=ContainerConfig(security_context_kwargs={"allow_privilege_escalation": True}),
         check_path=".spec.containers[].securityContext.allowPrivilegeEscalation",
     )
 
@@ -871,7 +881,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "non privileged container by default",
         expect=CheckStatus.Pass,
         descr="Changing the privileged flag is optional as it defaults to False",
-        container_kwargs={"security_context_kwargs": {"privileged": None}},
+        container=ContainerConfig(security_context_kwargs={"privileged": None}),
         check_path=".spec.containers[].securityContext.privileged",
     )
 
@@ -881,7 +891,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "privileged container",
         descr="Privileged containers can do almost every action that can be performed directly on the host.",
         # privilege can't be set to True with when allowPrivilegeEscalation is explicitly disabled
-        container_kwargs={"security_context_kwargs": {"privileged": True, "allow_privilege_escalation": None}},
+        container=ContainerConfig(security_context_kwargs={"privileged": True, "allow_privilege_escalation": None}),
         check_path=[
             ".spec.containers[].securityContext.privileged",
             ".spec.containers[].securityContext.allowPrivilegeEscalation",
@@ -894,7 +904,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "root FS is writeable by default",
         descr="Using an immutable root filesystem prevents against attackers from compromising the machine through "
         "permanent local changes.",
-        container_kwargs={"security_context_kwargs": {"read_only_root_filesystem": None}},
+        container=ContainerConfig(security_context_kwargs={"read_only_root_filesystem": None}),
         check_path=".spec.containers[].securityContext.readOnlyRootFilesystem",
     )
 
@@ -904,7 +914,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "root FS is explicitly writeable",
         descr="Using an immutable root filesystem prevents against attackers from compromising the machine through "
         "permanent local changes.",
-        container_kwargs={"security_context_kwargs": {"read_only_root_filesystem": False}},
+        container=ContainerConfig(security_context_kwargs={"read_only_root_filesystem": False}),
         check_path=".spec.containers[].securityContext.readOnlyRootFilesystem",
     )
 
@@ -919,7 +929,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"POD-034-{i+1}",
             f"using dangerous capability {cap}",
             descr="Dangerous capabilities can increase the impact of a container compromise",
-            container_kwargs={"security_context_kwargs": {"add_capabilities": [cap]}},
+            container=ContainerConfig(security_context_kwargs={"add_capabilities": [cap]}),
             check_path=".spec.containers[].securityContext.capabilities",
         )
 
@@ -937,7 +947,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"POD-035-{i+1}",
             f"using insecure capability {cap}",
             descr="Insecure capabilities can increase the impact of a container compromise",
-            container_kwargs={"security_context_kwargs": {"add_capabilities": [cap]}},
+            container=ContainerConfig(security_context_kwargs={"add_capabilities": [cap]}),
             check_path=".spec.containers[].securityContext.capabilities",
         )
 
@@ -949,7 +959,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="When not dropping all capabilities the container gets the capabilities "
         "defined by the container runtime, which is often fairly generous and "
         "does not adhere to principle of least privilege",
-        container_kwargs={"security_context_kwargs": {"drop_capabilities": None}},  # remove  drop: "ALL"
+        container=ContainerConfig(security_context_kwargs={"drop_capabilities": None}),  # remove  drop: "ALL"
         check_path=".spec.containers[].securityContext.capabilities.drop",
     )
 
@@ -1084,7 +1094,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "default memory requests from namespace",
         expect=CheckStatus.Pass,
         descr="not setting default memory requests can lead to problems upon admission",
-        container_kwargs={"request_memory": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         namespace=main_ns,
         check_path=".spec.containers[].resources.requests.memory",
     )
@@ -1093,7 +1103,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "RES-001-2",
         "no memory requests",
         descr="not setting memory requests can lead to problems upon admission",
-        container_kwargs={"request_memory": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         namespace=unrestricted_ns,
         check_path=".spec.containers[].resources.requests.memory",
     )
@@ -1104,7 +1114,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "default memory limits from namespace",
         expect=CheckStatus.Pass,
         descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
-        container_kwargs={"limits_memory": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         namespace=main_ns,
         check_path=".spec.containers[].resources.limits.memory",
     )
@@ -1113,7 +1123,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "RES-002-2",
         "no memory limits",
         descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
-        container_kwargs={"limits_memory": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         namespace=unrestricted_ns,
         check_path=".spec.containers[].resources.limits.memory",
     )
@@ -1124,7 +1134,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "default CPU requests from namespace",
         expect=CheckStatus.Pass,
         descr="not setting default CPU requests can lead to problems upon admission",
-        container_kwargs={"request_cpu": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         namespace=main_ns,
         check_path=".spec.containers[].resources.requests.cpu",
     )
@@ -1133,7 +1143,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "RES-003-2",
         "no CPU requests",
         descr="not setting CPU requests can lead to problems upon admission",
-        container_kwargs={"request_cpu": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         namespace=unrestricted_ns,
         check_path=".spec.containers[].resources.requests.cpu",
     )
@@ -1144,7 +1154,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "default CPU limits from namespace",
         expect=CheckStatus.Pass,
         descr="not setting CPU limit can lead to the pod suffocating the node by using all available CPU",
-        container_kwargs={"limits_cpu": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         namespace=main_ns,
         check_path=".spec.containers[].resources.limits.cpu",
     )
@@ -1153,7 +1163,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "RES-004-2",
         "no CPU limits",
         descr="not setting CPU limit can lead to the pod suffocating the node by using all available CPU",
-        container_kwargs={"limits_cpu": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         namespace=unrestricted_ns,
         check_path=".spec.containers[].resources.limits.cpu",
     )
@@ -1164,7 +1174,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "default ephemeral storage requests from namespace",
         expect=CheckStatus.Pass,
         descr="not setting ephemeral storarge limit can suffocate the node by using all available storage",
-        container_kwargs={"request_ephemeral_storage": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(request_ephemeral_storage=None)),
         namespace=main_ns,
         check_path=".spec.containers[].resources.requests.ephemeral-storage",
     )
@@ -1173,7 +1183,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "RES-005-2",
         "no ephemeral storage requests",
         descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
-        container_kwargs={"request_ephemeral_storage": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(request_ephemeral_storage=None)),
         namespace=unrestricted_ns,
         check_path=".spec.containers[].resources.requests.ephemeral-storage",
     )
@@ -1184,7 +1194,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "default ephemeral storage limits from namespace",
         expect=CheckStatus.Pass,
         descr="not setting ephemeral storarge limit can suffocate the node by using all available storage",
-        container_kwargs={"limits_ephemeral_storage": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=main_ns,
         check_path=".spec.containers[].resources.limits.ephemeral-storage",
     )
@@ -1193,7 +1203,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         "RES-006-2",
         "no ephemeral storage limits",
         descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
-        container_kwargs={"limits_ephemeral_storage": None},
+        container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=unrestricted_ns,
         check_path=".spec.containers[].resources.limits.ephemeral-storage",
     )

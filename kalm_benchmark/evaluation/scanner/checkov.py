@@ -3,10 +3,15 @@ import re
 from pathlib import Path
 from typing import Generator
 
-from kalm_benchmark.utils.constants import RunUpdateGenerator, UpdateType
+from loguru import logger
 
-from ..utils import normalize_path
+from kalm_benchmark.utils.constants import RunUpdateGenerator, UpdateType
+from kalm_benchmark.utils.path_normalization import normalize_checkov_path
+
 from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerBase
+
+# Bind logger to scan component for proper log filtering
+logger = logger.bind(component="scan")
 
 # a list of all checks is here: https://www.checkov.io/5.Policy%20Index/kubernetes.html
 
@@ -184,11 +189,15 @@ class Scanner(ScannerBase):
         :return: a list of results per file
         """
         scan_flag = "-f" if path.is_file() else "-d"
+        logger.info(f"Checkov: Scanning {'file' if path.is_file() else 'directory'}: {path}")
         cmd = ["checkov", "-o", "json", "--compact", scan_flag, str(path)]
         results = yield from self.run(cmd)
         # Parse results before returning to match the expected CheckResult format
         if results is not None:
-            return self.parse_results(results)
+            parsed_results = self.parse_results(results)
+            logger.info(f"Checkov: Manifest scan completed, found {len(parsed_results)} check results")
+            return parsed_results
+        logger.warning("Checkov: No results returned from manifest scan")
         return []
 
     def scan_cluster(self) -> RunUpdateGenerator:
@@ -294,7 +303,10 @@ class Scanner(ScannerBase):
         yield from self._cleanup_resources(created_resources, namespace)
         # Parse results before returning to match the expected CheckResult format
         if results is not None:
-            return self.parse_results(results)
+            parsed_results = self.parse_results(results)
+            logger.info(f"Checkov: Cluster scan completed, found {len(parsed_results)} check results")
+            return parsed_results
+        logger.warning("Checkov: No results returned from cluster scan")
         return []
 
     def _wait_for_resource(
@@ -321,7 +333,7 @@ class Scanner(ScannerBase):
         return True
 
     def _cleanup_resources(self, resources: list[str], namespace: str) -> RunUpdateGenerator:
-        """Delete all resources provided as names from the currently active kubernetes cluster in the designated namespace
+        """Delete all resources provided as names fromthe currently active cluster in the designated namespace
 
         :param resources: a list of resource names, which will be deleted from the cluster
         :return: Nothing
@@ -332,55 +344,72 @@ class Scanner(ScannerBase):
         for k8s_resource in reversed(resources):
             try:
                 yield from self.run(
-                    ["kubectl", "delete", "--ignore-not-found=true", k8s_resource, "-n", "namespace"], parse_json=False
+                    ["kubectl", "delete", "--ignore-not-found=true", k8s_resource, "-n", namespace], parse_json=False
                 )
             except Exception as e:
                 yield UpdateType.Error, e
 
     @classmethod
-    def parse_results(cls, results: dict) -> list[CheckResult]:
+    def parse_results(cls, results) -> list[CheckResult]:
         """
         Parses the raw results and turns them into a flat list of check results.
         The results consists of a list of the results per file.
         Per file is a dict per resource within that file.
         For each resource there is a list of 'advises' by the tool, which are the individual checks.
 
-        :param results: the results which will be parsed
+        :param results: the results which will be parsed (can be dict or list)
         :returns: the list of check results
         """
         check_id_pattern = re.compile(r"^(\w+(?:-\d+)+)")  # match the first letters and then the numbers following it
         check_results = []
-        failed_checks = results["results"]["failed_checks"]
+
+        # Checkov returns results as a list of objects, extract the first one
+        if isinstance(results, list) and len(results) > 0:
+            results = results[0]
+
+        if not isinstance(results, dict):
+            logger.warning(f"Checkov: Results are not in expected format: {type(results)}")
+            return []
+
+        # Extract failed_checks from the results structure
+        failed_checks = results.get("results", {}).get("failed_checks", [])
+        logger.debug(f"Checkov: Processing {len(failed_checks)} failed checks")
+
         for check in failed_checks:
-            kind, ns, obj_name = check["resource"].split(".", maxsplit=2)
-            m = check_id_pattern.search(obj_name)
-            check_id = m.group(1) if m is not None else None
-            check_result = check["check_result"]
-            status = CheckStatus.Alert if check_result["result"] == "FAILED" else CheckStatus.Pass
+            try:
+                kind, ns, obj_name = check["resource"].split(".", maxsplit=2)
+                m = check_id_pattern.search(obj_name)
+                check_id = m.group(1) if m is not None else None
+                check_result = check["check_result"]
+                status = CheckStatus.Alert if check_result["result"] == "FAILED" else CheckStatus.Pass
 
-            scanner_check_id = check["check_id"]
-            checked_path = cls.get_checked_path(scanner_check_id, check_result["evaluated_keys"])
+                scanner_check_id = check["check_id"]
+                checked_path = cls.get_checked_path(scanner_check_id, check_result["evaluated_keys"])
 
-            # Extract severity information if available
-            # Note: Severity requires Bridgecrew/Prisma Cloud API key integration
-            # Without API key, severity field won't be present in JSON output
-            severity = check.get("severity", None)
+                # Extract severity information if available
+                # Note: Severity requires Bridgecrew/Prisma Cloud API key integration
+                # Without API key, severity field won't be present in JSON output
+                severity = check.get("severity", None)
 
-            check_results.append(
-                CheckResult(
-                    check_id=check_id,
-                    obj_name=obj_name,
-                    checked_path=checked_path,
-                    got=status,
-                    scanner_check_id=scanner_check_id,
-                    scanner_check_name=check["check_name"],
-                    extra=check["check_class"],
-                    kind=kind,
-                    namespace=ns,
-                    severity=severity,
+                check_results.append(
+                    CheckResult(
+                        check_id=check_id,
+                        obj_name=obj_name,
+                        checked_path=checked_path,
+                        got=status,
+                        scanner_check_id=scanner_check_id,
+                        scanner_check_name=check["check_name"],
+                        extra=check["check_class"],
+                        kind=kind,
+                        namespace=ns,
+                        severity=severity,
+                    )
                 )
-            )
+            except Exception as e:
+                logger.warning(f"Checkov: Failed to parse check {check.get('check_id', 'unknown')}: {e}")
+                continue
 
+        logger.info(f"Checkov: Successfully parsed {len(check_results)} check results")
         return check_results
 
     @classmethod
@@ -417,6 +446,4 @@ def _normalize_path(path: list[str]) -> str:
     :param path: the string which will be normalized
     :return: the normalized version of the provided path
     """
-    path = normalize_path(path.replace("/", "."))
-    path = path.replace(".[]", "[]")  # checkov has a '/' before the indexing bracke
-    return path
+    return normalize_checkov_path(path)

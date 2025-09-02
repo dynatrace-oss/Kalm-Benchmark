@@ -81,7 +81,7 @@ class Scanner(ScannerBase):
         "run",
     ]
     NOTES = [
-        "kube-bench is a tool to check whether Kubernetes itself is deployed securiely according to the CIS benchmark. "
+        "kube-bench is a tool to check whether Kubernetes itself is deployed securely according to the CIS benchmark. "
         "It focuses on the infrastructure aspect and thus, is out of scope of this benchmark."
     ]
     CI_MODE = True

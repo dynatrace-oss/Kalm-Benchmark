@@ -1,7 +1,6 @@
 import base64
 import time
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import streamlit as st
@@ -9,8 +8,8 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 from kalm_benchmark.evaluation import evaluation
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS
-from kalm_benchmark.ui.utils.gen_utils import get_unified_service, init
-from kalm_benchmark.ui.utils.overview_utils import (
+from kalm_benchmark.ui.interface.gen_utils import get_unified_service, init
+from kalm_benchmark.ui.interface.overview_utils import (
     build_scanner_info,
     create_scanner_summary,
     parse_scan_timestamp,
@@ -20,22 +19,23 @@ from kalm_benchmark.utils.constants import (
     CI_MODE_LABEL,
     CLUSTER_SCANNING_LABEL,
     CUSTOM_CHECKS_LABEL,
+    HOVER_COLOR_RGBA,
     MANIFEST_SCANNING_LABEL,
     OUTPUT_FORMATS_ALTAIR,
     OUTPUT_FORMATS_LABEL,
+    ROW_HEIGHT_PX,
+    SCANNER_ICONS_PER_ROW,
+    SCANNER_OVERVIEW_GRID_HEIGHT_PX,
     SEVERITY_SUPPORT_LABEL,
     STANDARD_SEVERITY_SCORES,
+    TOOLTIP_DELAY_MS,
     Page,
     QueryParam,
 )
 
 
 def _get_scanner_icon_path(scanner_name: str) -> str:
-    """Get local path to scanner icon based on scanner name.
-
-    :param scanner_name: The name of the scanner
-    :return: Absolute path to the local icon file
-    """
+    """Get local filesystem path to scanner icon file."""
     icon_mapping = {
         "KubeLinter": "kube-linter.svg",
         "kube-score": "kube-score.png",
@@ -66,54 +66,30 @@ def _get_scanner_icon_path(scanner_name: str) -> str:
     return ""
 
 
-def _get_category_ratio(category_summary: pd.Series | None) -> str:
-    """Get category ratio in original KALM format 'covered/total (+extra)'.
-
-    :param category_summary: a series of all the result types of a particular scanner
-    :return: the ratio as string in format 'covered/total (+extra)' matching original KALM
-    """
-    if category_summary is None:
-        return "0/0"
-
-    covered = category_summary.get(evaluation.ResultType.Covered, 0)
-    missing = category_summary.get(evaluation.ResultType.Missing, 0)
-    extra = category_summary.get(evaluation.ResultType.Extra, 0)
-
-    total = covered + missing
-    result = f"{covered}/{total}"
-
-    if extra > 0:
-        result += f" (+{extra})"
-
-    return result
-
-
 def collect_overview_information(source_filter: str = "all") -> pd.DataFrame:
-    """Load all evaluation results of all scanners from unified database.
+    """Load evaluation results for all scanners from the unified database.
 
-    Refactored to reduce cognitive complexity by extracting helper functions.
-
-    :param source_filter: filter results by source type ("all", "manifests", "cluster", etc.)
-    :return: a dataframe where every row corresponds to the information for a particular scanner
+    :param source_filter: Filter results by source type ("all", "manifests", "cluster", etc.)
+    :return: DataFrame where each row contains scanner information and metrics
     """
     scanner_infos = []
     unified_service = get_unified_service()
     db_summaries = unified_service.create_evaluation_summary_dataframe()
-    summary_map = {s["scanner_name"]: s for s in db_summaries}
+    # Handle case where db_summaries might contain non-dictionary items
+    summary_map = {}
+    if isinstance(db_summaries, list):
+        for s in db_summaries:
+            if isinstance(s, dict) and "scanner_name" in s:
+                summary_map[s["scanner_name"]] = s
 
     for name, scanner in SCANNERS.items():
-        # Get and filter scan runs
         scan_runs = unified_service.db.get_scan_runs(scanner_name=name.lower())
         scan_runs = process_source_filter(scan_runs, source_filter)
 
-        # Parse latest scan date
         latest_scan_date = parse_scan_timestamp(scan_runs[0]["timestamp"]) if scan_runs else "Never"
-
-        # Create scanner summary
         db_summary = summary_map.get(name.lower())
         summary, is_valid_summary = create_scanner_summary(name, db_summary, unified_service)
 
-        # Build scanner info object
         scanner_info = build_scanner_info(name, scanner, summary, is_valid_summary, latest_scan_date)
         scanner_infos.append(scanner_info)
 
@@ -121,11 +97,7 @@ def collect_overview_information(source_filter: str = "all") -> pd.DataFrame:
 
 
 def _configure_grid(df: pd.DataFrame) -> dict:
-    """
-    Create the configuration mapping for the AgGrid
-    :param df: the dataftrame used for the generation of the initial config
-    :return: the grid configuration as a dictionary
-    """
+    """Create AgGrid configuration with formatters and column settings."""
     percent_formatter = JsCode("function (params) { return (params.value*100).toFixed(1) + '%'; }")
     bool_flag_formatter = JsCode(
         """
@@ -145,10 +117,8 @@ def _configure_grid(df: pd.DataFrame) -> dict:
         }
     """
     )
-    TOOLTIP_DELAY = 50  # in ms
-
     builder = GridOptionsBuilder.from_dataframe(df)
-    builder.configure_default_column(filterable=False, tooltipShowDelay=50)
+    builder.configure_default_column(filterable=False, tooltipShowDelay=TOOLTIP_DELAY_MS)
     builder.configure_selection(selection_mode="single")
     builder.configure_column(
         "name",
@@ -164,35 +134,35 @@ def _configure_grid(df: pd.DataFrame) -> dict:
         header_name="Version",
         headerTooltip="The version the tool had when creating the results",
         width=130,
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
     builder.configure_column(
         "ci_mode",
         header_name=CI_MODE_LABEL,
         valueFormatter=bool_flag_formatter,
         headerTooltip="Use exit-code to signal scan success or has dedicated integrations for build pipelines",
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
     builder.configure_column(
         "score",
         header_name="Score",
         valueFormatter=percent_formatter,
         headerTooltip="The F1 score across all checks in the benchmark",
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
     builder.configure_column(
         "coverage",
         header_name="Coverage",
         valueFormatter=percent_formatter,
         headerTooltip="The ratio of checks covered by the tool",
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
     builder.configure_column(
         "custom_checks",
         header_name=CUSTOM_CHECKS_LABEL,
         valueFormatter=bool_flag_formatter,
         headerTooltip="Adding of custom rules/checks is supported by the tool",
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
     builder.configure_column(
         "runs_offline",
@@ -202,7 +172,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
             "In offline mode the tool can run in any (airgapped) environment "
             "and does not require an internet connection."
         ),
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
     builder.configure_column("is_valid_summary", hide=True)
     builder.configure_column(
@@ -221,7 +191,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
         header_name="Last Scan",
         width=150,
         headerTooltip="Date of the most recent scan for this scanner",
-        tooltipShowDelay=TOOLTIP_DELAY,
+        tooltipShowDelay=TOOLTIP_DELAY_MS,
     )
 
     cat_columns = [c for c in df.columns if c.startswith("cat_")]
@@ -233,7 +203,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
             c,
             header_name=header_text,
             headerTooltip="The number of covered vs all checks. Checks outside the benchmark are shown in parenthesis.",
-            tooltipShowDelay=TOOLTIP_DELAY,
+            tooltipShowDelay=TOOLTIP_DELAY_MS,
         )
 
     grid_options = builder.build()
@@ -241,7 +211,7 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     _group_columns(grid_options, "Scope", ["can_scan_manifests", "can_scan_cluster"])
     _group_columns(grid_options, "Category", cat_columns)
 
-    grid_options["rowHeight"] = 30
+    grid_options["rowHeight"] = ROW_HEIGHT_PX
 
     grid_options["rowClassRules"] = {
         "invalid-summary": JsCode("function(params) { return !params.data.is_valid_summary; }")
@@ -250,12 +220,12 @@ def _configure_grid(df: pd.DataFrame) -> dict:
     return grid_options
 
 
-def show_overview_grid(df: Optional[pd.DataFrame] = None) -> Optional[dict]:
-    """Load the overview data for all known scanners and display them in a grid.
-    :param df: Optional dataframe to display. If None, loads all scanner data.
-    :return a dictionary with the selected scanner entry or None, if nothing is selected
+def show_overview_grid(df: pd.DataFrame | None = None) -> dict | None:
+    """Display scanner overview data in an interactive grid with selection capability.
+
+    :param df: Optional DataFrame to display. If None, loads all scanner data
+    :return: Dictionary with selected scanner entry or None if nothing is selected
     """
-    HOVER_COLOR = "rgba(255, 75, 75, .5)"
 
     if df is None:
         df = collect_overview_information()
@@ -269,9 +239,9 @@ def show_overview_grid(df: Optional[pd.DataFrame] = None) -> Optional[dict]:
         allow_unsafe_jscode=True,
         fit_columns_on_grid_load=True,
         theme="streamlit",
-        height=520,
+        height=SCANNER_OVERVIEW_GRID_HEIGHT_PX,
         custom_css={
-            ".ag-row-hover": {"background-color": HOVER_COLOR + " !important"},
+            ".ag-row-hover": {"background-color": HOVER_COLOR_RGBA + " !important"},
             ".img-cell.ag-cell": {
                 "padding-left": "0",
                 "padding-right": "0",
@@ -283,16 +253,19 @@ def show_overview_grid(df: Optional[pd.DataFrame] = None) -> Optional[dict]:
 
     st.markdown(
         """
-    <div style="background: linear-gradient(90deg, #e3f2fd 0%, #f3e5f5 100%); padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #1f77b4;">
+    <div style="background: linear-gradient(90deg, #e3f2fd 0%, #f3e5f5 100%); padding: 1rem;\
+      border-radius: 8px; margin: 1rem 0; border-left: 4px solid #1f77b4;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="color: #1565c0; font-weight: 500;">
-                💡 <strong>Interactive Guide:</strong> Hover over column headers for descriptions • Select any row to see quick actions and details
+                💡 <strong>Interactive Guide:</strong> Hover over column headers for descriptions \
+                    • Select any row to see quick actions and details
             </div>
             {}
         </div>
     </div>
     """.format(
-            f'<div style="color: #f57c00; font-weight: 600;">⚠️ {len(df) - df["is_valid_summary"].sum()} scanner(s) missing results</div>'
+            f'<div style="color: #f57c00; font-weight: 600;">⚠️ {len(df) - df["is_valid_summary"].sum()}\
+              scanner(s) missing results</div>'
             if df["is_valid_summary"].sum() < len(df)
             else '<div style="color: #2e7d32; font-weight: 600;">✅ All scanners have valid results</div>'
         ),
@@ -304,14 +277,7 @@ def show_overview_grid(df: Optional[pd.DataFrame] = None) -> Optional[dict]:
 
 
 def _group_columns(grid_options: dict, group_name: str, columns_to_group: list[str]) -> dict:
-    """A helper function to combine a list of columns into a column group.
-    This is done be creating a column group and then deleting the individual columns.
-
-    :param grid_options: the dictionary of grid options
-    :param group_name: the name of the resulting column group
-    :param columns_to_group: a collection of column names which should be grouped
-    :return: the updated configuration where the specified columns are children of the column group
-    """
+    """Combine individual columns into a column group for better organization."""
     sub_columns = []
     new_cols = []
     for col in grid_options["columnDefs"]:
@@ -326,34 +292,35 @@ def _group_columns(grid_options: dict, group_name: str, columns_to_group: list[s
     return grid_options
 
 
-def show_header():
-    """Show header with professional styling and supported scanners."""
+def _render_main_header() -> None:
+    """Render the main header section with branding and styling."""
     st.markdown(
         """
-    <div style="text-align: center; padding: 3.5rem 0 2.5rem 0; 
-                background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 20%, #74b9ff 40%, #00cec9 60%, #55efc4 80%, #6c5ce7 100%); 
-                border-radius: 20px; margin-bottom: 2rem; 
-                box-shadow: 0 15px 40px rgba(108, 92, 231, 0.5); 
+    <div style="text-align: center; padding: 3.5rem 0 2.5rem 0;
+                background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 20%,\
+                  #74b9ff 40%, #00cec9 60%, #55efc4 80%, #6c5ce7 100%);
+                border-radius: 20px; margin-bottom: 2rem;
+                box-shadow: 0 15px 40px rgba(108, 92, 231, 0.5);
                 position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                    background: radial-gradient(circle at 15% 25%, rgba(162, 155, 254, 0.4) 0%, transparent 50%), 
-                                radial-gradient(circle at 85% 75%, rgba(116, 185, 255, 0.4) 0%, transparent 50%), 
-                                radial-gradient(circle at 50% 15%, rgba(0, 206, 201, 0.3) 0%, transparent 45%), 
-                                radial-gradient(circle at 25% 85%, rgba(85, 239, 196, 0.3) 0%, transparent 45%); 
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                    background: radial-gradient(circle at 15% 25%, rgba(162, 155, 254, 0.4) 0%, transparent 50%),
+                                radial-gradient(circle at 85% 75%, rgba(116, 185, 255, 0.4) 0%, transparent 50%),
+                                radial-gradient(circle at 50% 15%, rgba(0, 206, 201, 0.3) 0%, transparent 45%),
+                                radial-gradient(circle at 25% 85%, rgba(85, 239, 196, 0.3) 0%, transparent 45%);
                     pointer-events: none;"></div>
         <div style="max-width: 800px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1;">
-            <h1 style="color: #FFFFFF; margin-bottom: 0.5rem; font-size: 3.2rem; font-weight: 800; 
+            <h1 style="color: #FFFFFF; margin-bottom: 0.5rem; font-size: 3.2rem; font-weight: 800;
                        text-shadow: 0 4px 15px rgba(0,0,0,0.4); letter-spacing: -0.02em;">
                 🛡️ Kalm Benchmark
             </h1>
-            <h3 style="color: rgba(255,255,255,0.95); font-weight: 500; margin-bottom: 1.5rem; 
+            <h3 style="color: rgba(255,255,255,0.95); font-weight: 500; margin-bottom: 1.5rem;
                       font-size: 1.6rem; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                 Kubernetes Security Scanner Comparison Platform
             </h3>
-            <p style="color: rgba(255,255,255,0.9); max-width: 650px; margin: 0 auto; 
+            <p style="color: rgba(255,255,255,0.9); max-width: 650px; margin: 0 auto;
                      line-height: 1.7; font-size: 1.15rem; text-shadow: 0 2px 6px rgba(0,0,0,0.25);">
-                Comprehensive evaluation and comparison of Kubernetes workload compliance scanners. 
-                Compare features, performance metrics, and coverage to make informed decisions about 
+                Comprehensive evaluation and comparison of Kubernetes workload compliance scanners.
+                Compare features, performance metrics, and coverage to make informed decisions about
                 your security toolchain.
             </p>
         </div>
@@ -362,10 +329,13 @@ def show_header():
         unsafe_allow_html=True,
     )
 
+
+def _render_scanners_section_header() -> None:
+    """Render the supported scanners section header."""
     st.markdown(
         """
     <div style="text-align: center; margin: 2rem 0;">
-        <h4 style="color: #474ecf; margin-bottom: 1.5rem; font-weight: 700; font-size: 1.4rem; 
+        <h4 style="color: #474ecf; margin-bottom: 1.5rem; font-weight: 700; font-size: 1.4rem;
                    text-shadow: 0 1px 3px rgba(71, 78, 207, 0.3);">
             Supported Security Scanners
         </h4>
@@ -374,62 +344,85 @@ def show_header():
         unsafe_allow_html=True,
     )
 
-    scanner_names = list(SCANNERS.keys())
 
-    icons_per_row = 5
-    rows_needed = (len(scanner_names) + icons_per_row - 1) // icons_per_row
+def _create_scanner_icon_html(scanner_name: str, icon_path: str) -> str:
+    """Create HTML for scanner icon display.
+
+    :param scanner_name: Name of the scanner
+    :param icon_path: Path to the scanner icon file
+    :return: HTML string for the scanner icon
+    """
+    if not icon_path or not Path(icon_path).exists():
+        return _create_fallback_scanner_html(scanner_name)
+
+    try:
+        with open(icon_path, "rb") as f:
+            image_data = f.read()
+
+        mime_type = "svg+xml" if icon_path.endswith(".svg") else "png"
+        b64_image = base64.b64encode(image_data).decode()
+
+        return f"""
+        <div style="display: flex; justify-content: center; align-items: center; height: 80px; padding: 8px;">
+            <img src="data:image/{mime_type};base64,{b64_image}"
+                 style="max-width: 70px; max-height: 70px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));"
+                 alt="{scanner_name}">
+        </div>
+        """
+    except Exception:
+        return _create_fallback_scanner_html(scanner_name)
+
+
+def _create_fallback_scanner_html(scanner_name: str) -> str:
+    """Create fallback HTML for scanner when icon is not available.
+
+    :param scanner_name: Name of the scanner
+    :return: HTML string for fallback display
+    """
+    return f"""
+    <div style="display: flex; justify-content: center; align-items: center; height: 80px; padding: 8px;
+                background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
+        <span style="color: #666; font-size: 0.8rem; text-align: center;">{scanner_name}</span>
+    </div>
+    """
+
+
+def _render_scanner_icons() -> None:
+    """Render the grid of scanner icons."""
+    scanner_names = list(SCANNERS.keys())
+    rows_needed = (len(scanner_names) + SCANNER_ICONS_PER_ROW - 1) // SCANNER_ICONS_PER_ROW
 
     for row in range(rows_needed):
-        cols = st.columns(icons_per_row)
-        for col_idx in range(icons_per_row):
-            scanner_idx = row * icons_per_row + col_idx
+        cols = st.columns(SCANNER_ICONS_PER_ROW)
+
+        for col_idx in range(SCANNER_ICONS_PER_ROW):
+            scanner_idx = row * SCANNER_ICONS_PER_ROW + col_idx
+
             if scanner_idx < len(scanner_names):
                 scanner_name = scanner_names[scanner_idx]
                 icon_path = _get_scanner_icon_path(scanner_name)
 
                 with cols[col_idx]:
-                    if icon_path and Path(icon_path).exists():
-                        try:
-                            with open(icon_path, "rb") as f:
-                                image_data = f.read()
+                    icon_html = _create_scanner_icon_html(scanner_name, icon_path)
+                    st.markdown(icon_html, unsafe_allow_html=True)
 
-                            mime_type = "svg+xml" if icon_path.endswith(".svg") else "png"
-                            b64_image = base64.b64encode(image_data).decode()
 
-                            st.markdown(
-                                f"""
-                            <div style="display: flex; justify-content: center; align-items: center; height: 80px; padding: 8px;">
-                                <img src="data:image/{mime_type};base64,{b64_image}" 
-                                     style="max-width: 70px; max-height: 70px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));" 
-                                     alt="{scanner_name}">
-                            </div>
-                            """,
-                                unsafe_allow_html=True,
-                            )
-                        except Exception:
-                            st.markdown(
-                                f"""
-                            <div style="display: flex; justify-content: center; align-items: center; height: 80px; padding: 8px; 
-                                        background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
-                                <span style="color: #666; font-size: 0.8rem; text-align: center;">{scanner_name}</span>
-                            </div>
-                            """,
-                                unsafe_allow_html=True,
-                            )
-                    else:
-                        st.markdown(
-                            f"""
-                        <div style="display: flex; justify-content: center; align-items: center; height: 80px; padding: 8px; 
-                                    background: #f8f9fa; border-radius: 8px; border: 2px dashed #dee2e6;">
-                            <span style="color: #666; font-size: 0.8rem; text-align: center;">{scanner_name}</span>
-                        </div>
-                        """,
-                            unsafe_allow_html=True,
-                        )
+def show_header():
+    """Display the main header with branding, supported scanners, and professional styling.
+
+    :return: None
+    """
+    _render_main_header()
+    _render_scanners_section_header()
+    _render_scanner_icons()
 
 
 def show_quick_stats(df: pd.DataFrame):
-    """Show quick statistics with professional styling."""
+    """Display platform statistics with key metrics in a professional layout.
+
+    :param df: DataFrame containing scanner information
+    :return: None
+    """
     total_scanners = len(df)
     valid_results = df["is_valid_summary"].sum()
     avg_score = df[df["is_valid_summary"]]["score"].mean() if valid_results > 0 else 0
@@ -437,8 +430,10 @@ def show_quick_stats(df: pd.DataFrame):
 
     st.markdown(
         """
-    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h4 style="text-align: center; color: #495057; margin-bottom: 1.5rem; font-weight: 600; font-size: 1.1rem;">📈 Platform Statistics</h4>
+    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; \
+                margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h4 style="text-align: center; color: #495057; margin-bottom: 1.5rem; \
+                   font-weight: 600; font-size: 1.1rem;">📈 Platform Statistics</h4>
     </div>
     """,
         unsafe_allow_html=True,
@@ -476,7 +471,10 @@ def show_quick_stats(df: pd.DataFrame):
 
 
 def show_scanner_capabilities_matrix():
-    """Show general scanner capabilities matrix (moved from scanner comparison page)"""
+    """Display comprehensive scanner capabilities matrix with feature comparison.
+
+    :return: None
+    """
     st.subheader("Scanner Capabilities Matrix")
 
     # Define scanner capabilities based on their implementations
@@ -498,9 +496,7 @@ def show_scanner_capabilities_matrix():
         scanner_capabilities["Manifest Scanning"].append("✅" if hasattr(scanner_class, "scan_manifests") else "❌")
         scanner_capabilities["Cluster Scanning"].append("✅" if hasattr(scanner_class, "scan_cluster") else "❌")
         scanner_capabilities["CI/CD Mode"].append("✅" if getattr(scanner_class, "CI_MODE", False) else "❌")
-        scanner_capabilities["Offline Capability"].append(
-            "✅" if getattr(scanner_class, "RUNS_OFFLINE", False) else "❌"
-        )
+        scanner_capabilities["Offline Capability"].append("✅" if getattr(scanner_class, "RUNS_OFFLINE", False) else "❌")
         scanner_capabilities["Custom Checks"].append("✅" if getattr(scanner_class, "CUSTOM_CHECKS", False) else "❌")
 
         formats = getattr(scanner_class, "FORMATS", [])
@@ -541,7 +537,10 @@ def show_scanner_capabilities_matrix():
 
 
 def show_severity_support_analysis():
-    """Show analysis of which scanners support severity scoring (moved from scanner comparison page)"""
+    """Display analysis of scanner severity scoring support with detailed breakdown.
+
+    :return: None
+    """
     st.subheader("⚖️ Severity Scoring Support Analysis")
 
     # Severity support data based on our audit
@@ -614,7 +613,10 @@ def show_severity_support_analysis():
 
 
 def show_scanner_deployment_comparison():
-    """Show scanner deployment and format options (moved from scanner comparison page)"""
+    """Display scanner deployment options and output format capabilities.
+
+    :return: None
+    """
     st.subheader("🚀 Deployment & Format Comparison")
 
     # Create deployment comparison data
@@ -677,57 +679,103 @@ def show_scanner_deployment_comparison():
     st.altair_chart(format_chart, use_container_width=True)
 
 
+def _get_source_icon_and_type(source_type: str) -> tuple[str, str]:
+    """Get icon and normalized type for a source type.
+
+    :param source_type: Source type string
+    :return: Tuple of (icon, normalized_type)
+    """
+    source_type_lower = source_type.lower()
+
+    if source_type_lower in ["manifest", "manifests"]:
+        return "📁", "manifests"
+    elif source_type_lower == "cluster":
+        return "🌐", "cluster"
+    elif source_type_lower in ["helm-chart", "helm"]:
+        return "⚓", "helm-chart"
+    else:
+        return "🔧", source_type
+
+
+def _create_source_mapping_entry(source_type: str, source_name: str) -> tuple[str, str]:
+    """Create display name and filter value for a source mapping entry.
+
+    :param source_type: Type of the source
+    :param source_name: Name or location of the source
+    :return: Tuple of (display_name, filter_value)
+    """
+    icon, normalized_type = _get_source_icon_and_type(source_type)
+    display_name = f"{icon} {source_name}"
+    filter_value = f"{normalized_type}:{source_name}"
+    return display_name, filter_value
+
+
+def _process_colon_separated_source(source_type: str) -> tuple[str, str] | None:
+    """Process source type that contains a colon separator.
+
+    :param source_type: Source type string containing ':'
+    :return: Tuple of (display_name, filter_value) or None if invalid
+    """
+    if ":" not in source_type:
+        return None
+
+    actual_type, source_name = source_type.split(":", 1)
+    return _create_source_mapping_entry(actual_type, source_name)
+
+
+def _process_simple_source(source_type: str, source_location: str) -> tuple[str, str] | None:
+    """Process simple source type without colon separator.
+
+    :param source_type: Source type string
+    :param source_location: Source location string
+    :return: Tuple of (display_name, filter_value) or None if invalid
+    """
+    if not source_location:
+        icon, _ = _get_source_icon_and_type(source_type)
+        display_name = f"{icon} {source_type.title()}"
+        return display_name, source_type
+
+    # Handle location-based sources
+    if source_type.lower() in ["manifest", "manifests"]:
+        path_name = Path(source_location).name if source_location else source_type
+        return _create_source_mapping_entry(source_type, path_name)
+    elif source_type.lower() in ["cluster", "helm-chart", "helm"]:
+        return _create_source_mapping_entry(source_type, source_location)
+    else:
+        icon, _ = _get_source_icon_and_type(source_type)
+        display_name = f"{icon} {source_type}: {source_location}"
+        filter_value = f"{source_type}:{source_location}"
+        return display_name, filter_value
+
+
 def get_available_sources() -> dict:
-    """Get list of available source instances from the database."""
+    """Retrieve available scan source instances from the database for filtering.
+
+    :return: Dictionary mapping display names to filter values for scan sources
+    """
     unified_service = get_unified_service()
     source_mapping = {}
 
     try:
         for name in SCANNERS.keys():
             scan_runs = unified_service.db.get_scan_runs(scanner_name=name.lower())
+
             for run in scan_runs:
                 source_type = run.get("source_type", "unknown")
                 source_location = run.get("source_location", "")
 
-                if source_type and source_type != "unknown":
-                    if ":" in source_type:
-                        actual_type, source_name = source_type.split(":", 1)
+                if not source_type or source_type == "unknown":
+                    continue
 
-                        if actual_type.lower() in ["manifest", "manifests"]:
-                            display_name = f"📁 {source_name}"
-                            filter_value = f"manifests:{source_name}"
-                        elif actual_type.lower() == "cluster":
-                            display_name = f"🌐 {source_name}"
-                            filter_value = f"cluster:{source_name}"
-                        elif actual_type.lower() in ["helm-chart", "helm"]:
-                            display_name = f"⚓ {source_name}"
-                            filter_value = f"helm-chart:{source_name}"
-                        else:
-                            display_name = f"🔧 {source_name}"
-                            filter_value = f"{actual_type}:{source_name}"
+                # Process colon-separated source types
+                if ":" in source_type:
+                    result = _process_colon_separated_source(source_type)
+                else:
+                    result = _process_simple_source(source_type, source_location)
 
-                        source_mapping[display_name] = filter_value
-
-                    else:
-                        if source_location:
-                            if source_type.lower() in ["manifest", "manifests"]:
-                                path_name = Path(source_location).name if source_location else source_type
-                                display_name = f"📁 {path_name}"
-                                filter_value = f"manifests:{path_name}"
-                            elif source_type.lower() == "cluster":
-                                display_name = f"🌐 {source_location}"
-                                filter_value = f"cluster:{source_location}"
-                            elif source_type.lower() in ["helm-chart", "helm"]:
-                                display_name = f"⚓ {source_location}"
-                                filter_value = f"helm-chart:{source_location}"
-                            else:
-                                display_name = f"🔧 {source_type}: {source_location}"
-                                filter_value = f"{source_type}:{source_location}"
-
-                            source_mapping[display_name] = filter_value
-                        else:
-                            display_name = f"🔧 {source_type.title()}"
-                            source_mapping[display_name] = source_type
+                if result:
+                    display_name, filter_value = result
+                    source_mapping[display_name] = filter_value
 
     except Exception as e:
         from loguru import logger
@@ -738,7 +786,10 @@ def get_available_sources() -> dict:
 
 
 def show_filter_options() -> dict:
-    """Show filtering options and return filter criteria."""
+    """Display advanced filtering options for scanner comparison customization.
+
+    :return: Dictionary containing all selected filter criteria
+    """
     with st.expander("🔍 Advanced Filter Options", expanded=False):
         st.markdown("**Customize your scanner comparison view:**")
 
@@ -837,7 +888,12 @@ def show_filter_options() -> dict:
 
 
 def apply_filters(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
-    """Apply filters to the dataframe."""
+    """Apply user-selected filters to the scanner DataFrame.
+
+    :param df: Original DataFrame containing all scanner data
+    :param filters: Dictionary containing filter criteria from show_filter_options
+    :return: Filtered DataFrame matching the specified criteria
+    """
     filtered_df = df.copy()
 
     if filters["min_score"] > 0:
@@ -860,8 +916,12 @@ def apply_filters(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
     return filtered_df
 
 
-def show_quick_actions(selection: Optional[dict]):
-    """Show quick action buttons for selected scanner."""
+def show_quick_actions(selection: dict | None):
+    """Display quick action buttons for the selected scanner.
+
+    :param selection: Dictionary containing selected scanner information or None
+    :return: None
+    """
     if selection is None:
         return
 
@@ -908,7 +968,10 @@ def show_quick_actions(selection: Optional[dict]):
 
 
 def show() -> None:
-    """Show the overview page with professional styling and modern UI."""
+    """Display the main overview page with scanner comparison interface.
+
+    :return: None
+    """
     show_header()
 
     df = collect_overview_information()
@@ -916,7 +979,8 @@ def show() -> None:
 
     st.markdown(
         """
-    <div style="height: 2px; background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, #dee2e6 80%, transparent 100%); margin: 2rem 0;"></div>
+    <div style="height: 2px; background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, \
+                #dee2e6 80%, transparent 100%); margin: 2rem 0;"></div>
     """,
         unsafe_allow_html=True,
     )
@@ -924,7 +988,7 @@ def show() -> None:
     st.markdown(
         """
     <div style="margin: 2rem 0 1rem 0;">
-        <h3 style="color: #474ecf; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; 
+        <h3 style="color: #474ecf; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;
                    font-size: 1.5rem; text-shadow: 0 1px 3px rgba(71, 78, 207, 0.2);">
             📋 Scanner Comparison Table
         </h3>
@@ -956,7 +1020,9 @@ def show() -> None:
     if selection:
         st.markdown(
             """
-        <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+        <div style="margin-top: 2rem; padding: 1.5rem; \
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); \
+                    border-radius: 10px; border: 1px solid #dee2e6;">
         """,
             unsafe_allow_html=True,
         )
@@ -968,7 +1034,8 @@ def show() -> None:
     # Add divider and show general scanner capabilities
     st.markdown(
         """
-    <div style="height: 2px; background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, #dee2e6 80%, transparent 100%); margin: 3rem 0 2rem 0;"></div>
+    <div style="height: 2px; background: linear-gradient(90deg, transparent 0%, #dee2e6 20%, \
+                #dee2e6 80%, transparent 100%); margin: 3rem 0 2rem 0;"></div>
     """,
         unsafe_allow_html=True,
     )

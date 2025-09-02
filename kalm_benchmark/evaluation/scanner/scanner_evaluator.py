@@ -12,7 +12,10 @@ from loguru import logger
 from strenum import LowercaseStrEnum, StrEnum
 
 from ...utils.constants import RunUpdateGenerator, UpdateType
-from ..utils import GeneratorWrapper
+from ...utils.eval_utils import GeneratorWrapper
+
+# Bind logger to scan component for proper log filtering
+logger = logger.bind(component="scan")
 
 
 @dataclass
@@ -34,7 +37,7 @@ class CheckResult:
 class CheckCategory(StrEnum):
     AdmissionControl = auto()
     DataSecurity = auto()
-    Detection = auto()  # TODO: sure?
+    Detection = auto()
     Misc = auto()
     Network = auto()
     IAM = auto()
@@ -82,7 +85,7 @@ class ScannerBase(ABC):
         pass
 
     @classmethod
-    def categorize_check(cls, check_id: str) -> str:
+    def categorize_check(cls, check_id: str) -> str | None:
         """Assign a category to the check depending.
         This method is not required to be implemented.
 
@@ -92,7 +95,12 @@ class ScannerBase(ABC):
         return None
 
     @classmethod
-    def run(cls, cmd: list[str], parse_json: bool = True, stream_process_output: bool = False) -> RunUpdateGenerator:
+    def run(
+        cls,
+        cmd: list[str],
+        parse_json: bool = True,
+        stream_process_output: bool = False,
+    ) -> RunUpdateGenerator:
         """Starts a subprocess with the given command.
         If the process runs into a problem (return code != 0) then `stderr` is forwarded as an
         error message to the caller.
@@ -107,7 +115,10 @@ class ScannerBase(ABC):
         """
         # Validate command input for security
         if not isinstance(cmd, list) or not all(isinstance(arg, str) for arg in cmd):
-            yield UpdateType.Error, "Command must be a list of strings for security reasons"
+            yield (
+                UpdateType.Error,
+                "Command must be a list of strings for security reasons",
+            )
             return None
 
         if not cmd:
@@ -118,8 +129,26 @@ class ScannerBase(ABC):
         sanitized_cmd = []
         for arg in cmd:
             # Basic validation - reject arguments with shell metacharacters that could be dangerous
-            if any(char in arg for char in [";", "|", "&", "$", "`", "(", ")", "<", ">", "\n", "\r"]):
-                yield UpdateType.Warning, f"Command argument contains potentially dangerous characters: {arg}"
+            if any(
+                char in arg
+                for char in [
+                    ";",
+                    "|",
+                    "&",
+                    "$",
+                    "`",
+                    "(",
+                    ")",
+                    "<",
+                    ">",
+                    "\n",
+                    "\r",
+                ]
+            ):
+                yield (
+                    UpdateType.Warning,
+                    f"Command argument contains potentially dangerous characters: {arg}",
+                )
             sanitized_cmd.append(str(arg))  # Ensure all arguments are strings
 
         try:
@@ -148,7 +177,10 @@ class ScannerBase(ABC):
                 result = json.loads(output)
                 output_is_json = True  # the output contains no useful info for debugging
             except json.JSONDecodeError as exc:
-                yield UpdateType.Error, f"Malformed JSON response of '{cmd_str}': {exc}"
+                yield (
+                    UpdateType.Error,
+                    f"Malformed JSON response of '{cmd_str}': {exc}",
+                )
                 result = None
 
         # handle error code and error message in addation to the "regular" output
@@ -158,10 +190,15 @@ class ScannerBase(ABC):
             msg_details = (
                 f": {os.linesep}{errors} "
                 if len(errors) > 0
-                else output if len(output) > 0 and not output_is_json else ""
+                else output
+                if len(output) > 0 and not output_is_json
+                else ""
             )
             level = UpdateType.Warning if has_results else UpdateType.Error
-            yield level, f"The process '{cmd_str}' ended with exit-code {proc.returncode}{msg_details}"
+            yield (
+                level,
+                f"The process '{cmd_str}' ended with exit-code {proc.returncode}{msg_details}",
+            )
         return result
 
     @staticmethod
@@ -268,15 +305,25 @@ class ScannerBase(ABC):
         :return: a list of parsed CheckResult objects
         """
         if self.SCAN_MANIFESTS_CMD is None:
-            yield UpdateType.Error, f"{self.NAME} does not support scanning of manifests"
+            yield (
+                UpdateType.Error,
+                f"{self.NAME} does not support scanning of manifests",
+            )
             return None
 
         path_obj = Path(path)
         if not self.SCAN_PER_FILE or path_obj.is_file():
+            logger.info(f"{self.NAME}: Scanning path {path_obj} as {'file' if path_obj.is_file() else 'directory'}")
             raw_results = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(path_obj)], **kwargs)
         else:  # special handling if tool does not support scanning an entire folder
+            yaml_files = list(path_obj.rglob("*.yaml"))
+            logger.info(
+                f"{self.NAME}: Scanning directory {path_obj} with {len(yaml_files)} YAML files (SCAN_PER_FILE=True)"
+            )
+            if len(yaml_files) == 0:
+                logger.warning(f"{self.NAME}: No YAML files found in {path_obj}")
             raw_results = []
-            for p in path_obj.glob("*.yaml"):
+            for file_idx, p in enumerate(yaml_files):
                 res = yield from self.run(self.SCAN_MANIFESTS_CMD + [str(p)], **kwargs)
                 if res is not None and len(res) > 0:
                     raw_results.append(res)
@@ -285,16 +332,27 @@ class ScannerBase(ABC):
         if raw_results is not None:
             try:
                 parsed_results = self.parse_results(raw_results)
+                logger.info(
+                    f"{self.NAME}: Successfully parsed {len(parsed_results) if parsed_results else 0} check results"
+                )
                 return parsed_results
             except Exception as e:
-                yield UpdateType.Error, f"Failed to parse results from {self.NAME}: {e}"
+                logger.error(f"{self.NAME}: Failed to parse results: {e}")
+                yield (
+                    UpdateType.Error,
+                    f"Failed to parse results from {self.NAME}: {e}",
+                )
                 return []
 
+        logger.warning(f"{self.NAME}: No raw results to parse")
         return []
 
     def scan_cluster(self, **kwargs) -> RunUpdateGenerator:
         if self.SCAN_CLUSTER_CMD is None:
-            yield UpdateType.Error, f"{self.NAME} does not support checking a cluster"
+            yield (
+                UpdateType.Error,
+                f"{self.NAME} does not support checking a cluster",
+            )
             return []
         raw_results = yield from self.run(self.SCAN_CLUSTER_CMD, **kwargs)
 
@@ -304,7 +362,10 @@ class ScannerBase(ABC):
                 parsed_results = self.parse_results(raw_results)
                 return parsed_results
             except Exception as e:
-                yield UpdateType.Error, f"Failed to parse results from {self.NAME}: {e}"
+                yield (
+                    UpdateType.Error,
+                    f"Failed to parse results from {self.NAME}: {e}",
+                )
                 return []
 
         return []
@@ -319,3 +380,48 @@ class ScannerBase(ABC):
     def can_scan_cluster(self) -> bool:
         # either command is specified or there is a custom scan implementation
         return self.SCAN_CLUSTER_CMD is not None or type(self).scan_cluster != ScannerBase.scan_cluster
+
+    def scan_helm_chart(
+        self,
+        chart_path: Union[str, Path],
+        release_name: str = "test-release",
+        namespace: str = "default",
+        **kwargs,
+    ) -> RunUpdateGenerator:
+        """Scan a Helm chart by rendering it to manifests first.
+
+        :param chart_path: Path to Helm chart directory or Artifact Hub URL
+        :param release_name: Name for the Helm release
+        :param namespace: Kubernetes namespace for the release
+        :return: Parsed CheckResult objects from scanning the rendered manifests
+        """
+        from ...utils.helm_operations import scan_helm_chart_generator
+
+        return scan_helm_chart_generator(chart_path, self, release_name, namespace)
+
+    def scan_popular_charts(
+        self,
+        num_charts: int = 10,
+        release_name: str = "test-release",
+        namespace: str = "default",
+        **kwargs,
+    ) -> RunUpdateGenerator:
+        """Scan popular Helm charts by downloading and rendering them.
+
+        :param num_charts: Number of popular charts to download and scan
+        :param release_name: Base name for Helm releases
+        :param namespace: Kubernetes namespace for the releases
+        :return: Combined parsed CheckResult objects from all scanned charts
+        """
+        from ...utils.helm_operations import scan_popular_charts_generator
+
+        return scan_popular_charts_generator(num_charts, self, release_name, namespace)
+
+    @property
+    def can_scan_helm(self) -> bool:
+        """Check if the scanner can scan Helm charts.
+
+        Helm scanning is available for any scanner that can scan manifests,
+        since we render Helm charts to manifests first.
+        """
+        return self.can_scan_manifests

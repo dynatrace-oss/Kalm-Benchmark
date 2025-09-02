@@ -1,6 +1,3 @@
-"""Custom exception classes for Kalm Benchmark operations."""
-
-
 class KalmBenchmarkError(Exception):
     """Base exception for Kalm Benchmark operations."""
 
@@ -33,5 +30,11 @@ class ConfigurationError(KalmBenchmarkError):
 
 class ScanError(KalmBenchmarkError):
     """Raised when scan operations fail."""
+
+    pass
+
+
+class HelmChartError(Exception):
+    """Custom exception for Helm chart operations."""
 
     pass

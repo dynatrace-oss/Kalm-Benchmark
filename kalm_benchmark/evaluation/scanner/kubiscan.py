@@ -224,7 +224,7 @@ class Scanner(ScannerBase):
             try:
                 alert_obj = AlertObject.from_dict(dict(zip(columns, cells)))
                 rows.append(alert_obj)
-            except Exception as e:
+            except Exception:
                 # Skip problematic rows silently and continue processing
                 continue
 

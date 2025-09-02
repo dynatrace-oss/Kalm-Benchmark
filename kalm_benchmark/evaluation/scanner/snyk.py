@@ -2,12 +2,13 @@ from typing import Tuple
 
 from loguru import logger
 
-from ..file_index import FileIndex
-from ..utils import (
+from kalm_benchmark.utils.path_normalization import normalize_snyk_path
+
+from ...utils.eval_utils import (
     fix_path_to_current_environment,
     get_difference_in_parent_path,
-    normalize_path,
 )
+from ..file_index import FileIndex
 from .scanner_evaluator import CheckResult, CheckStatus, ScannerBase
 
 CHECK_MAPPING = {}
@@ -132,12 +133,4 @@ class Scanner(ScannerBase):
 
 
 def _normalize_path(path: str, kind: str | None = None) -> str:
-    if path.startswith("input."):
-        path = path[6:]  # drop the leading 'input.'
-        is_relative = True
-    else:
-        is_relative = not path.startswith(kind.lower())
-
-    norm_path = normalize_path(path, is_relative=is_relative)
-
-    return norm_path
+    return normalize_snyk_path(path, kind)

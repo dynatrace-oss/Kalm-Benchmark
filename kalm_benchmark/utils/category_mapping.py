@@ -26,11 +26,8 @@ PREFIX_CATEGORY_MAPPINGS = {
 def get_category_by_prefix(prefix: str) -> CheckCategory:
     """Get category by prefix using configuration-driven mapping.
 
-    Args:
-        prefix: The check ID prefix to categorize
-
-    Returns:
-        The appropriate CheckCategory, defaults to Misc if no match found
+    :param prefix: The check ID prefix to categorize
+    :return: The appropriate CheckCategory, defaults to Misc if no match found
     """
     prefix_lower = prefix.lower()
     for prefixes, category in PREFIX_CATEGORY_MAPPINGS.items():
@@ -42,10 +39,7 @@ def get_category_by_prefix(prefix: str) -> CheckCategory:
 def get_category_by_specific_check(check_id: str) -> CheckCategory | None:
     """Get category for specific check IDs that override prefix-based categorization.
 
-    Args:
-        check_id: The specific check ID to look up
-
-    Returns:
-        The CheckCategory if found, None if not in specific mappings
+    :param: check_id: The specific check ID to look up
+    :return: The CheckCategory if found, None if not in specific mappings
     """
     return SPECIFIC_CHECK_MAPPINGS.get(check_id.lower())

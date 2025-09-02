@@ -21,7 +21,7 @@ def sanitize_name(name: str, max_len: int = 253) -> str:
 def ensure_list(thing: Any | list[Any] | None) -> list[Any] | None:
     """
     Ensure that the provided object is a list, except if it's nothing.
-    If it's not a list, then it will be wrapped in alist.
+    If it's not a list, then it will be wrapped in a list.
     :param thing: the object which is ensured to be a list
     :return: either a list or None
     """
