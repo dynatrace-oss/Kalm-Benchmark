@@ -4,8 +4,9 @@ automountServiceAccountToken: false
 metadata:
   annotations:
     check_path: .metadata.namespace
-    description: not setting memory limit can lead to the pod suffocating the node by using all available memory
+    description: The default namespace should not be used for custom workloads
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.6.4']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Namespaces']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242383']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['16.1.a']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Code that uses namespaces to isolate Kubernetes resources.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NS-001
@@ -17,8 +18,9 @@ kind: Deployment
 metadata:
   annotations:
     check_path: .metadata.namespace
-    description: not setting memory limit can lead to the pod suffocating the node by using all available memory
+    description: The default namespace should not be used for custom workloads
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.6.4']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Namespaces']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242383']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['16.1.a']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Code that uses namespaces to isolate Kubernetes resources.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NS-001
@@ -34,7 +36,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -50,7 +52,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

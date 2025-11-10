@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: false
+metadata:
+  annotations:
+    check_path: .spec.hostNetwork
+    description: The hostNetwork defaults to `false` and thus should be okay
+    expected: pass
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.2.5']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Pod security enforcement']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242437']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A4']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9013']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Appropriate Pod Security Standards policy is applied for all namespaces and enforced.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.']}]"
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: POD-010-1
+  name: pod-010-1-hostnetwork-flag-not-set-dedicated-sa
+  namespace: kalm-benchmark
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    check_path: .spec.hostNetwork
+    description: The hostNetwork defaults to `false` and thus should be okay
+    expected: pass
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.2.5']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Pod security enforcement']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242437']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A4']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9013']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Appropriate Pod Security Standards policy is applied for all namespaces and enforced.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.']}]"
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: POD-010-1
+  name: pod-010-1-hostnetwork-flag-not-set
+  namespace: kalm-benchmark
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: kalm-benchmark
+      check: POD-010-1
+  template:
+    metadata:
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
+      labels:
+        app.kubernetes.io/part-of: kalm-benchmark
+        check: POD-010-1
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 1
+      automountServiceAccountToken: false
+      containers:
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+          name: app
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+          resources:
+            limits:
+              cpu: 1m
+              ephemeral-storage: 1Mi
+              memory: 1Mi
+            requests:
+              cpu: 1m
+              ephemeral-storage: 1Mi
+              memory: 1Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 31337
+            runAsNonRoot: true
+            runAsUser: 31337
+            seLinuxOptions:
+              level: s0:c123,c456
+            seccompProfile:
+              type: RuntimeDefault
+      hostIPC: false
+      hostPID: false
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      priorityClassName: default-priority
+      securityContext:
+        runAsGroup: 31337
+        runAsNonRoot: true
+        runAsUser: 31337
+        seLinuxOptions:
+          level: s0:c123,c456
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: pod-010-1-hostnetwork-flag-not-set-dedicated-sa

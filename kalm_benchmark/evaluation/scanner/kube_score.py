@@ -98,8 +98,8 @@ CHECK_MAPPING = {
     ),
     "ingress-targets-service": (CheckCategory.Network, ".spec.rules[].http.paths[].backend.serviceName"),
     "label-values": (CheckCategory.Workload, ".metadata.labels"),
-    "networkpolicy-targets-pod": (CheckCategory.Network, ".spec.podSelector"),
-    "pod-networkpolicy": (CheckCategory.Network, ".spec.podSelector"),
+    "networkpolicy-targets-pod": (CheckCategory.Network, [".spec.podSelector", "NetworkPolicy.metadata.namespace"]),
+    "pod-networkpolicy": (CheckCategory.Network, [".spec.podSelector", "NetworkPolicy.metadata.namespace"]),
     "pod-probes": (
         CheckCategory.Reliability,
         [".spec.containers[].livenessProbe", ".spec.containers[].readinessProbe"],
@@ -147,6 +147,7 @@ class Scanner(ScannerBase):
     RUNS_OFFLINE = True
     IMAGE_URL = "https://user-images.githubusercontent.com/47952/56085330-6c0a2480-5e41-11e9-89ba-0cfddd7714a8.png"
     VERSION_CMD = ["kube-score", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     @classmethod
     def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:
@@ -183,7 +184,7 @@ class Scanner(ScannerBase):
                     checked_path = cls.get_checked_path(c["id"])
 
                     grade = Grade(check["grade"])
-                    status = CheckStatus.Pass if Grade(grade) == Grade.Ok or check["skipped"] else CheckStatus.Alert
+                    status = CheckStatus.Pass if (Grade(grade) == Grade.Ok or check["skipped"] == "true") else CheckStatus.Alert
 
                     check_results.append(
                         CheckResult(

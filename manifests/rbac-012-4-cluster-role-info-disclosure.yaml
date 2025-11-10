@@ -5,6 +5,7 @@ metadata:
     check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
     description: Attackers can use disclosed information to plan their next steps
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-012-4

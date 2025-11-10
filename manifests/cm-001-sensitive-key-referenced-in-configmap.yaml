@@ -17,9 +17,10 @@ data:
   token: PRIVATE KEY eyJhbGciO JWT Bearer
 metadata:
   annotations:
-    check_path: .data.aws_access_key_id|.data.aws_secret_access_key|.data.azure_batchai_storage_account|.data.azure_batchai_storage_key|.data.azure_batch_account|.data.azure_batch_key|.data.secret|.data.key|.data.password|.data.pwd|.data.token|.data.jwt|.data.bearer|.data.credential
+    check_path: .data.aws_access_key_id|.data.aws_secret_access_key|.data.azure_batchai_storage_account|.data.azure_batchai_storage_key|.data.azure_batch_account|.data.azure_batch_key|.data.secret|.data.key|.data.password|.data.pwd|.data.token|.data.jwt|.data.bearer|.data.credential|ConfigMap.data
     description: Attackers can retrieve and use sensitive information provided via config maps
     expected: alert
+    standards: "[{'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['6.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9026']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['ConfigMaps are not used to hold confidential data.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: CM-001

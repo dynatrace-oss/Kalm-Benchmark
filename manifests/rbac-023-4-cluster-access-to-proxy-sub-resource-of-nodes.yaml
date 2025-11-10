@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
+    description: Attackers can access the kubelet API via the proxy sub-resource of nodes
+    expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.1.10']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Role-based access control']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A9']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['1.5.b']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9003']}]"
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-023-4
+  name: rbac-023-4-cluster-role-use-proxy-subresource
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/proxy
+    verbs:
+      - get

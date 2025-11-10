@@ -3,9 +3,10 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
-    check_path: .spec.containers[].securityContext.capabilities
+    check_path: .spec.containers[].securityContext.capabilities|.spec.containers[].securityContext.capabilities.add|.spec.containers[].securityContext.capabilities.add[]
     description: Insecure capabilities can increase the impact of a container compromise
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.2.9']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Pod security enforcement']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242437']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A4']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9011']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Appropriate Pod Security Standards policy is applied for all namespaces and enforced.', 'Drop all capabilities from the containers and add back only specific ones that are needed for operation of the container.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Apply security context to your pods and containers.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-035-16
@@ -16,9 +17,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    check_path: .spec.containers[].securityContext.capabilities
+    check_path: .spec.containers[].securityContext.capabilities|.spec.containers[].securityContext.capabilities.add|.spec.containers[].securityContext.capabilities.add[]
     description: Insecure capabilities can increase the impact of a container compromise
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.2.9']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Pod security enforcement']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242437']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A4']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9011']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Appropriate Pod Security Standards policy is applied for all namespaces and enforced.', 'Drop all capabilities from the containers and add back only specific ones that are needed for operation of the container.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Apply security context to your pods and containers.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-035-16
@@ -34,7 +36,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -50,7 +52,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

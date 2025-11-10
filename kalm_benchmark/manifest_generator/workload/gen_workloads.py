@@ -9,6 +9,7 @@ from ..constants import (
     MAIN_NS,
     SENSITIVE_KEYS,
     SENSITIVE_VALUES,
+    AppArmorProfile,
     CheckStatus,
     ContainerConfig,
     ContainerResourceConfig,
@@ -32,6 +33,7 @@ class PodCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -46,7 +48,7 @@ class PodCheck(Check):
         :param check_path: the path(s) which is the essence of the check
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path, kwargs, namespace)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards, kwargs, namespace)
         Workload(self, self.name, self.meta, **kwargs)
 
 
@@ -90,6 +92,7 @@ class VolumeMountCheck(Check):
         mount_type: str | None = None,  # e.g. File, Directory, etc.
         sub_path: str | None = None,
         read_only: bool | None = True,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -124,6 +127,7 @@ class VolumeMountCheck(Check):
                 ".spec.volumes[].hostPath.path",
                 ".spec.containers[].volumeMounts[]",
             ],
+            standards=standards
         )  # id, name, expect, descr)
 
         empty_dir = k8s.EmptyDirVolumeSource() if volume_type == "empty" else None
@@ -192,6 +196,7 @@ class ConfigMapCheck(Check):
         descr: str = None,
         data: dict | None = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -205,7 +210,7 @@ class ConfigMapCheck(Check):
         :param data: a dictionary representing the content of the configmap
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards)
         k8s.KubeConfigMap(self, check_id, metadata=self.meta, data=data)
 
 
@@ -226,6 +231,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         " to API server is needed when access to API server is needed.",
         security=PodSecurityConfig(service_account_name="default"),
         check_path=".spec.serviceAccountName",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.5"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Protecting Pod service account tokens"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Service account tokens are not mounted in pods that don't require them.", "Avoid using the default ServiceAccount. Instead, create dedicated ServiceAccounts for each workload."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
     )
     PodCheck(
         app,
@@ -236,6 +247,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Create a dedicated ServiceAccount without any permissions instead.",
         security=PodSecurityConfig(service_account_name=None),
         check_path=".spec.serviceAccountName",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.5"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Protecting Pod service account tokens"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Service account tokens are not mounted in pods that don't require them.", "Avoid using the default ServiceAccount. Instead, create dedicated ServiceAccounts for each workload."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
     )
 
     pod_sa_automount_combos = [
@@ -314,6 +331,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             check_path=[".spec.automountServiceAccountToken", ".automountServiceAccountToken"],
             expect=cfg["expect"],
             descr=cfg["descr"],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.6"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Protecting Pod service account tokens"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9025"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Service account tokens are not mounted in pods that don't require them.", "automountServiceAccountToken should be set to false unless the pod specifically requires access to the Kubernetes API to operate."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
         )
 
     PodCheck(
@@ -323,6 +347,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Pods with high risk workloads can be assigned to specific node to separate them from other workloads",
         scheduling=PodSchedulingConfig(node_selector=None, node_affinity=False),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
+        standards=[{"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A14"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["16.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Sensitive applications are running isolated on nodes or with specific sandboxed runtimes."]}],
     )
     PodCheck(
         app,
@@ -332,6 +359,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         scheduling=PodSchedulingConfig(node_selector=None),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
+        standards=[{"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A14"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["16.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Sensitive applications are running isolated on nodes or with specific sandboxed runtimes."]}],
     )
     PodCheck(
         app,
@@ -341,6 +371,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         scheduling=PodSchedulingConfig(node_affinity=False),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
+        standards=[{"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A14"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["16.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Sensitive applications are running isolated on nodes or with specific sandboxed runtimes."]}],
     )
 
     PodCheck(
@@ -350,6 +383,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability",
         scheduling=PodSchedulingConfig(priority_class=None),
         check_path=".spec.priorityClassName",
+        standards=[],
     )
 
     PodCheck(
@@ -361,6 +395,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         container=ContainerConfig(),  # Will use defaults, need to handle readiness_probe separately
         container_kwargs={"readiness_probe": None},
         check_path=".spec.containers[].readinessProbe",
+        standards=[],
     )
 
     PodCheck(
@@ -372,6 +407,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         container=ContainerConfig(),  # Will use defaults, need to handle liveness_probe separately
         container_kwargs={"liveness_probe": None},
         check_path=".spec.containers[].livenessProbe",
+        standards=[],
     )
 
     PodCheck(
@@ -382,6 +418,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="The hostPID defaults to `false` and thus should be okay",
         security=PodSecurityConfig(host_pid=None),
         check_path=".spec.hostPID",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.3"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     PodCheck(
@@ -392,6 +435,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "cross-container influence and may expose the host itself to potentially malicious or destructive actions",
         security=PodSecurityConfig(host_pid=True),
         check_path=".spec.hostPID",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.3"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     PodCheck(
@@ -402,6 +452,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="The hostIPC defaults to `false` and thus should be okay",
         security=PodSecurityConfig(host_ipc=None),
         check_path=".spec.hostIPC",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.4"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     PodCheck(
@@ -412,6 +469,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         " cross-container influence and may expose the host itself to potentially malicious or destructive actions",
         security=PodSecurityConfig(host_ipc=True),
         check_path=".spec.hostIPC",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.4"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     PodCheck(
@@ -422,6 +486,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="The hostNetwork defaults to `false` and thus should be okay",
         security=PodSecurityConfig(host_network=None),
         check_path=".spec.hostNetwork",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.5"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
     )
     PodCheck(
         app,
@@ -430,6 +502,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Containers should be isolated from the host machine as much as possible.",
         security=PodSecurityConfig(host_network=True),
         check_path=".spec.hostNetwork",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.5"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
     )
 
     PodCheck(
@@ -438,28 +518,36 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Pod uses hostPort",
         descr="When you bind a Pod to a hostPort, it limits the number of places the  Pod can be scheduled, "
         "because each <hostIP, hostPort, protocol> combination must be unique.",
-        container_kwargs={"ports": [k8s.ContainerPort(container_port=31337, host_port=31337)]},
+        container_kwargs={"ports": [k8s.ContainerPort(container_port=31337, host_port=31335)]},
         check_path=".spec.containers[].ports[].hostPort",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.12"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242414"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
-    PodCheck(
-        app,
-        "POD-012",
-        "Pod uses HostAliases to modify its /etc/hosts",
-        descr="Managing /etc/hosts aliases can prevent Docker from modifying the file after a pod's"
-        " containers have already been started",
-        host_aliases=[k8s.HostAlias(ip="127.0.0.1", hostnames=["foo.com"])],
-        check_path=".spec.hostAliases",
-    )
+#    PodCheck(
+#        app,
+#        "POD-012",
+#        "Pod uses HostAliases to modify its /etc/hosts",
+#        descr="Managing /etc/hosts aliases can prevent Docker from modifying the file after a pod's"
+#        " containers have already been started",
+#        host_aliases=[k8s.HostAlias(ip="127.0.0.1", hostnames=["foo.com"])],
+#        check_path=".spec.hostAliases",
+#        standards=[{"standard": "BSI", "controls": ["APP.4.4.A4[B]"]}],
+#    )
 
-    PodCheck(
-        app,
-        "POD-013",
-        "deprecate serviceAccount field used",
-        descr="ServiceAccount field is deprecated, ServiceAccountName should be used instead",
-        security=PodSecurityConfig(service_account="deprecated-sa", service_account_name=None),
-        check_path=".spec.serviceAccount",
-    )
+#    PodCheck(
+#        app,
+#        "POD-013",
+#        "deprecated serviceAccount field used",
+#        descr="ServiceAccount field is deprecated, ServiceAccountName should be used instead",
+#        security=PodSecurityConfig(service_account="deprecated-sa", service_account_name=None),
+#        check_path=".spec.serviceAccount",
+#    )
 
     PodCheck(
         app,
@@ -470,19 +558,42 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
-            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io"
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Hardening container environments"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["9.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Restrict a Container's Access to Resources with AppArmor"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Prevent containers from loading unwanted kernel modules."]}],
     )
 
     # TODO implement seccomp check
-    # PodCheck(
-    #     app,
-    #     "POD-015",
-    #     "seccomp not enabled",
-    #     descr="",
-    #     seccomp_profile=None,
-    # )
+    PodCheck(
+        app,
+        "POD-015",
+        "seccomp not enabled",
+        descr="A seccomp profile can be used to restrict the syscalls that a container can make.",
+        security=PodSecurityConfig(pod_security_context=k8s.PodSecurityContext(seccomp_profile=None)),
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None}),
+        check_path=[
+            ".spec.containers[].securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile.type",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io",
+            ".metadata.annotations[container.seccomp.security.alpha.kubernetes.io/pod]",
+        ],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.6.2"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Hardening container environments"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["9.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "For nodes that support it, Seccomp is enabled with appropriate syscalls profile for programs.", "Set the Seccomp Profile for a Container."]}],
+    )
 
     # =============================== PodSecurityContext ======================================
 
@@ -493,6 +604,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="not providing a podSecurityContext leads to the use of too permissive settings for the pod",
         security=PodSecurityConfig(pod_security_context=None),
         check_path=".spec.securityContext",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.6.3"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
     )
 
     # the hardened version in this benchmark prioritizes the run_as_user field,
@@ -573,10 +687,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[
                 ".spec.securityContext.runAsNonRoot",
-                ".spec.securityContext.runAsUser",
                 ".spec.containers[].securityContext.runAsNonRoot",
-                ".spec.containers[].securityContext.runAsUser",
             ],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.7"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Non-root containers and rootless container engines"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["12.3.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Set runAsNonRoot: true", "Configure the container to execute as a less privileged user (for example, using runAsUser and runAsGroup), and configure appropriate permissions on files and directories inside the container image.", "Container images are configured to be run as unprivileged user.", "Build images to directly start with an unprivileged user.", "The Security Context allows a container image to be started with a specific user and group with runAsUser and runAsGroup, even if not specified in the image manifest."]}],
         )
 
     # the configurations assume, that the user on the hardened pod
@@ -628,10 +747,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[
                 ".spec.securityContext.runAsUser",
-                ".spec.securityContext.runAsNonRoot",
                 ".spec.containers[].securityContext.runAsUser",
-                ".spec.containers[].securityContext.runAsNonRoot",
             ],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.7"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Non-root containers and rootless container engines"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["12.3.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Set runAsNonRoot: true", "Configure the container to execute as a less privileged user (for example, using runAsUser and runAsGroup), and configure appropriate permissions on files and directories inside the container image.", "Container images are configured to be run as unprivileged user.", "Build images to directly start with an unprivileged user.", "The Security Context allows a container image to be started with a specific user and group with runAsUser and runAsGroup, even if not specified in the image manifest."]}],
         )
 
     run_as_group_configs = [
@@ -680,13 +804,20 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             security=PodSecurityConfig(pod_security_context_kwargs=cfg["pod"]),
             container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[".spec.securityContext.runAsGroup", ".spec.containers[].securityContext.runAsGroup"],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.7"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Non-root containers and rootless container engines"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["12.3.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Set runAsNonRoot: true", "Configure the container to execute as a less privileged user (for example, using runAsUser and runAsGroup), and configure appropriate permissions on files and directories inside the container image.", "Container images are configured to be run as unprivileged user.", "Build images to directly start with an unprivileged user.", "The Security Context allows a container image to be started with a specific user and group with runAsUser and runAsGroup, even if not specified in the image manifest."]}],
         )
 
     for i, (sysctl, value) in enumerate(
         [
-            ("kernel.shm_rmid_forced", "1"),
-            ("net.ipv4.tcp_keepalive_time", "100000"),
-            ("net.ipv4.tcp_keepalive_probes", "10"),
+            ("kernel.oops_limit", "10000"),
+            ("kernel.pid_max", "4194304"),
+            ("net.core.rmem_default", "212992"),
         ]
     ):
         PodCheck(
@@ -696,6 +827,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             descr="Giving dangerous capabilities to a container increases the impact of a container compromise",
             security=PodSecurityConfig(pod_security_context_kwargs={"sysctls": [k8s.Sysctl(name=sysctl, value=value)]}),
             check_path=".spec.securityContext.sysctls[]",
+            standards=[],
         )
 
     # ============================= harden linux =============================
@@ -711,13 +843,22 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
             ".spec.securityContext.seccompProfile",
             ".spec.securityContext.seLinuxOptions",
             ".spec.containers[].securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile.type",
             ".spec.containers[].securityContext.seLinuxOptions",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Hardening container environments"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["9.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Restrict a Container's Access to Resources with AppArmor", "Assign SELinux Labels to a Container."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.", "Prevent containers from loading unwanted kernel modules."]}],
     )
 
     PodCheck(
@@ -727,9 +868,11 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         descr="Not hardening a linux system can increase the impact of a compromise",
         security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None}),
-        apparmor_profile=None,
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None}),
+        apparmor_profile=[("container.apparmor.security.beta.kubernetes.io", AppArmorProfile.RuntimeDefault)],
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
             ".spec.securityContext.seccompProfile",
@@ -737,6 +880,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             ".spec.containers[].securityContext.seccompProfile",
             ".spec.containers[].securityContext.seLinuxOptions",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Hardening container environments"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["9.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Restrict a Container's Access to Resources with AppArmor", "Assign SELinux Labels to a Container."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.", "Prevent containers from loading unwanted kernel modules."]}],
     )
     PodCheck(
         app,
@@ -745,9 +895,11 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         descr="Not hardening a linux system can increase the impact of a compromise",
         security=PodSecurityConfig(pod_security_context_kwargs={"se_linux_level": None}),
+        container=ContainerConfig(security_context_kwargs={"se_linux_level": None}),
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
             ".spec.securityContext.seccompProfile",
@@ -755,6 +907,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             ".spec.containers[].securityContext.seccompProfile",
             ".spec.containers[].securityContext.seLinuxOptions",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Hardening container environments"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["9.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Restrict a Container's Access to Resources with AppArmor", "Assign SELinux Labels to a Container."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.", "Prevent containers from loading unwanted kernel modules."]}],
     )
 
     PodCheck(
@@ -763,26 +922,38 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "no seccomp profile defined",
         descr="not providing a seccomp profile allows a process more capabilities than necessary",
         security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None}),
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None}),
+        apparmor_profile=[("container.apparmor.security.beta.kubernetes.io", AppArmorProfile.RuntimeDefault)],
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",  # deprecated and removed in v1.25
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",  # deprecated and removed in v1.25
             ".spec.securityContext.seccompProfile",
             ".spec.containers[].securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile.type",
         ],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.6.2"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Hardening container environments"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["9.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "For nodes that support it, Seccomp is enabled with appropriate syscalls profile for programs.", "Set the Seccomp Profile for a Container."]}],
     )
 
     # =================== Container checks ====================================
-    for i, cmd in enumerate(CMDS):
-        PodCheck(
-            app,
-            f"POD-024-{i}",
-            f"usage of {cmd} in container",
-            descr="Attackers who can run a cmd/bash script inside a container can use it to execute malicious code",
-            container=ContainerConfig(),
-            container_kwargs={"command": [cmd]},
-            check_path=[".spec.containers[].command"],
-        )
+#    for i, cmd in enumerate(CMDS):
+#        PodCheck(
+#            app,
+#            f"POD-024-{i}",
+#            f"usage of {cmd} in container",
+#            descr="Attackers who can run a cmd/bash script inside a container can use it to execute malicious code",
+#            container=ContainerConfig(),
+#            container_kwargs={"command": [cmd]},
+#            check_path=[".spec.containers[].command"],
+#            standards=[{"standard": "Kubernetes Security Checklist", "controls": ["Images"]}],
+#        )
 
     EnvVarCheck(
         app,
@@ -791,6 +962,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Attackers can retrieve and use sensitive information provided via environment variables",
         env_keys=SENSITIVE_KEYS,
         check_path=[".spec.containers[].env[].name"],
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.4.1"]},
+                   {"standard": "NSA-CISA", "controls": ["Secrets"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242415"]},
+                   {"standard": "BSI", "controls": ["SYS.1.6.A8"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Secrets"]},
+                   {"standard": "PCI-DSS", "controls": ["6.1"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9026"]},
+                   {"standard": "OWASP", "controls": ["Finding exposed secrets"]}],
     )
 
     PodCheck(
@@ -801,6 +980,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Kubernetes may run older version of the container images without user knowing about this",
         container=ContainerConfig(image_pull_policy=None),
         check_path=[".spec.containers[].imagePullPolicy"],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["1.2.11"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["AlwaysPullImages - Enforces the usage of the latest version of a tagged image and ensures that the deployer has permissions to use the image."]}],
     )
     for i, img_pull_policy in enumerate(["Never", "IfNotPresent"]):
         PodCheck(
@@ -810,6 +991,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             descr="Kubernetes may run older version of the container images without user knowing about this",
             container=ContainerConfig(image_pull_policy=img_pull_policy),
             check_path=[".spec.containers[].imagePullPolicy"],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["1.2.11"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["AlwaysPullImages - Enforces the usage of the latest version of a tagged image and ensures that the deployer has permissions to use the image."]}],
         )
 
     PodCheck(
@@ -820,6 +1003,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Specify an explicit tag or digest to have full control over the running container image",
         container=ContainerConfig(image_tag=":1.12.6"),
         check_path=[".spec.containers[].image"],
+        standards=[{"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deployment via admission control."]}],
     )
 
     PodCheck(
@@ -829,6 +1014,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="When using latest image tag the used image can change without the user knowing about this",
         container=ContainerConfig(image_tag=":latest"),
         check_path=[".spec.containers[].image"],
+        standards=[{"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deployment via admission control."]}],
     )
 
     PodCheck(
@@ -838,6 +1025,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Kubernetes may run older version of the container images without user knowing about this",
         container=ContainerConfig(image_tag=None),
         check_path=[".spec.containers[].image"],
+        standards=[{"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deployment via admission control."]}],
     )
 
     # POD-029
@@ -853,6 +1042,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Not providing a securityContext leads to the use of too permissive settings for the containers",
         container=ContainerConfig(security_context=None),
         check_path=[".spec.containers[].securityContext"],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.6.3"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
     )
 
     PodCheck(
@@ -863,6 +1055,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "add only the ones you need through the capabilities settings. ",
         container=ContainerConfig(security_context_kwargs={"allow_privilege_escalation": None}),
         check_path=".spec.containers[].securityContext.allowPrivilegeEscalation",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.6"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Disable privilege escalations using allowPrivilegeEscalation: false."]}],
     )
 
     PodCheck(
@@ -873,6 +1072,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "add only the ones you need through the capabilities settings. ",
         container=ContainerConfig(security_context_kwargs={"allow_privilege_escalation": True}),
         check_path=".spec.containers[].securityContext.allowPrivilegeEscalation",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.6"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Disable privilege escalations using allowPrivilegeEscalation: false."]}],
     )
 
     PodCheck(
@@ -883,6 +1089,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Changing the privileged flag is optional as it defaults to False",
         container=ContainerConfig(security_context_kwargs={"privileged": None}),
         check_path=".spec.containers[].securityContext.privileged",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.2"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Avoid running privileged containers (set privileged: false)."]}],
     )
 
     PodCheck(
@@ -891,11 +1104,17 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "privileged container",
         descr="Privileged containers can do almost every action that can be performed directly on the host.",
         # privilege can't be set to True with when allowPrivilegeEscalation is explicitly disabled
-        container=ContainerConfig(security_context_kwargs={"privileged": True, "allow_privilege_escalation": None}),
+        container=ContainerConfig(security_context_kwargs={"privileged": True}),
         check_path=[
             ".spec.containers[].securityContext.privileged",
-            ".spec.containers[].securityContext.allowPrivilegeEscalation",
         ],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.2"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Avoid running privileged containers (set privileged: false)."]}],
     )
 
     PodCheck(
@@ -906,6 +1125,10 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "permanent local changes.",
         container=ContainerConfig(security_context_kwargs={"read_only_root_filesystem": None}),
         check_path=".spec.containers[].securityContext.readOnlyRootFilesystem",
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Immutable container file systems"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["8.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Configure the root filesystem to be read-only with readOnlyRootFilesystem: true."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
     )
 
     PodCheck(
@@ -916,6 +1139,10 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "permanent local changes.",
         container=ContainerConfig(security_context_kwargs={"read_only_root_filesystem": False}),
         check_path=".spec.containers[].securityContext.readOnlyRootFilesystem",
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Immutable container file systems"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["8.2.a"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Configure the root filesystem to be read-only with readOnlyRootFilesystem: true."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
     )
 
     # taken from:
@@ -930,7 +1157,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"using dangerous capability {cap}",
             descr="Dangerous capabilities can increase the impact of a container compromise",
             container=ContainerConfig(security_context_kwargs={"add_capabilities": [cap]}),
-            check_path=".spec.containers[].securityContext.capabilities",
+            check_path=[".spec.containers[].securityContext.capabilities", ".spec.containers[].securityContext.capabilities.add", ".spec.containers[].securityContext.capabilities.add[]", "spec.containers[app].securityContext.capabilities.add.SYS_ADMIN"],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.9"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Drop all capabilities from the containers and add back only specific ones that are needed for operation of the container."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
         )
 
     # taken from:
@@ -948,7 +1183,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"using insecure capability {cap}",
             descr="Insecure capabilities can increase the impact of a container compromise",
             container=ContainerConfig(security_context_kwargs={"add_capabilities": [cap]}),
-            check_path=".spec.containers[].securityContext.capabilities",
+            check_path=[".spec.containers[].securityContext.capabilities", ".spec.containers[].securityContext.capabilities.add", ".spec.containers[].securityContext.capabilities.add[]"],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.9"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Drop all capabilities from the containers and add back only specific ones that are needed for operation of the container."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
         )
 
     PodCheck(
@@ -960,7 +1203,35 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "defined by the container runtime, which is often fairly generous and "
         "does not adhere to principle of least privilege",
         container=ContainerConfig(security_context_kwargs={"drop_capabilities": None}),  # remove  drop: "ALL"
-        check_path=".spec.containers[].securityContext.capabilities.drop",
+        check_path=[".spec.containers[].securityContext.capabilities.drop", ".spec.containers[].securityContext.capabilities"],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.9"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242437"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9011"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced.", "Drop all capabilities from the containers and add back only specific ones that are needed for operation of the container."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Apply security context to your pods and containers."]}],
+
+    )
+
+    
+    PodCheck(
+        app,
+        "POD-046",
+        "Minimize the admission of Windows HostProcess Containers",
+        descr="A Windows container making use of the hostProcess flag can interact with the "
+              "underlying Windows cluster node. As per the Kubernetes documentation, this provides "
+              "\"privileged access\" to the Windows node.",
+        container=ContainerConfig(security_context_kwargs={"windows_options": {"host_process": True}}),
+        check_path=".spec.containers[].securityContext.windowsOptions.hostProcess",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.10"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
+
     )
 
     # ==================== pod resource requests/limits ===================
@@ -976,6 +1247,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="using hostPath is not ideal but can be tolerated when it's read-only",
         volume_type="hostpath",
         read_only=True,
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     VolumeMountCheck(
@@ -985,6 +1262,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Attackers can use a writable hostpath to gain persistence on underlying host system",
         volume_type="hostpath",
         read_only=False,
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     VolumeMountCheck(
@@ -994,6 +1277,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Attackers can use a writable hostpath to gain persistence on underlying host system",
         volume_type="hostpath",
         read_only=None,
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     files = [("azure", "/etc/kubernetes/azure.json")]
@@ -1009,6 +1298,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             mount_path=path,
             mount_type="File",
             read_only=True,
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
         )
 
     VolumeMountCheck(
@@ -1021,6 +1316,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         volume_type="hostpath",
         mount_path="/var/run/docker.sock",
         read_only=True,
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     VolumeMountCheck(
@@ -1033,6 +1334,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         volume_type="hostpath",
         mount_path="/var/lib/docker",
         read_only=True,
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     # this check requires special kubernetes version
@@ -1047,6 +1354,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         mount_path="/mnt/data",
         sub_path="symlink",
         volume_type="empty",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.2.11"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Pod security enforcement"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A4"]}, 
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["3.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013", "MS-M9016"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Appropriate Pod Security Standards policy is applied for all namespaces and enforced."]}],
     )
 
     ConfigMapCheck(
@@ -1055,7 +1368,10 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "sensitive key referenced in configmap",
         descr="Attackers can retrieve and use sensitive information provided via config maps",
         data={sk: SENSITIVE_VALUES for sk in SENSITIVE_KEYS},
-        check_path=[f".data.{key}" for key in SENSITIVE_KEYS],
+        check_path=[f".data.{key}" for key in SENSITIVE_KEYS] + ["ConfigMap.data"],
+        standards=[{"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["6.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9026"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["ConfigMaps are not used to hold confidential data."]}],
     )
 
     # ================= Namespace checks ====================
@@ -1063,9 +1379,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         app,
         "NS-001",
         "use default namespace",
-        descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
+        descr="The default namespace should not be used for custom workloads",
         namespace="default",
         check_path=".metadata.namespace",
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.6.4"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Namespaces"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242383"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["16.1.a"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Code that uses namespaces to isolate Kubernetes resources."]}],
     )
 
     for i, ns in enumerate(["kube-system", "kube-public"]):
@@ -1073,9 +1394,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             app,
             f"NS-002-{i+1}",
             f"place pod in {ns}",
-            descr=f"{name} should not be used for custom workloads",
+            descr=f"{ns} should not be used for custom workloads",
             namespace=ns,
             check_path=".metadata.namespace",
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.6.1"]}, 
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Namespaces"]},
+                    {"standard": "CIS Kubernetes STIG", "controls": ["V-242417"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["16.1.a"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Code that uses namespaces to isolate Kubernetes resources."]}],
         )
 
 
@@ -1096,7 +1422,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting default memory requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.requests.memory",
+        check_path=[".spec.containers[].resources.requests.memory", ".spec.containers[].resources.requests"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
     PodCheck(
         app,
@@ -1105,7 +1436,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting memory requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.requests.memory",
+        check_path=[".spec.containers[].resources.requests.memory", ".spec.containers[].resources.requests"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
 
     PodCheck(
@@ -1116,7 +1452,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.limits.memory",
+        check_path=[".spec.containers[].resources.limits.memory", ".spec.containers[].resources.limits"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
     PodCheck(
         app,
@@ -1125,7 +1466,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.limits.memory",
+        check_path=[".spec.containers[].resources.limits.memory", ".spec.containers[].resources.limits"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
 
     PodCheck(
@@ -1136,7 +1482,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting default CPU requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.requests.cpu",
+        check_path=[".spec.containers[].resources.requests.cpu", ".spec.containers[].resources.requests"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
     PodCheck(
         app,
@@ -1145,7 +1496,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting CPU requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.requests.cpu",
+        check_path=[".spec.containers[].resources.requests.cpu", ".spec.containers[].resources.requests"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
 
     PodCheck(
@@ -1156,7 +1512,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting CPU limit can lead to the pod suffocating the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.limits.cpu",
+        check_path=[".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
     PodCheck(
         app,
@@ -1165,7 +1526,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting CPU limit can lead to the pod suffocating the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.limits.cpu",
+        check_path=[".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads."]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
 
     PodCheck(
@@ -1176,7 +1542,11 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storarge limit can suffocate the node by using all available storage",
         container=ContainerConfig(resources=ContainerResourceConfig(request_ephemeral_storage=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.requests.ephemeral-storage",
+        check_path=[".spec.containers[].resources.requests.ephemeral-storage", ".spec.containers[].resources.requests"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
     PodCheck(
         app,
@@ -1185,7 +1555,11 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(request_ephemeral_storage=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.requests.ephemeral-storage",
+        check_path=[".spec.containers[].resources.requests.ephemeral-storage", ".spec.containers[].resources.requests"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
 
     PodCheck(
@@ -1196,7 +1570,11 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storarge limit can suffocate the node by using all available storage",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.limits.ephemeral-storage",
+        check_path=[".spec.containers[].resources.limits.ephemeral-storage", ".spec.containers[].resources.limits"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )
     PodCheck(
         app,
@@ -1205,5 +1583,9 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.limits.ephemeral-storage",
+        check_path=[".spec.containers[].resources.limits.ephemeral-storage", ".spec.containers[].resources.limits"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                   {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                   {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster."]}],
     )

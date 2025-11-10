@@ -20,6 +20,7 @@ class Check(Chart):
         expect: str = CheckStatus.Alert,
         descr: str | None = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         forwarded_kwargs: dict | None = None,  # don't process other kwargs for the resources
         namespace: str = MAIN_NS,
         annotations: dict | bool = True,
@@ -52,6 +53,12 @@ class Check(Chart):
 
             # ensure annotations are only strings as expected by cdk8s
             annotations = {str(k): str(v) for k, v in annotations.items()}
+
+        if standards is not None:
+            if annotations is None:
+                annotations = {}
+            annotations["standards"] = str(standards)
+
 
         self.meta = Meta(
             name=self.name,

@@ -2,13 +2,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
-    check_path: ClusterRole.rules[].resources|Role.rules[].resources|.rules[].resources
+    check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources|.rules[].resources.pods.attach
     description: Allowing roles to attach to pods can be dangerous
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-005-2
-  name: rbac-005-2-cluster-pod-attach
+  name: rbac-005-2-cluster-role-attaches-to-pods
   namespace: kalm-benchmark
 rules:
   - apiGroups:

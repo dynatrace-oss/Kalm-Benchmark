@@ -8,6 +8,8 @@ from .cdk8s_imports import k8s
 from .check import Check, Meta
 from .constants import (
     CheckStatus,
+    ContainerConfig,
+    ContainerResourceConfig,
     LimitRangeConfig,
     NetworkPolicyConfig,
     PodSecurityAdmissionMode,
@@ -43,6 +45,7 @@ class ConfiguredNamespace(Construct):
         use_default_deny_all_network_policy: bool = False,
         network_policy_kwargs: Optional[dict | bool] = True,
         has_filler_workload: bool = True,
+        **kwargs,
     ) -> None:
         """
         Instantiates a new Namespace with all relevant kubernetes resources.
@@ -76,12 +79,12 @@ class ConfiguredNamespace(Construct):
 
         if quota_kwargs:
             # True means use defautl arguments
-            if quota_kwargs:
+            if quota_kwargs == True:
                 quota_kwargs = {}
             _resource_quota_base(self, meta, **quota_kwargs)
 
         if limit_range_kwargs:
-            if limit_range_kwargs:
+            if limit_range_kwargs == True:
                 limit_range_kwargs = {}
             _limit_range_base(self, meta, **limit_range_kwargs)
 
@@ -92,13 +95,13 @@ class ConfiguredNamespace(Construct):
             NetworkPolicy(self, "default-deny-all", meta)
 
         if network_policy_kwargs:
-            if network_policy_kwargs:
+            if network_policy_kwargs == True:
                 network_policy_kwargs = {}
             NetworkPolicy(self, name, meta, **network_policy_kwargs)
 
         if has_filler_workload:
             # add an empty workload to avoid alerts regarding empty namespaces, resources, etc.
-            Workload(scope, name + "-filler", meta)
+            Workload(scope, name + "-filler", meta, **kwargs)
 
 
 class SetupBenchmarkNamespace(Chart):
@@ -138,14 +141,14 @@ class SetupBenchmarkNamespace(Chart):
 def _limit_range_base(
     scope: Construct,
     meta,
-    min_cpu: str = "1m",
-    max_cpu: str = "100m",
-    default_cpu_request: str = "1m",
-    default_cpu_limit: str = "100m",
-    min_memory: str = "1Ki",
-    max_memory: str = "10Mi",
-    default_memory_request: str = "1Ki",
-    default_memory_limit: str = "1Mi",
+    min_cpu: str | None = "1m",
+    max_cpu: str | None = "100m",
+    default_cpu_request: str | None = "1m",
+    default_cpu_limit: str | None = "100m",
+    min_memory: str | None = "1Ki",
+    max_memory: str | None = "10Mi",
+    default_memory_request: str | None = "1Ki",
+    default_memory_limit: str | None = "1Mi",
 ) -> k8s.KubeLimitRange:
     return k8s.KubeLimitRange(
         scope,
@@ -209,6 +212,7 @@ class NamespaceCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         resource_quota: ResourceQuotaConfig = None,
         limit_range: LimitRangeConfig = None,
         network_policy: NetworkPolicyConfig = None,
@@ -233,7 +237,7 @@ class NamespaceCheck(Check):
         # label names may at most have 63 characters, thus it restricts the namespace length
         # see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
         ns_name = sanitize_name(f"{check_id}-{name}", max_len=63)
-        super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, namespace=ns_name)
+        super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, standards=standards, namespace=ns_name)
 
         # Use default configurations if None provided
         if resource_quota is None:
@@ -268,32 +272,56 @@ def gen_namespace_resource_checks(app: App) -> None:
         "no LimitRange object for namespace",
         limit_range=LimitRangeConfig(enabled=False),
         check_path=["LimitRange.metadata.namespace"],
+        #container=ContainerConfig(resources=None),
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
     NamespaceCheck(
         app,
         "RES-007-1",
         "no default cpu request for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_cpu_request": None}),
-        check_path=["LimitRange.spec.limits.defaultRequest.cpu", ".spec.limits.defaultRequest.cpu"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
+        check_path=["LimitRange.spec.limits[].defaultRequest.cpu", ".spec.limits[].defaultRequest.cpu"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
     NamespaceCheck(
         app,
         "RES-007-2",
         "no default cpu limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_cpu_limit": None}),
-        check_path=["LimitRange.spec.limits.default.cpu", ".spec.limits.default.cpu"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
+        check_path=["LimitRange.spec.limits[].default.cpu", ".spec.limits[].default.cpu"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
     NamespaceCheck(
         app,
         "RES-007-3",
         "no cpu limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"min_cpu": None, "max_cpu": None}),
+        # container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None, limits_cpu=None)),
         check_path=[
-            "LimitRange.spec.limits.min.cpu",
-            "LimitRange.spec.limits.max.cpu",
-            ".spec.limits.min.cpu",
-            ".spec.limits.max.cpu",
+            "LimitRange.spec.limits[].min.cpu",
+            "LimitRange.spec.limits[].max.cpu",
+            ".spec.limits[].min.cpu",
+            ".spec.limits[].max.cpu",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
 
     NamespaceCheck(
@@ -301,26 +329,46 @@ def gen_namespace_resource_checks(app: App) -> None:
         "RES-008-1",
         "no default memory request for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_memory_request": None}),
-        check_path=["LimitRange.spec.limits.defaultRequest.memory", ".spec.limits.defaultRequest.memory"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
+        check_path=["LimitRange.spec.limits[].defaultRequest.memory", ".spec.limits[].defaultRequest.memory"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
     NamespaceCheck(
         app,
         "RES-008-2",
         "no default memory limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_memory_limit": None}),
-        check_path=["LimitRange.spec.limits.default.memory", ".spec.limits.default.memory"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
+        check_path=["LimitRange.spec.limits[].default.memory", ".spec.limits[].default.memory"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
     NamespaceCheck(
         app,
         "RES-008-3",
         "no default memory limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"min_memory": None, "max_memory": None}),
+        # container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None, request_memory=None)),
         check_path=[
-            "LimitRange.spec.limits.min.memory",
-            "LimitRange.spec.limits.max.memory",
-            ".spec.limits.min.memory",
-            ".spec.limits.max.memory",
+            "LimitRange.spec.limits[].min.memory",
+            "LimitRange.spec.limits[].max.memory",
+            "LimitRange.spec.limits[].default.memory",
+            ".spec.limits[].min.memory",
+            ".spec.limits[].max.memory",
+            ".spec.limits[].default.memory",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
 
     NamespaceCheck(
@@ -329,6 +377,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         "no resource quota applied to namespace",
         resource_quota=ResourceQuotaConfig(enabled=False),
         check_path=["ResourceQuota.metadata.namespace"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads", "Memory limit is set for the workloads with a limit equal or inferior to the request"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
     NamespaceCheck(
         app,
@@ -347,6 +400,11 @@ def gen_namespace_resource_checks(app: App) -> None:
             ".spec.hard.requests.memory",
             ".spec.hard.pods",
         ],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads", "Memory limit is set for the workloads with a limit equal or inferior to the request"]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
     )
 
 
@@ -358,6 +416,13 @@ def gen_network_policy_checks(app) -> None:
         network_policy=NetworkPolicyConfig(enabled=False),
         use_default_deny_all_network_policy=False,
         check_path=["NetworkPolicy.metadata.namespace"],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.3.2"]},
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Network policies"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A18"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["4.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9014"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Default network policies within each namespace, selecting all pods, denying everything, are in place."]},
+                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Kubernetes network policies to control traffic between pods and clusters."]}],
     )
 
     for i, policy_type in enumerate(["Ingress", "Egress"], start=1):
@@ -367,6 +432,12 @@ def gen_network_policy_checks(app) -> None:
             f"only {policy_type.lower()} is blocked",
             network_policy=NetworkPolicyConfig(kwargs={"policy_types": [policy_type]}),
             check_path=["NetworkPolicy.spec.policyTypes[]", ".spec.policyTypes[]"],
+            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.3.1"]},
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Network policies"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A7"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["4.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9014"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.", "Ingress and egress network policies are applied to all workloads in the cluster."]}],
         )
 
     NamespaceCheck(
@@ -380,7 +451,10 @@ def gen_network_policy_checks(app) -> None:
                 "policy_types": ["Egress"],
             }
         ),
-        check_path=["NetworkPolicy.egress[].to[].ipBlock", ".egress[].to[].ipBlock"],
+        check_path=["NetworkPolicy.spec.egress[].to[].ipBlock", ".spec.egress[].to[].ipBlock"],
+        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Protecting sensitive cloud infrastructure"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Access from the workloads to the cloud metadata API is filtered."]}],
     )
 
     NamespaceCheck(
@@ -395,6 +469,12 @@ def gen_network_policy_checks(app) -> None:
             }
         ),
         check_path=["NetworkPolicy.spec.egress[].ports[].port", ".spec.egress[].ports[].port"],
+        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.3.1"]},
+                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Network policies"]},
+                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A7"]},
+                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["4.1.a"]},
+                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9014"]},
+                    {"standard": "Kubernetes Security Checklist", "controls": ["Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.", "Ingress and egress network policies are applied to all workloads in the cluster."]}],
     )
 
     NamespaceCheck(

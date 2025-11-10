@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
+    description: ()
+    expected: alert
+    standards: "[{'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}]"
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-022-2
+  name: rbac-022-2-role-update-netpol
+  namespace: kalm-benchmark
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - networkpolicies
+    verbs:
+      - update

@@ -4,6 +4,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.metadata.namespace
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-001
@@ -12,56 +13,13 @@ metadata:
   namespace: np-001-namespace-without-network-policy
 ---
 apiVersion: v1
-kind: ResourceQuota
-metadata:
-  annotations:
-    check_path: NetworkPolicy.metadata.namespace
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: NP-001
-  name: np-001-namespace-without-network-policy
-  namespace: np-001-namespace-without-network-policy
-spec:
-  hard:
-    cpu: 30
-    memory: 20Gi
-    pods: 1000
----
-apiVersion: v1
-kind: LimitRange
-metadata:
-  annotations:
-    check_path: NetworkPolicy.metadata.namespace
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: NP-001
-  name: np-001-namespace-without-network-policy
-  namespace: np-001-namespace-without-network-policy
-spec:
-  limits:
-    - default:
-        cpu: 100m
-        memory: 1Mi
-      defaultRequest:
-        cpu: 1m
-        memory: 1Ki
-      max:
-        cpu: 100m
-        memory: 10Mi
-      min:
-        cpu: 1m
-        memory: 1Ki
-      type: Container
----
-apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
     check_path: NetworkPolicy.metadata.namespace
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-001
@@ -74,6 +32,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.metadata.namespace
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-001
@@ -89,7 +48,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -105,7 +64,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

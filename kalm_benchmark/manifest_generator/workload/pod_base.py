@@ -74,10 +74,36 @@ def _create_pod_security_context(
     )
 
 
+def _set_security_annotations(
+        metadata: k8s.ObjectMeta, 
+        spec: k8s.PodSpec,
+        apparmor_profile: list[tuple[str, str]],
+) -> tuple[k8s.ObjectMeta, k8s.PodSpec]:
+    if apparmor_profile is not None:
+        annotations = metadata.annotations
+
+        container_names = spec.container_names
+        for container_name in container_names:
+            for profile_tuple in apparmor_profile:
+                if profile_tuple[0].startswith("seccomp") or profile_tuple[0].startswith("container.seccomp"):
+                    key = f"{profile_tuple[0]}/pod"
+                else:
+                    key = f"{profile_tuple[0]}/{container_name}"
+                annotations[key] = profile_tuple[1]
+#            apparmor_key = f"container.apparmor.security.beta.kubernetes.io/{container_name}"
+#            annotations[apparmor_key] = apparmor_profile
+#            seccomp_key = f"container.seccomp.security.alpha.kubernetes.io/{container_name}"
+#            annotations[seccomp_key] = SeccompProfileForPSP.RuntimeDefault
+        # also add the deprecated version for seccomp (deprecated since > 1.18)
+#        annotations["seccomp.security.alpha.kubernetes.io/pod"] = SeccompProfileForPSP.RuntimeDefault
+
+    return metadata, spec
+
+
 def _pod_base(
     meta: k8s.ObjectMeta,
     name: str,
-    apparmor_profile: str | None = AppArmorProfile.RuntimeDefault,
+    apparmor_profile: list[tuple[str, str]] | None = [("container.apparmor.security.beta.kubernetes.io", AppArmorProfile.RuntimeDefault), ("container.seccomp.security.alpha.kubernetes.io", SeccompProfileForPSP.RuntimeDefault), ("seccomp.security.alpha.kubernetes.io", SeccompProfileForPSP.RuntimeDefault)],
     labels: list[tuple[str, str]] | tuple[str, str] | None = ("app.kubernetes.io/part-of", "kalm-benchmark"),
     **kwargs,
 ) -> tuple[k8s.ObjectMeta, k8s.PodSpec]:
@@ -85,7 +111,6 @@ def _pod_base(
     filtered_kwargs = kwargs.copy()
     filtered_kwargs.pop("service_account_name", None)
     filtered_kwargs.pop("service_account", None)
-    filtered_kwargs.pop("container_kwargs", None)
 
     spec = _PodSpecBase(name, **filtered_kwargs)
 
@@ -99,19 +124,7 @@ def _pod_base(
         for k, v in ensure_list(labels):
             metadata.labels[k] = v
 
-    if apparmor_profile is not None:
-        annotations = metadata.annotations
-
-        container_names = spec.container_names
-        for container_name in container_names:
-            apparmor_key = f"container.apparmor.security.beta.kubernetes.io/{container_name}"
-            annotations[apparmor_key] = apparmor_profile
-            seccomp_key = f"container.seccomp.security.alpha.kubernetes.io/{container_name}"
-            annotations[seccomp_key] = SeccompProfileForPSP.RuntimeDefault
-        # also add the deprecated version for seccomp (deprecated since > 1.18)
-        annotations["seccomp.security.alpha.kubernetes.io/pod"] = SeccompProfileForPSP.RuntimeDefault
-
-    return metadata, spec
+    return _set_security_annotations(metadata, spec, apparmor_profile)
 
 
 def _create_containers(
@@ -162,7 +175,7 @@ def _create_containers(
         "image": image_with_tag,
         "image_pull_policy": container_config.image_pull_policy,
         "security_context": security_context,
-        "ports": [k8s.ContainerPort(container_port=container_config.container_port)],
+        "ports": [k8s.ContainerPort(container_port=container_config.container_port, host_port=container_config.host_port)],
         "liveness_probe": k8s.Probe(http_get=k8s.HttpGetAction(path="/live", port=k8s.IntOrString.from_number(8080))),
         "readiness_probe": k8s.Probe(http_get=k8s.HttpGetAction(path="/ready", port=k8s.IntOrString.from_number(8080))),
         "resources": k8s.ResourceRequirements(requests=requests, limits=limits),
@@ -209,7 +222,8 @@ class _PodSpecBase(k8s.PodSpec):
             pod_security_context = _create_pod_security_context(**pod_security_context_kwargs)
 
         # Create containers using configuration
-        self._container_names, containers = _create_containers(container)
+        container_kwargs = kwargs.pop("container_kwargs", {})
+        self._container_names, containers = _create_containers(container, **(container_kwargs or {}))
 
         # Handle node affinity
         node_affinity = (

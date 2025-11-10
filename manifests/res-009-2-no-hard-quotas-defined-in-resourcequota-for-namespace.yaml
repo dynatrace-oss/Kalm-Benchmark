@@ -4,6 +4,7 @@ metadata:
   annotations:
     check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads', 'Memory limit is set for the workloads with a limit equal or inferior to the request']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-2
@@ -17,60 +18,14 @@ metadata:
   annotations:
     check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads', 'Memory limit is set for the workloads with a limit equal or inferior to the request']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-2
   name: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
   namespace: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
 spec:
-  hard:
-    cpu: 30
-    memory: 20Gi
-    pods: 1000
----
-apiVersion: v1
-kind: LimitRange
-metadata:
-  annotations:
-    check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: RES-009-2
-  name: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
-  namespace: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
-spec:
-  limits:
-    - default:
-        cpu: 100m
-        memory: 1Mi
-      defaultRequest:
-        cpu: 1m
-        memory: 1Ki
-      max:
-        cpu: 100m
-        memory: 10Mi
-      min:
-        cpu: 1m
-        memory: 1Ki
-      type: Container
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  annotations:
-    check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: RES-009-2
-  name: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
-  namespace: res-009-2-no-hard-quotas-defined-in-resourcequota-for-namespace
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-    - Ingress
+  hard: {}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -79,6 +34,7 @@ metadata:
   annotations:
     check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads', 'Memory limit is set for the workloads with a limit equal or inferior to the request']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-2
@@ -91,6 +47,7 @@ metadata:
   annotations:
     check_path: ResourceQuota.spec.hard.cpu|ResourceQuota.spec.hard.memory|ResourceQuota.spec.hard.requests.cpu|ResourceQuota.spec.hard.requests.memory|ResourceQuota.spec.hard.pods|.spec.hard.cpu|.spec.hard.memory|.spec.hard.requests.cpu|.spec.hard.requests.memory|.spec.hard.pods
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads', 'Memory limit is set for the workloads with a limit equal or inferior to the request']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-009-2
@@ -106,7 +63,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -122,7 +79,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

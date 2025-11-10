@@ -19,34 +19,43 @@ CHECK_MAPPING = {
     ),
     "KSV003": (
         CheckCategory.Workload,
-        [".spec.containers[].securityContext.capabilities.drop"],
+        [
+            ".spec.containers[].securityContext.capabilities.drop", 
+            ".spec.containers[].securityContext.capabilities",
+        ],
     ),  # capabilities no drop all
     "KSV004": (
         CheckCategory.Workload,
-        [".spec.containers[].securityContext.capabilities.drop"],
+        [
+            ".spec.containers[].securityContext.capabilities.drop", 
+            ".spec.containers[].securityContext.capabilities",
+        ],
     ),  # capabilities no drop at least one
-    "KSV005": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # SYS_ADMIN capability
+    "KSV005": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add", ".spec.containers[].securityContext.capabilities"]),  # SYS_ADMIN capability
     "KSV006": (CheckCategory.Workload, [".spec.volumes[].hostPath.path"]),  # mounts docker socket
     "KSV007": (CheckCategory.Workload, [".spec.hostAliases"]),
     "KSV008": (CheckCategory.Workload, [".spec.hostIPC"]),
     "KSV009": (CheckCategory.Workload, [".spec.hostNetwork"]),
     "KSV010": (CheckCategory.Workload, [".spec.hostPID"]),
-    "KSV011": (CheckCategory.Reliability, [".spec.containers[].resources.limits.cpu"]),
+    "KSV011": (CheckCategory.Reliability, [".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits"]),
     "KSV012": (
         CheckCategory.Workload,
         [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
     ),
     "KSV013": (CheckCategory.Workload, [".spec.containers[].image"]),
     "KSV014": (CheckCategory.Workload, [".spec.containers[].securityContext.readOnlyRootFilesystem"]),
-    "KSV015": (CheckCategory.Reliability, [".spec.containers[].resources.requests.cpu"]),
-    "KSV016": (CheckCategory.Reliability, [".spec.containers[].resources.requests.memory"]),
+    "KSV015": (CheckCategory.Reliability, [".spec.containers[].resources.requests.cpu", ".spec.containers[].resources.requests"]),
+    "KSV016": (CheckCategory.Reliability, [".spec.containers[].resources.requests.memory", ".spec.containers[].resources.requests"]),
     "KSV017": (CheckCategory.Workload, [".spec.containers[].securityContext.privileged"]),
-    "KSV018": (CheckCategory.Reliability, [".spec.containers[].resources.limits.memory"]),
+    "KSV018": (CheckCategory.Reliability, [".spec.containers[].resources.limits.memory", ".spec.containers[].resources.limits"]),
     "KSV020": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsUser"]),
     "KSV021": (CheckCategory.Workload, [".spec.containers[].securityContext.runAsGroup"]),
     "KSV022": (
         CheckCategory.Workload,
-        [".spec.containers[].securityContext.capabilities.add"],
+        [
+            ".spec.containers[].securityContext.capabilities.add",
+            ".spec.containers[].securityContext.capabilities",
+        ],
     ),  # specific capabilities added
     "KSV023": (CheckCategory.Workload, [".spec.volumes[].hostPath"]),
     "KSV024": (
@@ -291,6 +300,12 @@ CHECK_MAPPING = {
         ],
     ),
     "KSV102": (CheckCategory.Workload, [".metadata.name", ".spec.containers[].image"]),
+    "KSV103": (
+        CheckCategory.Workload, 
+        [
+            ".spec.containers[].securityContext.windowsOptions.hostProcess",
+        ],
+    ),
     "KSV104": (
         CheckCategory.Workload,
         [
@@ -305,8 +320,18 @@ CHECK_MAPPING = {
     ),
     "KSV106": (
         CheckCategory.AdmissionControl,
-        [".spec.containers[].securityContext.capabilities.drop", ".spec.containers[].securityContext.capabilities.add"],
+        [
+            ".spec.containers[].securityContext.capabilities.drop", 
+            ".spec.containers[].securityContext.capabilities.add",
+            ".spec.containers[].securityContext.capabilities",
+        ],
     ),  # drop all capabilities only add net bind service
+    "KSV110": (
+        CheckCategory.Workload,
+        [
+            ".metadata.namespace",
+        ],
+    ),  # default namespace
     "KSV111": (  # manage all resources in namespace (wildcard)
         CheckCategory.IAM,
         [
@@ -336,6 +361,45 @@ CHECK_MAPPING = {
             "Role.rules[].verbs",
         ],
     ),
+    "KSV114": (  # Manage webhookconfigurations
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    "KSV115": (  # Manage EKS IAM Auth ConfigMap
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    "KSV116": (  # Runs with a root primary or supplementary GID
+        CheckCategory.Workload,
+        [
+            ".spec.securityContext.runAsGroup",
+            ".spec.containers[].securityContext.runAsGroup",
+        ],
+    ),
+    "KSV117": ( # Privileged port used
+        CheckCategory.Workload,
+        [
+            ".spec.containers[].ports[].containerPort", 
+            ".spec.initContainers[].ports[].containerPort",
+        ],
+    ),
+    "KSV118": (  # default security context
+        CheckCategory.Workload,
+        [
+            ".spec.securityContext",
+            ".spec.containers[].securityContext",
+        ],
+    ),
     "KSV119": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities.add"]),  # NET_RAW capability
     "KSV120": (
         CheckCategory.Workload,
@@ -345,8 +409,33 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         [".spec.volumes[].hostPath.path"],
     ),  # K8s resource with disallowed volumes mounted (/, /boot, /dev, /etc, /lib, /proc, /sys, /usr, /var/lib/docker)
+    "KSV122": (
+        CheckCategory.IAM, 
+        [
+            "RoleBinding.roleRef.name", 
+            "ClusterRoleBinding.roleRef.name",
+            ".roleRef.name",
+        ]
+    ),  # Privilege escalation allowed in init container
+    "KSV123": (
+        CheckCategory.IAM, 
+        [
+            "RoleBinding.roleRef.name", 
+            "ClusterRoleBinding.roleRef.name",
+            ".roleRef.name",
+        ]
+    ),  # Binding to system:masters group
     "AVD-KSV-0109": (CheckCategory.DataSecurity, ["ConfigMap.data"]),  # ConfigMap with secrets
     "AVD-KSV-01010": (CheckCategory.DataSecurity, ["ConfigMap.data"]),  # ConfigMap with sensitive content
+    "AVD-KSV-01011": (
+        CheckCategory.IAM, 
+        [
+            "RoleBinding.roleRef.name", 
+            "ClusterRoleBinding.roleRef.name",
+            ".roleRef.name",
+        ]
+    ),  # Binding to system:authenticate group
+    "no-user-pods-in-system-namespace": (CheckCategory.Workload, [".metadata.namespace"]),  # User pods in kube-system or kube-public namespace
 }
 
 
@@ -359,6 +448,7 @@ class Scanner(ScannerBase):
     IMAGE_URL = "https://github.com/aquasecurity/trivy/blob/main/docs/imgs/logo.png?raw=true"
     RUNS_OFFLINE = True
     CUSTOM_CHECKS = "in Rego"
+    PATH_COLUMNS = ["checked_path"]
 
     @classmethod
     def parse_results(cls, results: dict) -> list[CheckResult]:

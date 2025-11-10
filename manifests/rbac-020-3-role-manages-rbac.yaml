@@ -5,6 +5,7 @@ metadata:
     check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
     description: Attackers can escalate privileges if they can update roles
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.1.8']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Role-based access control']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A9']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['1.5.b']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9003']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Avoid creating RBAC permissions to create or update roles which can lead to privilege escalation.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-020-3

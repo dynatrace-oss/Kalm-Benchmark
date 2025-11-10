@@ -19,6 +19,7 @@ class Scanner(ScannerBase):
     CI_MODE = True
     FORMATS = ["JSON", "Template"]
     VERSION_CMD = ["kubesec", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     @classmethod
     def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:
@@ -53,6 +54,8 @@ class Scanner(ScannerBase):
                 m = check_id_pattern.search(name)
                 check_id = m.group(1) if m is not None else None
                 scoring = resource["scoring"]
+
+                logger.debug(f"Kubesec: Processing resource {file_idx}.{resource_idx}: {kind}/{name} with check ID {check_id}")
 
                 if len(scoring) == 0:
                     details = resource.get("message", "Unknown kubesec error")

@@ -31,6 +31,7 @@ class PodSecurityAdmissionCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -43,7 +44,7 @@ class PodSecurityAdmissionCheck(Check):
         :param check_path: the path(s) which is the essence of the check
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards)
         PodSecurityPolicy(self, self.name, self.meta, **kwargs)
 
 
@@ -206,6 +207,7 @@ def gen_pod_security_admission_checks(app) -> None:
         ],
         pod_security_admission_mode=None,
         pod_security_level=None,
+        standards=[],
     )
 
     NamespaceCheck(
@@ -217,6 +219,7 @@ def gen_pod_security_admission_checks(app) -> None:
             "Namespace.metadata.labels.pod-security.kubernetes.io",
         ],
         pod_security_level=PodSecurityLevel.Privileged,
+        standards=[],
     )
 
     NamespaceCheck(
@@ -228,6 +231,7 @@ def gen_pod_security_admission_checks(app) -> None:
             "Namespace.metadata.labels.pod-security.kubernetes.io",
         ],
         pod_security_admission_mode=PodSecurityAdmissionMode.Warn,
+        standards=[],
     )
 
 
@@ -246,18 +250,26 @@ def gen_psps(app) -> None:
         "PSP-001-1",
         "allow privileged containers",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host",
+        "as they can perform almost every action that can be performed directly on the host",
         privileged=True,  # explicitly allows privileged pods
         check_path=".spec.privileged",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.1"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-254801"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Admission controllers"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]}],
     )
     PodSecurityAdmissionCheck(
         app,
         "PSP-001-2",
         "allow privileged containers by default",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host",
+        "as they can perform almost every action that can be performed directly on the host",
         privileged=None,
         check_path=".spec.privileged",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.1"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-254801"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["Admission controllers"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -265,18 +277,28 @@ def gen_psps(app) -> None:
         "PSP-002-1",
         "allow privilege escalation in containers",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host",
+        "as they can perform almost every action that can be performed directly on the host",
         allow_privilege_escalation=True,
         check_path=".spec.allowPrivilegeEscalation",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.2"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["RBAC Good Practice - Workload creation"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
         "PSP-002-2",
         "allow privilege escalation in containers by default",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host.",
+        "as they can perform almost every action that can be performed directly on the host.",
         allow_privilege_escalation=None,
         check_path=".spec.allowPrivilegeEscalation",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.2"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes Security Checklist", "controls": ["RBAC Good Practice - Workload creation"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -287,6 +309,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_pid=True,
         check_path=".spec.hostPID",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.3"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9015"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -296,6 +323,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_pid=None,
         check_path=".spec.hostPID",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.3"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9015"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -306,6 +338,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_ipc=True,
         check_path=".spec.hostIPC",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.4"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9016"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -315,6 +352,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_ipc=None,
         check_path=".spec.hostIPC",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.4"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9016"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -324,6 +366,11 @@ def gen_psps(app) -> None:
         descr="Containers should be isolated from the host machine as much as possible",
         host_network=True,
         check_path=".spec.hostNetwork",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.5"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -332,6 +379,11 @@ def gen_psps(app) -> None:
         descr="Containers should be isolated from the host machine as much as possible",
         host_network=None,
         check_path=".spec.hostNetwork",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.5"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -341,6 +393,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=None,
         check_path=".spec.allowedHostPaths",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -349,6 +403,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=[],
         check_path=".spec.allowedHostPaths",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -359,6 +415,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=["/does/not/exist"],
         check_path=".spec.allowedHostPaths",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -368,6 +426,11 @@ def gen_psps(app) -> None:
         descr="a user should not have elevated privileges",
         run_as_user_rule=RunAsUserRule.RunAsAny,  # poses no restrictions on the users
         check_path=".spec.runAsUser",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.7"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -378,6 +441,11 @@ def gen_psps(app) -> None:
         run_as_user_rule=RunAsUserRule.MustRunAs,
         uid_range=(0, 65535),  # allowing all UIDs is basically no protection as well
         check_path=".spec.runAsUser",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.7"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -388,6 +456,11 @@ def gen_psps(app) -> None:
         run_as_user_rule=RunAsUserRule.MustRunAs,
         uid_range=(10000, 65535),
         check_path=".spec.runAsUser",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.7"]},
+                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -398,6 +471,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MustRunAs,
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -407,6 +484,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MayRunAs,
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -417,6 +498,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MayRunAs,
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -427,6 +512,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MustRunAs,
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -437,6 +526,9 @@ def gen_psps(app) -> None:
         # the test PSP drops all capabilities, but by explicitly allowing net_raw the alert should be triggered
         allowed_capabilities=["NET_RAW"],
         check_path=".spec.allowedCapabilities",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.8"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -446,6 +538,9 @@ def gen_psps(app) -> None:
         descr="container group should not have elevated privileges",
         drop_capabilities=["NET_RAW"],  # drop only NET_RAW instead of ALL
         check_path=".spec.requiredDropCapabilities",
+        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.8"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -456,6 +551,9 @@ def gen_psps(app) -> None:
         "through permanent local changes",
         read_only_root_filesystem=True,
         check_path=".spec.readOnlyRootFilesystem",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9027"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -465,6 +563,9 @@ def gen_psps(app) -> None:
         "through permanent local changes",
         read_only_root_filesystem=None,
         check_path=".spec.readOnlyRootFilesystem",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9027"]},
+                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -474,6 +575,9 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         se_linux_rule=SeLinuxRule.RunAsAny,
         check_path=".spec.seLinux",
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
+                   {"standard": "OWASP", "controls": ["Assess the privileges used by containers"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -483,9 +587,12 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         apparmor_profile_name=None,
         check_path=[
-            ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName"
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
+            ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]"
         ],
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -494,9 +601,12 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         apparmor_profile_name=AppArmorProfile.Unconfined,
         check_path=[
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]",
         ],
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -505,9 +615,12 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         allowed_apparmor_profile_names=False,
         check_path=[
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/allowedProfileNames",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/allowedProfileNames]",
         ],
+        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
+                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -521,6 +634,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/defaultProfileName]",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
         ],
     )
 
@@ -535,6 +649,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/defaultProfileName]",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
         ],
     )
     PodSecurityAdmissionCheck(

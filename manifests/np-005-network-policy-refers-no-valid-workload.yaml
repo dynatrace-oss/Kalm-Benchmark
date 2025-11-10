@@ -11,50 +11,6 @@ metadata:
   name: np-005-network-policy-refers-no-valid-workload
   namespace: np-005-network-policy-refers-no-valid-workload
 ---
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  annotations:
-    check_path: NetworkPolicy.spec.podSelector|.spec.podSelector
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: NP-005
-  name: np-005-network-policy-refers-no-valid-workload
-  namespace: np-005-network-policy-refers-no-valid-workload
-spec:
-  hard:
-    cpu: 30
-    memory: 20Gi
-    pods: 1000
----
-apiVersion: v1
-kind: LimitRange
-metadata:
-  annotations:
-    check_path: NetworkPolicy.spec.podSelector|.spec.podSelector
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: NP-005
-  name: np-005-network-policy-refers-no-valid-workload
-  namespace: np-005-network-policy-refers-no-valid-workload
-spec:
-  limits:
-    - default:
-        cpu: 100m
-        memory: 1Mi
-      defaultRequest:
-        cpu: 1m
-        memory: 1Ki
-      max:
-        cpu: 100m
-        memory: 10Mi
-      min:
-        cpu: 1m
-        memory: 1Ki
-      type: Container
----
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -67,7 +23,9 @@ metadata:
   name: np-005-network-policy-refers-no-valid-workload
   namespace: np-005-network-policy-refers-no-valid-workload
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app: does-not-exist
   policyTypes:
     - Egress
     - Ingress
@@ -106,7 +64,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -122,7 +80,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

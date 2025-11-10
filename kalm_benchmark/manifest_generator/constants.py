@@ -16,6 +16,7 @@ class CheckKey(SnakeCaseStrEnum):
     CheckPath = auto()
     Description = auto()
     Expect = "expected"
+    Standards = auto()
 
 
 CMDS = [
@@ -46,7 +47,7 @@ SENSITIVE_KEYS = [
     "credential",
 ]
 SENSITIVE_VALUES = "PRIVATE KEY eyJhbGciO JWT Bearer"
-DANGEROUS_CAPABILITIES = ["ALL", "SYS_ADMIN", "NET_ADMIN"]
+DANGEROUS_CAPABILITIES = ["ALL", "SYS_ADMIN", "NET_ADMIN", "NET_RAW"]
 INSECURE_CAPABILITIES = [
     "AUDIT_WRITE",
     "BPF",
@@ -255,6 +256,7 @@ class ContainerConfig:
     image_tag: str | None = "@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa"
     image_pull_policy: str | None = "Always"
     container_port: int = 8080
+    host_port: int | None = None
     env_vars: list | None = None
     security_context: dict | bool | None = True
     security_context_kwargs: dict | None = None
@@ -323,12 +325,12 @@ MISSING_CHECKS = [
     MissingCheck(
         "POD-005", "don't reference non-existing SA", "", ".spec.serviceAccountName|ServiceAccount.metadata.name"
     ),
-    MissingCheck(
-        "POD-015",
-        "enable Seccomp",
-        "annotation can be either a pod annotation, or a container annotation",
-        ".spec.serviceAccountName|ServiceAccount.metadata.name",
-    ),
+    #MissingCheck(
+    #    "POD-015",
+    #    "enable Seccomp",
+    #    "annotation can be either a pod annotation, or a container annotation",
+    #    ".spec.serviceAccountName|ServiceAccount.metadata.name",
+    #),
     MissingCheck(
         "POD-020",
         "fsGroup / supplementalGroups should be non-zero",
@@ -425,7 +427,7 @@ MISSING_CHECKS = [
     MissingCheck(
         "SC-003",
         "configure image provenance using ImagePolicyWebhook admission controller",
-        "As suggeded by CIS benchmark (5.5.1)",
+        "As suggested by CIS benchmark (5.5.1)",
     ),
     MissingCheck(
         "SC-004",

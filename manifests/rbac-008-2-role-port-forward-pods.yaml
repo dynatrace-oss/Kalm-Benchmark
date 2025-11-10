@@ -2,9 +2,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
-    check_path: ClusterRole.rules[].resources|Role.rules[].resources|.rules[].resources
+    check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources
     description: Attackers can open a backdoor communication channel directly to the sockets inside target container bypassing network security restrictions
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-008-2
