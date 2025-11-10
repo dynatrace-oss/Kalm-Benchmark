@@ -57,7 +57,7 @@ class Col(SnakeCaseStrEnum):
     ScannerCheckName = auto()
     ResultType = auto()
     Standards = auto()
-    CheckMainId = auto()
+    BenchmarkId = auto()
 
 
 @dataclass
@@ -227,11 +227,11 @@ def evaluate_scanner(
 
     df_scanner["check_id"] = df_scanner["check_id"].infer_objects(copy=False).fillna(extracted_check_id)
     df_scanner["check_id"] = df_scanner["check_id"].astype(str).str.upper().replace("NONE", None)
-    df_scanner["check_main_id"] = df_scanner["check_id"].str.extract(r"^([A-Z]+-\d+)", expand=False)
+    df_scanner["benchmark_id"] = df_scanner["check_id"].str.extract(r"^([A-Z]+-\d+)", expand=False)
 
     df_bench = load_benchmark()
     df_bench["check_id"] = df_bench["check_id"].astype(str).str.upper().replace("NONE", None)
-    df_bench["check_main_id"] = df_bench["check_id"].str.extract(r"^([A-Z]+-\d+)", expand=False)
+    df_bench["benchmark_id"] = df_bench["check_id"].str.extract(r"^([A-Z]+-\d+)", expand=False)
     df = merge_dataframes(df_bench, df_scanner, id_column=Col.CheckId, path_column_1="path_to_check", path_column_2=scanner.PATH_COLUMNS[0] if scanner.PATH_COLUMNS else None)
 
     required_cols = [Col.PathToCheck, Col.CheckedPath, Col.ScannerCheckId, Col.ScannerCheckName]
@@ -681,13 +681,13 @@ def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | 
     # note the only information from the scanner is the 'got' column which is required for the score calculation
     # all others infos from the scanners are dropped to avoid pollution of the results
     # e.g., having countless scanner_checks per benchmark check
-    relevant_columns = [Col.CheckMainId, Col.Category, Col.PathToCheck, Col.CheckedPath, Col.ResultType, Col.Expected, Col.Got]
+    relevant_columns = [Col.BenchmarkId, Col.Category, Col.PathToCheck, Col.CheckedPath, Col.ResultType, Col.Expected, Col.Got]
     df_unique_checks = df[relevant_columns].drop(df[df[Col.PathToCheck] == "-"].index).drop_duplicates(relevant_columns, ignore_index=True)
 
     # consolidate conflicting check results (e.g. TP, FP, ...) by taking the 'worst'
     # i.e., FP in case of both TP and FP
     df_unique_checks = (
-        df_unique_checks.groupby(by=[Col.CheckMainId, Col.ResultType])
+        df_unique_checks.groupby(by=[Col.BenchmarkId, Col.ResultType])
         .apply(_consolidate_conflicting_checks)
         .reset_index(drop=True)
     )

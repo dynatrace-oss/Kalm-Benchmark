@@ -117,9 +117,12 @@ class TestSeverityNormalization:
         "medium": "MEDIUM",
         "low": "LOW",
         "info": "INFO",
+        "informational": "INFO",
         "warn": "MEDIUM",
         "warning": "MEDIUM",
         "error": "HIGH",
+        "fail": "HIGH",
+        "pass": "INFO",
     }
 
     @given(st.sampled_from(list(KNOWN_SEVERITIES.keys())))

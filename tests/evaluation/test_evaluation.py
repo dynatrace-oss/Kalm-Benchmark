@@ -58,7 +58,7 @@ class TestResultSummarization:
         checked_path = "checked/path"
         data = [
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -68,7 +68,7 @@ class TestResultSummarization:
                 Col.Got: CheckStatus.Pass,
             },
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -94,7 +94,7 @@ class TestResultSummarization:
 
         data = [
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -104,7 +104,7 @@ class TestResultSummarization:
                 Col.Got: CheckStatus.Pass,
             },
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -130,7 +130,7 @@ class TestResultSummarization:
 
         data = [
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -140,7 +140,7 @@ class TestResultSummarization:
                 Col.Got: CheckStatus.Pass,
             },
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
