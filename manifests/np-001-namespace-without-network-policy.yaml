@@ -4,7 +4,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.metadata.namespace
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-001
@@ -19,7 +19,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.metadata.namespace
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-001
@@ -32,7 +32,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.metadata.namespace
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.2']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A18']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Default network policies within each namespace, selecting all pods, denying everything, are in place.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Kubernetes network policies to control traffic between pods and clusters']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-001

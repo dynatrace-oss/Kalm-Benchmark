@@ -6,7 +6,7 @@ metadata:
     check_path: .spec.containers[].resources.limits.memory|.spec.containers[].resources.limits
     description: not setting memory limit can lead to the pod suffocating the node by using all available memory
     expected: alert
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal or inferior to the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster.']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal to or greater than the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-002-2
@@ -20,7 +20,7 @@ metadata:
     check_path: .spec.containers[].resources.limits.memory|.spec.containers[].resources.limits
     description: not setting memory limit can lead to the pod suffocating the node by using all available memory
     expected: alert
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal or inferior to the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster.']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal to or greater than the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-002-2

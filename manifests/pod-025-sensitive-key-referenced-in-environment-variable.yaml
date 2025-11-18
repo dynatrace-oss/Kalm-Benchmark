@@ -6,7 +6,7 @@ metadata:
     check_path: .spec.containers[].env[].name
     description: Attackers can retrieve and use sensitive information provided via environment variables
     expected: alert
-    standards: "[{'standard': 'CIS', 'version': '1.11.1', 'controls': ['5.4.1']}, {'standard': 'NSA-CISA', 'controls': ['Secrets']}, {'standard': 'Kubernetes STIG', 'controls': ['V-242415']}, {'standard': 'BSI', 'controls': ['SYS.1.6.A8']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Secrets']}, {'standard': 'PCI-DSS', 'controls': ['6.1']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9026']}, {'standard': 'OWASP', 'controls': ['Finding exposed secrets']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.4.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Secrets']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242415']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Pods needing secrets should have these automatically mounted through volumes, preferably stored in memory like with the emtpyDir.medium option.']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['6.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9026']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Finding exposed secrets']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-025
@@ -20,7 +20,7 @@ metadata:
     check_path: .spec.containers[].env[].name
     description: Attackers can retrieve and use sensitive information provided via environment variables
     expected: alert
-    standards: "[{'standard': 'CIS', 'version': '1.11.1', 'controls': ['5.4.1']}, {'standard': 'NSA-CISA', 'controls': ['Secrets']}, {'standard': 'Kubernetes STIG', 'controls': ['V-242415']}, {'standard': 'BSI', 'controls': ['SYS.1.6.A8']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Secrets']}, {'standard': 'PCI-DSS', 'controls': ['6.1']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9026']}, {'standard': 'OWASP', 'controls': ['Finding exposed secrets']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.4.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Secrets']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242415']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Pods needing secrets should have these automatically mounted through volumes, preferably stored in memory like with the emtpyDir.medium option.']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['6.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9026']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Finding exposed secrets']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-025

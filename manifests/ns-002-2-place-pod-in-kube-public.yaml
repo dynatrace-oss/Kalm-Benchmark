@@ -6,7 +6,7 @@ metadata:
     check_path: .metadata.namespace
     description: kube-public should not be used for custom workloads
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.6.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Namespaces']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242417']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['16.1.a']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Code that uses namespaces to isolate Kubernetes resources.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.6.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Namespaces']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242417']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['16.1.a']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Code that uses namespaces to isolate Kubernetes resources']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NS-002-2
@@ -20,7 +20,7 @@ metadata:
     check_path: .metadata.namespace
     description: kube-public should not be used for custom workloads
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.6.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Namespaces']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242417']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['16.1.a']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Code that uses namespaces to isolate Kubernetes resources.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.6.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Namespaces']}, {'standard': 'CIS Kubernetes STIG', 'controls': ['V-242417']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['16.1.a']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Code that uses namespaces to isolate Kubernetes resources']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NS-002-2

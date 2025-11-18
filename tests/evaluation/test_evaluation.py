@@ -575,7 +575,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we have the expected number of rows (one match + extras)
         assert len(df_res) == 7  # 1 match + 6 extras
@@ -592,7 +592,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk, "sk": [".1|.2"]})
         df2 = pd.DataFrame({"pk": pk, "sk": [".2|.3"]})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that the result contains the matching path ".2"
         assert len(df_res) >= 1
@@ -613,7 +613,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk_left": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk_right": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk_left", path_column_2="sk_right")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we have the essential columns
         assert "pk" in df_res.columns
@@ -633,7 +633,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we get results and that matching occurs appropriately
         assert len(df_res) >= 3  # Should have at least the matches
@@ -657,7 +657,7 @@ class TestDataframeMerge:
         data_right = [1, 2, 3]
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
         df_expect = pd.DataFrame(
             {
                 "pk": pk_right,
@@ -675,7 +675,7 @@ class TestDataframeMerge:
         data_right = [10, 20, 30, 40]
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we have the essential structure
         assert len(df_res) >= 3  # Should have multiple matches

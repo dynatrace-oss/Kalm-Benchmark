@@ -35,7 +35,7 @@ CHECK_MAPPING = {
     "CKV_K8S_17": (CheckCategory.Workload, ".spec.hostPID"),
     "CKV_K8S_18": (CheckCategory.Workload, ".spec.hostIPC"),
     "CKV_K8S_19": (CheckCategory.Workload, ".spec.hostNetwork"),
-    "CKV_K8S_20": (CheckCategory.Workload, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
+    "CKV_K8S_20": (CheckCategory.Workload, ".spec.containers[].securityContext.allowPrivilegeEscalation"),
     "CKV_K8S_21": (CheckCategory.Workload, ".metadata.namespace"),
     "CKV_K8S_22": (CheckCategory.Workload, ".spec.containers[].securityContext.readOnlyRootFilesystem"),
     "CKV_K8S_23": (

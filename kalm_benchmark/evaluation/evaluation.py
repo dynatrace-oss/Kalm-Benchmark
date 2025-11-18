@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from enum import auto
 from functools import lru_cache
+import json
 from pathlib import Path
 
 import cdk8s
@@ -330,10 +331,10 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
 
         if df1_rows.empty and not df2_rows.empty:
             for _, row2 in df2_rows.iterrows():
-                results.append(_combine_rows(None, row2, path_column_1, path_column_2))
+                results.append(_combine_rows(None, row2))
         elif not df1_rows.empty and df2_rows.empty:
             for _, row1 in df1_rows.iterrows():
-                results.append(_combine_rows(row1, None, path_column_1, path_column_2))
+                results.append(_combine_rows(row1, None))
         elif not df1_rows.empty and not df2_rows.empty:
             matched_pairs = set()
 
@@ -341,16 +342,16 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
             for _, row1 in df1_rows.iterrows():
                 for _, row2 in df2_rows.iterrows():
                     if _paths_match(row1.get(path_column_1), row2.get(path_column_2)):
-                        results.append(_combine_rows(row1, row2, path_column_1, path_column_2))
+                        results.append(_combine_rows(row1, row2))
                         matched_pairs.add((row1.name, row2.name))
 
             for _, row1 in df1_rows.iterrows():
                 if not any(pair[0] == row1.name for pair in matched_pairs):
-                    results.append(_combine_rows(row1, None, path_column_1, path_column_2))
+                    results.append(_combine_rows(row1, None))
 
             for _, row2 in df2_rows.iterrows():
                 if not any(pair[1] == row2.name for pair in matched_pairs):
-                    results.append(_combine_rows(None, row2, path_column_1, path_column_2))
+                    results.append(_combine_rows(None, row2))
 
     return pd.DataFrame(results) if results else pd.DataFrame()
 
@@ -380,7 +381,7 @@ def _paths_match(path1, path2):
     return False
 
 
-def _combine_rows(row1, row2, path_column_1: str | None = None, path_column_2: str | None = None):
+def _combine_rows(row1, row2) -> dict:
     """Combine two rows from different dataframes, handling missing values.
     Merges row data by preferring non-null values from either row,
     with special handling for the specified path column.
@@ -550,9 +551,7 @@ def _extract_standards(standards_str: str | None) -> dict[str, str]:
         return {}
 
     try:
-        import ast
-        # Parse the string representation of the list
-        standards_list = ast.literal_eval(standards_str)
+        standards_list = json.loads(standards_str)  # Parse the JSON string
         
         if not isinstance(standards_list, list):
             return {standards_str: ""}

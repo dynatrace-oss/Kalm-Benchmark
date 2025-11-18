@@ -6,7 +6,7 @@ metadata:
     check_path: .spec.containers[].image
     description: When using latest image tag the used image can change without the user knowing about this
     expected: alert
-    standards: "[{'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.2.a']}, {'standard': 'Kubernetes Security Checklist', 'controls': [\"References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deployment via admission control.\"]}]"
+    standards: "[{'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.2.a']}, {'standard': 'Kubernetes Security Checklist', 'controls': [\"References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deploy time via admission control.\"]}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: SC-002-2
@@ -20,7 +20,7 @@ metadata:
     check_path: .spec.containers[].image
     description: When using latest image tag the used image can change without the user knowing about this
     expected: alert
-    standards: "[{'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.2.a']}, {'standard': 'Kubernetes Security Checklist', 'controls': [\"References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deployment via admission control.\"]}]"
+    standards: "[{'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['3.2.a']}, {'standard': 'Kubernetes Security Checklist', 'controls': [\"References to container images are made by sha256 digests (rather than tags) or the provenance of the image is validated by verifying the image's digital signature at deploy time via admission control.\"]}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: SC-002-2

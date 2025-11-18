@@ -4,7 +4,7 @@ metadata:
   annotations:
     check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -18,7 +18,7 @@ metadata:
   annotations:
     check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -45,7 +45,7 @@ metadata:
   annotations:
     check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -58,7 +58,7 @@ metadata:
   annotations:
     check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3

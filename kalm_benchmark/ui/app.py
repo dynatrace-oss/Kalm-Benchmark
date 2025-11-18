@@ -8,6 +8,9 @@ from kalm_benchmark.ui.logging_config import init_logging
 from kalm_benchmark.ui.modules.benchmark_comparison import (
     show as show_benchmark_comparison,
 )
+from kalm_benchmark.ui.modules.benchmark_overview import (
+    show as show_benchmark_overview,
+)
 from kalm_benchmark.ui.modules.ccss_overview import show as show_ccss_overview
 from kalm_benchmark.ui.modules.helm_scanner_analysis import (
     show as show_helm_scanner_analysis,
@@ -103,7 +106,7 @@ def show_home_page():
             ### 📊 Benchmark Analysis
             **Scanner Effectiveness Evaluation**
 
-            Compare security scanners against 235+ vulnerable Kubernetes manifests to measure:
+            Compare security scanners against 230+ vulnerable Kubernetes manifests to measure:
             - F1 scores and accuracy metrics
             - Coverage across security categories
             - False positive/negative rates
@@ -160,6 +163,7 @@ def main():
         st.Page(show_overview, title="Scanner Overview", icon="📊", url_path="scanner_overview"),
         st.Page(show_scanner_comparison, title="Scanner Comparison", icon="⚖️", url_path="scanner_comparison"),
         st.Page(show_scanner_details, title="Scanner Details", icon="🔍", url_path="scanner_details"),
+        st.Page(show_benchmark_overview, title="Benchmark Overview", icon="🛡️", url_path="benchmark_overview"),
         st.Page(show_benchmark_comparison, title="Benchmark Analysis", icon="📈", url_path="benchmark_analysis"),
         st.Page(show_helm_scanner_analysis, title="Helm Scanner Analysis", icon="🔬", url_path="helm_scanner_analysis"),
         st.Page(show_helm_security_trends, title="Security Trends", icon="📊", url_path="helm_security_trends"),

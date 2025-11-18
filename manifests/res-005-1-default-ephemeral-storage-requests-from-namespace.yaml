@@ -6,7 +6,7 @@ metadata:
     check_path: .spec.containers[].resources.requests.ephemeral-storage|.spec.containers[].resources.requests
     description: not setting ephemeral storarge limit can suffocate the node by using all available storage
     expected: pass
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster.']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-005-1
@@ -20,7 +20,7 @@ metadata:
     check_path: .spec.containers[].resources.requests.ephemeral-storage|.spec.containers[].resources.requests
     description: not setting ephemeral storarge limit can suffocate the node by using all available storage
     expected: pass
-    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster.']}]"
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-005-1

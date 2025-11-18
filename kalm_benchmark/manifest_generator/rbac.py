@@ -5,9 +5,19 @@ from .cdk8s_imports import k8s
 from .check import Check
 from .constants import (
     MAIN_NS,
+    BsiK8sControls,
     CheckStatus,
+    CisBenchmarkControls,
+    CisBenchmarkVersions,
+    K8sChecklistControls,
+    NsaCisaControls,
+    MsThreatMatrixControls,
+    OwaspControls,
+    PciGuidanceControls,
     RBACBindingConfig,
     RoleConfig,
+    StandardsAndGuidelines,
+    StandardsFields,
     SubjectConfig,
 )
 from .utils import ensure_list
@@ -305,11 +315,11 @@ def gen_rbac(app) -> None:
             subject=SubjectConfig(type=SubjectType.Group),
             role=RoleConfig(name="cluster-admin", exists=True, is_cluster_role=True),
             binding=RBACBindingConfig(is_cluster_binding=is_cluster),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.1"]}, 
-                       {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                       {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                       {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["2.2.a"]},
-                       {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_1.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_2_a.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
         )
 
         # wildcards for both resource and verbs affect this as well, but it will be covered in RBAC-003
@@ -328,11 +338,11 @@ def gen_rbac(app) -> None:
                 role=RoleConfig(
                     name=f"secret-read-{verb}", is_cluster_role=is_cluster, resources="secrets", verbs=verb
                 ),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.2"]},
-                           {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Secrets"]},
-                           {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]},
-                           {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                           {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_2.value]},
+                           {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.secrets.value]},
+                           {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]},
+                           {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                           {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
             )
 
         RBACCheck(
@@ -342,11 +352,11 @@ def gen_rbac(app) -> None:
             descr="Allowing wildcards violates principle of least privilege",
             check_path=["ClusterRole.rules[].resources", "Role.rules[].resources", ".rules[].resources", ".rules[].resources.pods.exec", ".rules[].resources.pods.attach"],
             role=RoleConfig(name=f"{pfx}all-resource-reader", is_cluster_role=is_cluster, resources="*", verbs="get"),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.3"]}, 
-                       {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                       {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                       {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["2.1.a"]},
-                       {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_3.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
         )
         RBACCheck(
             app,
@@ -355,11 +365,11 @@ def gen_rbac(app) -> None:
             descr="Allowing wildcards violates principle of least privilege",
             check_path=["ClusterRole.rules[].verbs", "Role.rules[].verbs", ".rules[].verbs"],
             role=RoleConfig(name=f"{pfx}all-ns-verbs", is_cluster_role=is_cluster, resources="jobs", verbs="*"),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.3"]}, 
-                       {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                       {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                       {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["2.1.a"]},
-                       {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_3.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
         )
         RBACCheck(
             app,
@@ -370,11 +380,11 @@ def gen_rbac(app) -> None:
             role=RoleConfig(
                 name=f"{pfx}all-ns-verbs", is_cluster_role=is_cluster, resources="jobs", verbs="get", api_groups="*"
             ),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.3"]}, 
-                       {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                       {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                       {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["2.1.a"]},
-                       {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_3.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                       {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
+                       {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
         )
 
         # wildcard variants are covered with RBAC-003
@@ -393,12 +403,12 @@ def gen_rbac(app) -> None:
                     ".rules[].resources",
                 ],
                 role=RoleConfig(name=f"{pfx}pod-{verb}", is_cluster_role=is_cluster, resources="pod", verbs=verb),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.4"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]},
-                            {"standard": "Kubernetes Security Checklist", "controls": ["RBAC rights to create, update, patch, delete workloads are only granted if necessary"]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_4.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_rbac.value]}],
             )
 
         RBACCheck(
@@ -436,7 +446,7 @@ def gen_rbac(app) -> None:
                     ".rules[].resources.pods.exec",
             ],
             role=RoleConfig(name=f"{pfx}role-exec-into-pods", is_cluster_role=is_cluster, resources="pods/exec", verbs="create"),
-            standards=[{"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9010"]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9010.value]}],
 
         )
 
@@ -460,12 +470,12 @@ def gen_rbac(app) -> None:
                 resources=[],  # create roles without rules
             ),
             binding=RBACBindingConfig(is_cluster_binding=is_cluster),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.5"]}, 
-                        {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Protecting Pod service account tokens"]},
-                        {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                        {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.2.a"]},
-                        {"standard": "Kubernetes Security Checklist", "controls": ["Service account tokens are not mounted in pods that don't require them.", "Avoid using the default ServiceAccount. Instead, create dedicated ServiceAccounts for each workload."]},
-                        {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_5.value]}, 
+                        {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.service_account_tokens.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_2_a.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_service_account_tokens.value, K8sChecklistControls.asc_sa_service_account.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
         )
 
         for j, verb in enumerate(["get", "list", "watch"]):
@@ -511,13 +521,13 @@ def gen_rbac(app) -> None:
                 resources=["users", "groups", "serviceaccounts"],
                 verbs="impersonate",
             ),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.8"]}, 
-                        {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                        {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                        {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                        {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]},
-                        {"standard": "Kubernetes Security Checklist", "controls": ["Avoid creating RBAC permissions to create or update roles which can lead to privilege escalation."]},
-                        {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_8.value]}, 
+                        {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_privilege_escalation.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
         )
 
         for j, res in enumerate(["rolebindings", "clusterrolebindings", "roles", "clusterroles"]):
@@ -537,13 +547,13 @@ def gen_rbac(app) -> None:
                 role=RoleConfig(
                     name=f"{pfx}role-destroy-resources", is_cluster_role=is_cluster, resources=res, verbs="bind"
                 ),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.8"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]},
-                            {"standard": "Kubernetes Security Checklist", "controls": ["Avoid creating RBAC permissions to create or update roles which can lead to privilege escalation."]},
-                            {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_8.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_privilege_escalation.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
             )
 
         for j, res in enumerate(["rolebindings", "clusterrolebindings", "roles", "clusterroles"]):
@@ -563,13 +573,13 @@ def gen_rbac(app) -> None:
                 role=RoleConfig(
                     name=f"{pfx}role-escalate-resources", is_cluster_role=is_cluster, resources=res, verbs="escalate"
                 ),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.8"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]},
-                            {"standard": "Kubernetes Security Checklist", "controls": ["Avoid creating RBAC permissions to create or update roles which can lead to privilege escalation."]},
-                            {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels."]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_8.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_privilege_escalation.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
             )
 
         for j, verb in enumerate(["get", "list", "watch"]):
@@ -687,12 +697,11 @@ def gen_rbac(app) -> None:
                 role=RoleConfig(
                     name=f"pv-{verb}", is_cluster_role=is_cluster, resources="persistentvolumes", verbs=verb
                 ),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.9"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
-
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
             )
 
         for j, verb in enumerate(["create", "update", "patch"]):
@@ -712,7 +721,7 @@ def gen_rbac(app) -> None:
                 role=RoleConfig(
                     name=f"{pfx}role-{verb}-netpol", is_cluster_role=is_cluster, resources="networkpolicies", verbs=verb
                 ),
-                standards=[{"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A7"]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a7.value]}],
             )
 
         for j, verb in enumerate(["get"]):
@@ -737,11 +746,11 @@ def gen_rbac(app) -> None:
                     ],
                     verbs=verb,
                 ),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.10"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_10.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
             )
 
         for j, verb in enumerate(["create", "update", "patch", "delete"]):
@@ -768,11 +777,11 @@ def gen_rbac(app) -> None:
                     verbs=verb,
                     api_groups=["admissionregistration.k8s.io"]
                 ),
-                standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.12"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+                standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_12.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
             )
             
         RBACCheck(
@@ -796,11 +805,11 @@ def gen_rbac(app) -> None:
                 ],
                 verbs=["create"],
             ),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.13"]}, 
-                            {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Authentication"]},
-                            {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                            {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                            {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_13.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.authentication.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
         )
 
         RBACCheck(
@@ -827,12 +836,12 @@ def gen_rbac(app) -> None:
                 verbs=["create", "update", "approve"],
                 api_groups=["certificates.k8s.io"]
             ),
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.1.11"]}, 
-                        {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                        {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A9"]}, 
-                        {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["1.5.b"]},
-                        {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]},
-                        {"standard": "Kubernetes Security Checklist", "controls": ["Certificate Signing - Perform additional authorization checks to ensure the signing user has permission to sign certificate requests."]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value,  StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_11.value]}, 
+                        {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
+                        {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ac_certificate_signing.value]}],
         )
 
         RBACCheck(
@@ -844,7 +853,7 @@ def gen_rbac(app) -> None:
             subject=SubjectConfig(type=SubjectType.User),
             role=RoleConfig(name="system:anonymous", exists=True, is_cluster_role=True),
             binding=RBACBindingConfig(is_cluster_binding=is_cluster),
-            standards=[{"standard": "Kubernetes Security Checklist", "controls": ["Review bindings to the system:unauthenticated group and remove them where possible."]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_review_bindings.value]}],
         )
 
         RBACCheck(
@@ -856,7 +865,7 @@ def gen_rbac(app) -> None:
             subject=SubjectConfig(type=SubjectType.User),
             role=RoleConfig(name="system:unauthenticated", exists=True, is_cluster_role=True),
             binding=RBACBindingConfig(is_cluster_binding=is_cluster),
-            standards=[{"standard": "Kubernetes Security Checklist", "controls": ["Review bindings to the system:unauthenticated group and remove them where possible."]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_review_bindings.value]}],
         )
 
     RBACCheck(
@@ -871,11 +880,11 @@ def gen_rbac(app) -> None:
         ],
         subject=SubjectConfig(name="rbac-016-ronin-sa", type=SubjectType.SA),
         role=RoleConfig(name=None),
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Role-based access control"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["2.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["The Role Based Access Control Good Practices are followed for guidance related to authentication and authorization."]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Implementing Role-Based Access Control in Kubernetes."]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.rbac.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_aa_rbac.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s2_rbac.value]}],
     )
 
     roles = [f"role-{i}-too-much" for i in range(10)]
@@ -891,9 +900,9 @@ def gen_rbac(app) -> None:
         ],
         subject=SubjectConfig(name="poly-role-sa", type=SubjectType.User),
         role=RoleConfig(name=roles, resources="services", verbs="get"),
-        standards=[{"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A3"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["2.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9003"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a3.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
     )
 
     # for subject_ns in ["default", "kube-system"]:

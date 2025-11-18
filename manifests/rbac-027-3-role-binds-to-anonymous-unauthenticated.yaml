@@ -5,7 +5,7 @@ metadata:
     check_path: RoleBinding.roleRef.name|ClusterRoleBinding.roleRef.name|.roleRef.name
     description: Bindings to system:anonymous or system:unauthenticated should be reviewed
     expected: alert
-    standards: "[{'standard': 'Kubernetes Security Checklist', 'controls': ['Review bindings to the system:unauthenticated group and remove them where possible.']}]"
+    standards: "[{'standard': 'Kubernetes Security Checklist', 'controls': ['Review bindings for the system:unauthenticated group and remove them where possible, as this gives access to anyone who can contact the API server at a network level.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-027-3

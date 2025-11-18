@@ -7,13 +7,22 @@ from .check import Check
 from .constants import (
     AppArmorProfile,
     CheckStatus,
+    CisBenchmarkControls,
+    CisBenchmarkVersions,
     FsGroupRule,
     GenericPspRule,
+    K8sChecklistControls,
+    K8sStigControls,
+    MsThreatMatrixControls,
+    NsaCisaControls,
+    OwaspControls,
     PodSecurityAdmissionMode,
     PodSecurityLevel,
     RunAsUserRule,
     SeccompProfileForPSP,
     SeLinuxRule,
+    StandardsAndGuidelines,
+    StandardsFields,
     SupplementalGroupsRule,
 )
 
@@ -253,10 +262,10 @@ def gen_psps(app) -> None:
         "as they can perform almost every action that can be performed directly on the host",
         privileged=True,  # explicitly allows privileged pods
         check_path=".spec.privileged",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.1"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-254801"]},
-                   {"standard": "Kubernetes Security Checklist", "controls": ["Admission controllers"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_1.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_254801.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -266,10 +275,10 @@ def gen_psps(app) -> None:
         "as they can perform almost every action that can be performed directly on the host",
         privileged=None,
         check_path=".spec.privileged",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.1"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-254801"]},
-                   {"standard": "Kubernetes Security Checklist", "controls": ["Admission controllers"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_1.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_254801.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -280,11 +289,11 @@ def gen_psps(app) -> None:
         "as they can perform almost every action that can be performed directly on the host",
         allow_privilege_escalation=True,
         check_path=".spec.allowPrivilegeEscalation",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.2"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes Security Checklist", "controls": ["RBAC Good Practice - Workload creation"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_2.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_allow_privilege_escalation.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -294,11 +303,11 @@ def gen_psps(app) -> None:
         "as they can perform almost every action that can be performed directly on the host.",
         allow_privilege_escalation=None,
         check_path=".spec.allowPrivilegeEscalation",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.2"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes Security Checklist", "controls": ["RBAC Good Practice - Workload creation"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9013"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_2.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_allow_privilege_escalation.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -309,11 +318,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_pid=True,
         check_path=".spec.hostPID",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.3"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9015"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_3.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9015.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -323,11 +332,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_pid=None,
         check_path=".spec.hostPID",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.3"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9015"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_3.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9015.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -338,11 +347,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_ipc=True,
         check_path=".spec.hostIPC",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.4"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9016"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_4.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9016.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -352,11 +361,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_ipc=None,
         check_path=".spec.hostIPC",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.4"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9016"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_4.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9016.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -366,11 +375,11 @@ def gen_psps(app) -> None:
         descr="Containers should be isolated from the host machine as much as possible",
         host_network=True,
         check_path=".spec.hostNetwork",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.5"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_5.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -379,11 +388,11 @@ def gen_psps(app) -> None:
         descr="Containers should be isolated from the host machine as much as possible",
         host_network=None,
         check_path=".spec.hostNetwork",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.5"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9017"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_5.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -393,8 +402,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=None,
         check_path=".spec.allowedHostPaths",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -403,8 +412,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=[],
         check_path=".spec.allowedHostPaths",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -415,8 +424,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=["/does/not/exist"],
         check_path=".spec.allowedHostPaths",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -426,11 +435,11 @@ def gen_psps(app) -> None:
         descr="a user should not have elevated privileges",
         run_as_user_rule=RunAsUserRule.RunAsAny,  # poses no restrictions on the users
         check_path=".spec.runAsUser",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.7"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -441,11 +450,11 @@ def gen_psps(app) -> None:
         run_as_user_rule=RunAsUserRule.MustRunAs,
         uid_range=(0, 65535),  # allowing all UIDs is basically no protection as well
         check_path=".spec.runAsUser",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.7"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -456,11 +465,11 @@ def gen_psps(app) -> None:
         run_as_user_rule=RunAsUserRule.MustRunAs,
         uid_range=(10000, 65535),
         check_path=".spec.runAsUser",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.7"]},
-                   {"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -471,10 +480,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MustRunAs,
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -484,10 +493,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MayRunAs,
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -498,10 +507,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MayRunAs,
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -512,10 +521,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MustRunAs,
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9020"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -526,9 +535,9 @@ def gen_psps(app) -> None:
         # the test PSP drops all capabilities, but by explicitly allowing net_raw the alert should be triggered
         allowed_capabilities=["NET_RAW"],
         check_path=".spec.allowedCapabilities",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.8"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.v_5_2_8.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -538,9 +547,9 @@ def gen_psps(app) -> None:
         descr="container group should not have elevated privileges",
         drop_capabilities=["NET_RAW"],  # drop only NET_RAW instead of ALL
         check_path=".spec.requiredDropCapabilities",
-        standards=[{"standard": "CIS", "version": "1.11.1", "controls": ["5.2.8"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9021"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.v_5_2_8.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -551,9 +560,9 @@ def gen_psps(app) -> None:
         "through permanent local changes",
         read_only_root_filesystem=True,
         check_path=".spec.readOnlyRootFilesystem",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9027"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9027.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -563,9 +572,9 @@ def gen_psps(app) -> None:
         "through permanent local changes",
         read_only_root_filesystem=None,
         check_path=".spec.readOnlyRootFilesystem",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9027"]},
-                   {"standard": "OWASP", "controls": ["Use Pod Security Policies to prevent risky containers/Pods from being used"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9027.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -575,9 +584,9 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         se_linux_rule=SeLinuxRule.RunAsAny,
         check_path=".spec.seLinux",
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]},
-                   {"standard": "OWASP", "controls": ["Assess the privileges used by containers"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_continously_assess.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -591,8 +600,8 @@ def gen_psps(app) -> None:
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]"
         ],
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -605,8 +614,8 @@ def gen_psps(app) -> None:
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]",
         ],
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -619,8 +628,8 @@ def gen_psps(app) -> None:
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/allowedProfileNames",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/allowedProfileNames]",
         ],
-        standards=[{"standard": "NSA-CISA", "controls": ["Pod Security Enforcement"]},
-                   {"standard": "Kubernetes STIG", "controls": ["V-242437"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]}],
     )
 
     PodSecurityAdmissionCheck(

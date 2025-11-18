@@ -7,14 +7,22 @@ from ..utils.data.validation import sanitize_kubernetes_name as sanitize_name
 from .cdk8s_imports import k8s
 from .check import Check, Meta
 from .constants import (
+    BsiK8sControls,
     CheckStatus,
-    ContainerConfig,
-    ContainerResourceConfig,
+    CisBenchmarkControls,
+    CisBenchmarkVersions,
+    K8sChecklistControls,
     LimitRangeConfig,
     NetworkPolicyConfig,
+    MsThreatMatrixControls,
+    NsaCisaControls,
+    OwaspControls,
+    PciGuidanceControls,
     PodSecurityAdmissionMode,
     PodSecurityLevel,
     ResourceQuotaConfig,
+    StandardsAndGuidelines,
+    StandardsFields,
 )
 from .network_policy import NetworkPolicy
 from .workload.pod_base import Workload
@@ -273,11 +281,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         limit_range=LimitRangeConfig(enabled=False),
         check_path=["LimitRange.metadata.namespace"],
         #container=ContainerConfig(resources=None),
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -286,11 +294,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         limit_range=LimitRangeConfig(kwargs={"default_cpu_request": None}),
         # container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         check_path=["LimitRange.spec.limits[].defaultRequest.cpu", ".spec.limits[].defaultRequest.cpu"],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -299,11 +307,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         limit_range=LimitRangeConfig(kwargs={"default_cpu_limit": None}),
         # container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         check_path=["LimitRange.spec.limits[].default.cpu", ".spec.limits[].default.cpu"],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -317,11 +325,11 @@ def gen_namespace_resource_checks(app: App) -> None:
             ".spec.limits[].min.cpu",
             ".spec.limits[].max.cpu",
         ],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     NamespaceCheck(
@@ -331,11 +339,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         limit_range=LimitRangeConfig(kwargs={"default_memory_request": None}),
         # container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         check_path=["LimitRange.spec.limits[].defaultRequest.memory", ".spec.limits[].defaultRequest.memory"],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -344,11 +352,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         limit_range=LimitRangeConfig(kwargs={"default_memory_limit": None}),
         # container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         check_path=["LimitRange.spec.limits[].default.memory", ".spec.limits[].default.memory"],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -364,11 +372,11 @@ def gen_namespace_resource_checks(app: App) -> None:
             ".spec.limits[].max.memory",
             ".spec.limits[].default.memory",
         ],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Memory limit is set for the workloads with a limit equal or inferior to the request"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     NamespaceCheck(
@@ -377,11 +385,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         "no resource quota applied to namespace",
         resource_quota=ResourceQuotaConfig(enabled=False),
         check_path=["ResourceQuota.metadata.namespace"],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads", "Memory limit is set for the workloads with a limit equal or inferior to the request"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value, K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -400,11 +408,11 @@ def gen_namespace_resource_checks(app: App) -> None:
             ".spec.hard.requests.memory",
             ".spec.hard.pods",
         ],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Resource policies"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["11.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9029"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["CPU limit might be set on sensitive workloads", "Memory limit is set for the workloads with a limit equal or inferior to the request"]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Limiting resource usage on a cluster"]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value, K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
 
@@ -416,13 +424,13 @@ def gen_network_policy_checks(app) -> None:
         network_policy=NetworkPolicyConfig(enabled=False),
         use_default_deny_all_network_policy=False,
         check_path=["NetworkPolicy.metadata.namespace"],
-        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.3.2"]},
-                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Network policies"]},
-                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A18"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["4.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9014"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Default network policies within each namespace, selecting all pods, denying everything, are in place."]},
-                    {"standard": "OWASP Kubernetes Security Cheat Sheet", "controls": ["Use Kubernetes network policies to control traffic between pods and clusters."]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_3_2.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a18.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ns_default_network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_network_policies.value]}],
     )
 
     for i, policy_type in enumerate(["Ingress", "Egress"], start=1):
@@ -432,12 +440,12 @@ def gen_network_policy_checks(app) -> None:
             f"only {policy_type.lower()} is blocked",
             network_policy=NetworkPolicyConfig(kwargs={"policy_types": [policy_type]}),
             check_path=["NetworkPolicy.spec.policyTypes[]", ".spec.policyTypes[]"],
-            standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.3.1"]},
-                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Network policies"]},
-                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A7"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["4.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9014"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.", "Ingress and egress network policies are applied to all workloads in the cluster."]}],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_3_1.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a7.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ns_network_policies.value, K8sChecklistControls.sc_ns_ingress_egress.value]}],
         )
 
     NamespaceCheck(
@@ -452,9 +460,9 @@ def gen_network_policy_checks(app) -> None:
             }
         ),
         check_path=["NetworkPolicy.spec.egress[].to[].ipBlock", ".spec.egress[].to[].ipBlock"],
-        standards=[{"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Protecting sensitive cloud infrastructure"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9018"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Access from the workloads to the cloud metadata API is filtered."]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.sensitive_cloud_infrastructure.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ns_cloud_metadata.value]}],
     )
 
     NamespaceCheck(
@@ -469,12 +477,12 @@ def gen_network_policy_checks(app) -> None:
             }
         ),
         check_path=["NetworkPolicy.spec.egress[].ports[].port", ".spec.egress[].ports[].port"],
-        standards=[{"standard": "CIS Kubernetes Benchmark", "version": "1.12", "controls": ["5.3.1"]},
-                    {"standard": "NSA-CISA Kubernetes Hardening Guide", "controls": ["Network policies"]},
-                    {"standard": "BSI APP.4.4 Kubernetes", "controls": ["APP.4.4.A7"]},
-                    {"standard": "PCI Guidance for Containers and Container Orchestration Tools", "controls": ["4.1.a"]},
-                    {"standard": "Microsoft Threat Matrix for Kubernetes", "controls": ["MS-M9014"]},
-                    {"standard": "Kubernetes Security Checklist", "controls": ["Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.", "Ingress and egress network policies are applied to all workloads in the cluster."]}],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_3_1.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a7.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ns_network_policies.value, K8sChecklistControls.sc_ns_ingress_egress.value]}],
     )
 
     NamespaceCheck(

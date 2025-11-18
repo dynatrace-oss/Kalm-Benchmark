@@ -4,7 +4,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.spec.policyTypes[]|.spec.policyTypes[]
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from the pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-002-1
@@ -18,7 +18,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.spec.policyTypes[]|.spec.policyTypes[]
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from the pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-002-1
@@ -36,7 +36,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.spec.policyTypes[]|.spec.policyTypes[]
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from the pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-002-1
@@ -49,7 +49,7 @@ metadata:
   annotations:
     check_path: NetworkPolicy.spec.policyTypes[]|.spec.policyTypes[]
     expected: alert
-    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.3.1']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Network policies']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A7']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['4.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9014']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Configure NetworkPolicies to only allow expected ingress and egress traffic from the pods.', 'Ingress and egress network policies are applied to all workloads in the cluster.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: NP-002-1
