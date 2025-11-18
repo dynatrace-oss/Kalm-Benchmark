@@ -14,6 +14,7 @@ from kalm_benchmark.manifest_generator.constants import (
     MISSING_CHECKS,
     CheckKey,
     CheckStatus,
+    StandardsFields,
 )
 from kalm_benchmark.manifest_generator.gen_manifests import generate_manifests
 from kalm_benchmark.utils.constants import (
@@ -551,7 +552,7 @@ def _extract_standards(standards_str: str | None) -> dict[str, str]:
         return {}
 
     try:
-        standards_list = json.loads(standards_str)  # Parse the JSON string
+        standards_list = json.loads(standards_str.replace("'", "\""))  # Parse the JSON string
         
         if not isinstance(standards_list, list):
             return {standards_str: ""}
@@ -559,9 +560,9 @@ def _extract_standards(standards_str: str | None) -> dict[str, str]:
         formatted_items = dict()
         for standard in standards_list:
             if isinstance(standard, dict):
-                name = standard.get('standard', '')
-                version = standard.get('version', '')
-                controls = standard.get('controls', [])
+                name = standard.get(StandardsFields.standard.value, '')
+                version = standard.get(StandardsFields.version.value, '')
+                controls = standard.get(StandardsFields.controls.value, [])
                 
                 # Format as: "Standard Name (version): controls"
                 item = name

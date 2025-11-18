@@ -2,6 +2,21 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 from loguru import logger
+from kalm_benchmark.evaluation import evaluation
+
+
+def get_benchmarks() -> pd.DataFrame:
+    """Load benchmark data of KALM benchmark.
+
+    :return: DataFrame benchmarks
+    """
+
+    try:
+        return evaluation.load_benchmark()
+
+    except Exception as e:
+        logger.error(f"Error loading benchmark data: {e}")
+        return pd.DataFrame()
 
 def show():
     """Display the main CCSS overview page with scanner alignment analysis.
@@ -42,6 +57,15 @@ def show():
         """,
         unsafe_allow_html=True,
     )
+
+        # Get benchmark evaluation data
+    benchmarks = get_benchmarks()
+
+    if benchmarks.empty:
+        st.warning("🔍 **No benchmark evaluation data available**")
+
+    st.dataframe(benchmarks)
+
 
 if __name__ == "__main__":
     show()

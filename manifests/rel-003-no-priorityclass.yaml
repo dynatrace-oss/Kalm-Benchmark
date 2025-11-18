@@ -6,7 +6,6 @@ metadata:
     check_path: .spec.priorityClassName
     description: Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability
     expected: alert
-    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: REL-003
@@ -20,7 +19,6 @@ metadata:
     check_path: .spec.priorityClassName
     description: Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability
     expected: alert
-    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: REL-003
