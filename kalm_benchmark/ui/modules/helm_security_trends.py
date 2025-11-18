@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 import altair as alt
 import pandas as pd
+from kalm_benchmark.ui.interface.source_filter import ScanSourceType
 import streamlit as st
 from loguru import logger
 
@@ -471,7 +472,7 @@ def show():
     st.markdown("---")
     with st.expander("📊 Detailed Historical Analysis", expanded=False):
         unified_service = get_unified_service()
-        render_historical_scan_trends(unified_service, source_type="helm", chart_name="")
+        render_historical_scan_trends(unified_service, source_type=ScanSourceType.HELM_CHARTS, chart_name="")
 
     # Help section
     with st.expander("❓ Understanding Security Trends", expanded=False):

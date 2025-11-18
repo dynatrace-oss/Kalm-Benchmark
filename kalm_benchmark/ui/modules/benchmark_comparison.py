@@ -1,5 +1,6 @@
 import altair as alt
 import pandas as pd
+from kalm_benchmark.ui.interface.source_filter import ScanSourceType
 import streamlit as st
 from loguru import logger
 
@@ -224,7 +225,7 @@ def show():
     # Historical trends (if data available)
     st.markdown("---")
     with st.expander("📈 Historical Analysis", expanded=False):
-        render_historical_scan_trends(unified_service, source_type=None, chart_name=None)
+        render_historical_scan_trends(unified_service, source_type=ScanSourceType.BENCHMARK, chart_name=None)
 
     # Help section
     with st.expander("❓ Understanding Benchmark Comparison", expanded=False):

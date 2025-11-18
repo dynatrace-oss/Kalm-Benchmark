@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
+from kalm_benchmark.ui.interface.source_filter import ScanSourceType
 import streamlit as st
 
 from kalm_benchmark.evaluation.scanner_manager import SCANNERS
@@ -394,11 +395,11 @@ def show_benchmark_historical_analysis(unified_service, tool_name: str):
 
         with hist_tab1:
             st.markdown("**Benchmark Scan History**")
-            render_historical_scan_trends(unified_service, source_type="benchmark", chart_name=None)
+            render_historical_scan_trends(unified_service, source_type=ScanSourceType.BENCHMARK, chart_name=None)
 
         with hist_tab2:
             st.markdown(f"**{tool_name} Benchmark Performance Over Time**")
-            render_scanner_performance_trends(unified_service, tool_name, source_type="benchmark")
+            render_scanner_performance_trends(unified_service, tool_name, source_type=ScanSourceType.BENCHMARK)
 
 
 if __name__ == "__main__":
