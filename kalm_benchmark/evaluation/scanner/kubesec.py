@@ -52,7 +52,7 @@ class Scanner(ScannerBase):
                     continue
 
                 m = check_id_pattern.search(name)
-                check_id = m.group(1) if m is not None else None
+                check_id = m.group(1) if m else None
                 scoring = resource["scoring"]
 
                 logger.debug(f"Kubesec: Processing resource {file_idx}.{resource_idx}: {kind}/{name} with check ID {check_id}")

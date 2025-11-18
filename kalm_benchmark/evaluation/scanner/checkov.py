@@ -410,7 +410,7 @@ class Scanner(ScannerBase):
         check_results = []
 
         # Checkov returns results as a list of objects, extract the first one
-        if isinstance(results, list) and len(results) > 0:
+        if isinstance(results, list) and results:
             for result in results:
                 if isinstance(result, dict) and "check_type" in result:
                     if result["check_type"] != "kubernetes":
