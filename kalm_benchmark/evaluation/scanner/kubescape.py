@@ -51,9 +51,10 @@ CONTROL_CATEGORY = {
             ".data.secret",
             ".data.bearer",
             ".data.token",
-            "data.password",
+            ".data.password",
             ".spec.containers[].env[].valueFrom",
             ".spec.containers[].env[].value",
+            ".spec.containers[].env[].name",
         ],
     ),  # Applications credentials in configuration files
     "C-0013": (
@@ -63,7 +64,6 @@ CONTROL_CATEGORY = {
             ".spec.securityContext.runAsGroup",
             ".spec.containers[].securityContext.runAsUser",
             ".spec.containers[].securityContext.runAsGroup",
-            ".spec.containers[].securityContext.allowPrivilegeEscalation",
         ],
     ),  # Non-root containers
     "C-0014": (
@@ -104,7 +104,7 @@ CONTROL_CATEGORY = {
     # "C-0028": (CheckCategory.PodSecurity, ""),  # gone?
     "C-0030": (
         CheckCategory.Segregation,
-        ["NetworkPolicy.spec.podSelector.matchLabels", "NetworkPolicy.spec.ingress", "NetworkPolicy.spec.egress"],
+        ["NetworkPolicy.spec.podSelector.matchLabels", "NetworkPolicy.spec.ingress", "NetworkPolicy.spec.egress", "NetworkPolicy.spec.policyTypes"],
     ),  # Ingress and Egress blocked
     "C-0031": (
         CheckCategory.IAM,  # Delete Kubernetes events
@@ -126,7 +126,13 @@ CONTROL_CATEGORY = {
     ),  # Cluster-admin binding
     "C-0036": (
         CheckCategory.AdmissionControl,
-        "ValidatingWebhookConfiguration",
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+            "ValidatingWebhookConfiguration",
+        ],
     ),  # Validate admission controller (validating)
     "C-0037": (
         CheckCategory.IAM,
@@ -140,21 +146,27 @@ CONTROL_CATEGORY = {
     "C-0038": (CheckCategory.Workload, [".spec.hostIPC", ".spec.hostPID"]),  # Host PID/IPC privileges
     "C-0039": (
         CheckCategory.AdmissionControl,
-        "MutatingWebhookConfiguration",
+        [
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+            "MutatingWebhookConfiguration",
+        ],
     ),  # Validate admission controller (mutating)
     "C-0041": (CheckCategory.Workload, ".spec.hostNetwork"),  # HostNetwork access
     "C-0042": (CheckCategory.Workload, ".spec.containers[].ports[]"),  # SSH server running inside container
     "C-0044": (CheckCategory.Workload, ".spec.containers[].ports[].hostPort"),  # Container hostPort
     "C-0045": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # Writable hostPath mount
-    "C-0046": (CheckCategory.Workload, ".spec.securityContext.capabilities"),  # Insecure capabilities
+    "C-0046": (CheckCategory.Workload, [".spec.securityContext.capabilities", ".spec.containers[].securityContext.capabilities"]),  # Insecure capabilities
     # "C-0047": (CheckCategory.Workload, ""),  # gone?
     "C-0048": (CheckCategory.Workload, ".spec.volumes[].hostPath"),  # HostPath mount
     "C-0049": (CheckCategory.Segregation, "NetworkPolicy.metadata.namespace"),  # Network mapping
     "C-0050": (
         CheckCategory.Reliability,
         [
-            ".spec.containers[].resources.limits.memory",
-            ".spec.containers[].resources.requests.memory",
+            ".spec.containers[].resources.limits",
+            ".spec.containers[].resources.requests",
         ],
     ),  # Resources CPU limit and request
     "C-0052": (CheckCategory.Infrastructure, ""),  # Instance Metadata API (Run Kubescape with host sensor)
@@ -171,7 +183,7 @@ CONTROL_CATEGORY = {
             ".spec.securityContext.seLinuxOptions",
         ],
     ),  # Linux hardening
-    "C-0056": (CheckCategory.Reliability, ".spec.livenessProbe"),  # Configured liveness probe
+    "C-0056": (CheckCategory.Reliability, ".spec.containers[].livenessProbe"),  # Configured liveness probe
     "C-0057": (CheckCategory.Workload, ".spec.containers[].securityContext.privileged"),  # Privileged container
     "C-0058": (
         CheckCategory.Vulnerability,
@@ -219,6 +231,41 @@ CONTROL_CATEGORY = {
     # "C-0080"(: CheckCategory.SupplyChain,""),  # gone?
     "C-0081": (CheckCategory.Infrastructure, "Node"),  # CVE-2022-24348-argocddirtraversal
     # "C-0082": (CheckCategory.Infrastructure, ""), # gone?
+    "C-0185": (CheckCategory.IAM, ["RoleBinding.roleRef.name", "ClusterRoleBinding.roleRef.name", ".roleRef.name"]),
+    "C-0186": (CheckCategory.IAM, ["ClusterRole.rules[].resources", "Role.rules[].resources", ".rules[].resources", "ClusterRole.rules[].verbs", "Role.rules[].verbs", ".rules[].verbs"]),
+    "C-0187": (CheckCategory.IAM, ["ClusterRole.rules[].resources", "Role.rules[].resources", ".rules[].resources"]),
+    "C-0188": (CheckCategory.IAM, ["ClusterRole.rules[].resources", "Role.rules[].resources", ".rules[].resources", "ClusterRole.rules[].verbs", "Role.rules[].verbs", ".rules[].verbs"]),
+    "C-0189": (CheckCategory.IAM, ["ClusterRoleBinding.subjects[].name", "RoleBinding.subjects[].name", ".subjects[].name", "ClusterRoleBinding.subjects[].kind", "RoleBinding.subjects[].kind", ".subjects[].kind"]),
+    "C-0190": (CheckCategory.Workload, [".automountServiceAccountToken", ".spec.automountServiceAccountToken"]),
+    "C-0191": (CheckCategory.IAM, ["ClusterRole.rules[].verbs", "ClusterRole.rules[].resources", "Role.rules[].verbs", "Role.rules[].resources", ".rules[].verbs", ".rules[].resources"]),
+    "C-0193": (CheckCategory.Workload, [".spec.containers[].securityContext.privileged"]),
+    "C-0194": (CheckCategory.Workload, [".spec.hostPID"]),
+    "C-0195": (CheckCategory.Workload, [".spec.hostIPC"]),
+    "C-0196": (CheckCategory.Workload, [".spec.hostNetwork"]),
+    "C-0197": (CheckCategory.Workload, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
+    "C-0198": (CheckCategory.Workload, [".spec.containers[].securityContext.mustRunAsNonRoot"]),
+    "C-0199": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities"]),
+    "C-0200": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities"]),
+    "C-0201": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities"]),
+    "C-0202": (CheckCategory.Workload, [".spec.containers[].securityContext.windowsOptions.hostProcess"]),
+    "C-0203": (CheckCategory.Workload, [".spec.volumes[].hostPath"]),
+    "C-0204": (CheckCategory.Workload, [".spec.containers[].ports[].hostPort"]),
+    "C-0206": (CheckCategory.Network, ["NetworkPolicy.metadata.namespace"]),
+    "C-0207": (CheckCategory.Workload, [".spec.containers[].env[].name"]),
+    "C-0209": (CheckCategory.Network, [".metadata.namespace"]),
+    "C-0211": (CheckCategory.Workload, [".spec.containers[].securityContext"]),
+    "C-0212": (CheckCategory.Workload, [".metadata.namespace"]),
+    "C-0213": (CheckCategory.Workload, [".spec.containers[].securityContext.privileged"]),
+    "C-0214": (CheckCategory.Workload, [".spec.hostPID"]),
+    "C-0215": (CheckCategory.Workload, [".spec.hostIPC"]),
+    "C-0216": (CheckCategory.Workload, [".spec.hostNetwork"]),
+    "C-0217": (CheckCategory.Workload, [".spec.containers[].securityContext.allowPrivilegeEscalation"]),
+    "C-0218": (CheckCategory.Workload, [".spec.containers[].securityContext.mustRunAsNonRoot", ".spec.securityContext.runAsUser"]),
+    "C-0219": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities"]),
+    "C-0220": (CheckCategory.Workload, [".spec.containers[].securityContext.capabilities"]),
+    "C-0260": (CheckCategory.Network, ["NetworkPolicy.metadata.namespace"]),
+    "C-0270": (CheckCategory.Workload, [".spec.containers[].resources.limits.cpu"]),
+    "C-0271": (CheckCategory.Workload, [".spec.containers[].resources.limits.memory"]),
 }
 
 
@@ -242,6 +289,7 @@ class Scanner(ScannerBase):
     RUNS_OFFLINE = "artifacts/frameworks can be downloaded"
     CUSTOM_CHECKS = True
     VERSION_CMD = ["kubescape", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     def scan_manifests(self, path: str | Path) -> RunUpdateGenerator:
         """Start a scan of manifests at the specified location.

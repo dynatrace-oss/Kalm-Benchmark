@@ -7,13 +7,22 @@ from .check import Check
 from .constants import (
     AppArmorProfile,
     CheckStatus,
+    CisBenchmarkControls,
+    CisBenchmarkVersions,
     FsGroupRule,
     GenericPspRule,
+    K8sChecklistControls,
+    K8sStigControls,
+    MsThreatMatrixControls,
+    NsaCisaControls,
+    OwaspControls,
     PodSecurityAdmissionMode,
     PodSecurityLevel,
     RunAsUserRule,
     SeccompProfileForPSP,
     SeLinuxRule,
+    StandardsAndGuidelines,
+    StandardsFields,
     SupplementalGroupsRule,
 )
 
@@ -31,6 +40,7 @@ class PodSecurityAdmissionCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -43,7 +53,7 @@ class PodSecurityAdmissionCheck(Check):
         :param check_path: the path(s) which is the essence of the check
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards)
         PodSecurityPolicy(self, self.name, self.meta, **kwargs)
 
 
@@ -206,6 +216,7 @@ def gen_pod_security_admission_checks(app) -> None:
         ],
         pod_security_admission_mode=None,
         pod_security_level=None,
+        standards=[],
     )
 
     NamespaceCheck(
@@ -217,6 +228,7 @@ def gen_pod_security_admission_checks(app) -> None:
             "Namespace.metadata.labels.pod-security.kubernetes.io",
         ],
         pod_security_level=PodSecurityLevel.Privileged,
+        standards=[],
     )
 
     NamespaceCheck(
@@ -228,6 +240,7 @@ def gen_pod_security_admission_checks(app) -> None:
             "Namespace.metadata.labels.pod-security.kubernetes.io",
         ],
         pod_security_admission_mode=PodSecurityAdmissionMode.Warn,
+        standards=[],
     )
 
 
@@ -246,18 +259,26 @@ def gen_psps(app) -> None:
         "PSP-001-1",
         "allow privileged containers",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host",
+        "as they can perform almost every action that can be performed directly on the host",
         privileged=True,  # explicitly allows privileged pods
         check_path=".spec.privileged",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_1.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_254801.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
         "PSP-001-2",
         "allow privileged containers by default",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host",
+        "as they can perform almost every action that can be performed directly on the host",
         privileged=None,
         check_path=".spec.privileged",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_1.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_254801.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -265,18 +286,28 @@ def gen_psps(app) -> None:
         "PSP-002-1",
         "allow privilege escalation in containers",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host",
+        "as they can perform almost every action that can be performed directly on the host",
         allow_privilege_escalation=True,
         check_path=".spec.allowPrivilegeEscalation",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_2.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_allow_privilege_escalation.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
         "PSP-002-2",
         "allow privilege escalation in containers by default",
         descr="Allowing admission of privileged containers is a risk "
-        "as they can performa almost every action that can be performed directly on the host.",
+        "as they can perform almost every action that can be performed directly on the host.",
         allow_privilege_escalation=None,
         check_path=".spec.allowPrivilegeEscalation",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_2.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_allow_privilege_escalation.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -287,6 +318,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_pid=True,
         check_path=".spec.hostPID",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_3.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9015.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -296,6 +332,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_pid=None,
         check_path=".spec.hostPID",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_3.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9015.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -306,6 +347,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_ipc=True,
         check_path=".spec.hostIPC",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_4.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9016.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -315,6 +361,11 @@ def gen_psps(app) -> None:
         "to potentially malicious or destructive actions",
         host_ipc=None,
         check_path=".spec.hostIPC",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_4.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9016.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -324,6 +375,11 @@ def gen_psps(app) -> None:
         descr="Containers should be isolated from the host machine as much as possible",
         host_network=True,
         check_path=".spec.hostNetwork",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_5.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -332,6 +388,11 @@ def gen_psps(app) -> None:
         descr="Containers should be isolated from the host machine as much as possible",
         host_network=None,
         check_path=".spec.hostNetwork",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_5.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -341,6 +402,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=None,
         check_path=".spec.allowedHostPaths",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -349,6 +412,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=[],
         check_path=".spec.allowedHostPaths",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -359,6 +424,8 @@ def gen_psps(app) -> None:
         descr="Attackers can use a writable hostPath to gain persistence on underlying host system",
         allowed_host_paths=["/does/not/exist"],
         check_path=".spec.allowedHostPaths",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -368,6 +435,11 @@ def gen_psps(app) -> None:
         descr="a user should not have elevated privileges",
         run_as_user_rule=RunAsUserRule.RunAsAny,  # poses no restrictions on the users
         check_path=".spec.runAsUser",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -378,6 +450,11 @@ def gen_psps(app) -> None:
         run_as_user_rule=RunAsUserRule.MustRunAs,
         uid_range=(0, 65535),  # allowing all UIDs is basically no protection as well
         check_path=".spec.runAsUser",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -388,6 +465,11 @@ def gen_psps(app) -> None:
         run_as_user_rule=RunAsUserRule.MustRunAs,
         uid_range=(10000, 65535),
         check_path=".spec.runAsUser",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -398,6 +480,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MustRunAs,
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -407,6 +493,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MayRunAs,
         gid_range=(0, 65535),  # allowing all GIDs is basically no protection as well
         check_path=".spec.runAsGroup",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -417,6 +507,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MayRunAs,
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -427,6 +521,10 @@ def gen_psps(app) -> None:
         run_as_group_rule=GenericPspRule.MustRunAs,
         gid_range=(10000, 65535),
         check_path=".spec.runAsGroup",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9020.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -437,6 +535,9 @@ def gen_psps(app) -> None:
         # the test PSP drops all capabilities, but by explicitly allowing net_raw the alert should be triggered
         allowed_capabilities=["NET_RAW"],
         check_path=".spec.allowedCapabilities",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.v_5_2_8.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -446,6 +547,9 @@ def gen_psps(app) -> None:
         descr="container group should not have elevated privileges",
         drop_capabilities=["NET_RAW"],  # drop only NET_RAW instead of ALL
         check_path=".spec.requiredDropCapabilities",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.v_5_2_8.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9021.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -456,6 +560,9 @@ def gen_psps(app) -> None:
         "through permanent local changes",
         read_only_root_filesystem=True,
         check_path=".spec.readOnlyRootFilesystem",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9027.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -465,6 +572,9 @@ def gen_psps(app) -> None:
         "through permanent local changes",
         read_only_root_filesystem=None,
         check_path=".spec.readOnlyRootFilesystem",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9027.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -474,6 +584,9 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         se_linux_rule=SeLinuxRule.RunAsAny,
         check_path=".spec.seLinux",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_continously_assess.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -483,9 +596,12 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         apparmor_profile_name=None,
         check_path=[
-            ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName"
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
+            ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]"
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -494,9 +610,12 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         apparmor_profile_name=AppArmorProfile.Unconfined,
         check_path=[
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/defaultProfileName]",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]}],
     )
     PodSecurityAdmissionCheck(
         app,
@@ -505,9 +624,12 @@ def gen_psps(app) -> None:
         descr="Not hardening a linux system can increase the impact of a compromise",
         allowed_apparmor_profile_names=False,
         check_path=[
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/allowedProfileNames",
             ".metadata.annotations[apparmor.security.beta.kubernetes.io/allowedProfileNames]",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]}],
     )
 
     PodSecurityAdmissionCheck(
@@ -521,6 +643,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/defaultProfileName]",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
         ],
     )
 
@@ -535,6 +658,7 @@ def gen_psps(app) -> None:
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/defaultProfileName]",
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
         ],
     )
     PodSecurityAdmissionCheck(

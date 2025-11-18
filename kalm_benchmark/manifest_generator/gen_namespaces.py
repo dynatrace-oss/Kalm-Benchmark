@@ -7,12 +7,22 @@ from ..utils.data.validation import sanitize_kubernetes_name as sanitize_name
 from .cdk8s_imports import k8s
 from .check import Check, Meta
 from .constants import (
+    BsiK8sControls,
     CheckStatus,
+    CisBenchmarkControls,
+    CisBenchmarkVersions,
+    K8sChecklistControls,
     LimitRangeConfig,
     NetworkPolicyConfig,
+    MsThreatMatrixControls,
+    NsaCisaControls,
+    OwaspControls,
+    PciGuidanceControls,
     PodSecurityAdmissionMode,
     PodSecurityLevel,
     ResourceQuotaConfig,
+    StandardsAndGuidelines,
+    StandardsFields,
 )
 from .network_policy import NetworkPolicy
 from .workload.pod_base import Workload
@@ -43,6 +53,7 @@ class ConfiguredNamespace(Construct):
         use_default_deny_all_network_policy: bool = False,
         network_policy_kwargs: Optional[dict | bool] = True,
         has_filler_workload: bool = True,
+        **kwargs,
     ) -> None:
         """
         Instantiates a new Namespace with all relevant kubernetes resources.
@@ -76,12 +87,12 @@ class ConfiguredNamespace(Construct):
 
         if quota_kwargs:
             # True means use defautl arguments
-            if quota_kwargs:
+            if quota_kwargs == True:
                 quota_kwargs = {}
             _resource_quota_base(self, meta, **quota_kwargs)
 
         if limit_range_kwargs:
-            if limit_range_kwargs:
+            if limit_range_kwargs == True:
                 limit_range_kwargs = {}
             _limit_range_base(self, meta, **limit_range_kwargs)
 
@@ -92,13 +103,13 @@ class ConfiguredNamespace(Construct):
             NetworkPolicy(self, "default-deny-all", meta)
 
         if network_policy_kwargs:
-            if network_policy_kwargs:
+            if network_policy_kwargs == True:
                 network_policy_kwargs = {}
             NetworkPolicy(self, name, meta, **network_policy_kwargs)
 
         if has_filler_workload:
             # add an empty workload to avoid alerts regarding empty namespaces, resources, etc.
-            Workload(scope, name + "-filler", meta)
+            Workload(scope, name + "-filler", meta, **kwargs)
 
 
 class SetupBenchmarkNamespace(Chart):
@@ -138,14 +149,14 @@ class SetupBenchmarkNamespace(Chart):
 def _limit_range_base(
     scope: Construct,
     meta,
-    min_cpu: str = "1m",
-    max_cpu: str = "100m",
-    default_cpu_request: str = "1m",
-    default_cpu_limit: str = "100m",
-    min_memory: str = "1Ki",
-    max_memory: str = "10Mi",
-    default_memory_request: str = "1Ki",
-    default_memory_limit: str = "1Mi",
+    min_cpu: str | None = "1m",
+    max_cpu: str | None = "100m",
+    default_cpu_request: str | None = "1m",
+    default_cpu_limit: str | None = "100m",
+    min_memory: str | None = "1Ki",
+    max_memory: str | None = "10Mi",
+    default_memory_request: str | None = "1Ki",
+    default_memory_limit: str | None = "1Mi",
 ) -> k8s.KubeLimitRange:
     return k8s.KubeLimitRange(
         scope,
@@ -209,6 +220,7 @@ class NamespaceCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         resource_quota: ResourceQuotaConfig = None,
         limit_range: LimitRangeConfig = None,
         network_policy: NetworkPolicyConfig = None,
@@ -233,7 +245,7 @@ class NamespaceCheck(Check):
         # label names may at most have 63 characters, thus it restricts the namespace length
         # see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
         ns_name = sanitize_name(f"{check_id}-{name}", max_len=63)
-        super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, namespace=ns_name)
+        super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, standards=standards, namespace=ns_name)
 
         # Use default configurations if None provided
         if resource_quota is None:
@@ -268,32 +280,56 @@ def gen_namespace_resource_checks(app: App) -> None:
         "no LimitRange object for namespace",
         limit_range=LimitRangeConfig(enabled=False),
         check_path=["LimitRange.metadata.namespace"],
+        #container=ContainerConfig(resources=None),
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
         "RES-007-1",
         "no default cpu request for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_cpu_request": None}),
-        check_path=["LimitRange.spec.limits.defaultRequest.cpu", ".spec.limits.defaultRequest.cpu"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
+        check_path=["LimitRange.spec.limits[].defaultRequest.cpu", ".spec.limits[].defaultRequest.cpu"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
         "RES-007-2",
         "no default cpu limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_cpu_limit": None}),
-        check_path=["LimitRange.spec.limits.default.cpu", ".spec.limits.default.cpu"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
+        check_path=["LimitRange.spec.limits[].default.cpu", ".spec.limits[].default.cpu"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
         "RES-007-3",
         "no cpu limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"min_cpu": None, "max_cpu": None}),
+        # container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None, limits_cpu=None)),
         check_path=[
-            "LimitRange.spec.limits.min.cpu",
-            "LimitRange.spec.limits.max.cpu",
-            ".spec.limits.min.cpu",
-            ".spec.limits.max.cpu",
+            "LimitRange.spec.limits[].min.cpu",
+            "LimitRange.spec.limits[].max.cpu",
+            ".spec.limits[].min.cpu",
+            ".spec.limits[].max.cpu",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     NamespaceCheck(
@@ -301,26 +337,46 @@ def gen_namespace_resource_checks(app: App) -> None:
         "RES-008-1",
         "no default memory request for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_memory_request": None}),
-        check_path=["LimitRange.spec.limits.defaultRequest.memory", ".spec.limits.defaultRequest.memory"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
+        check_path=["LimitRange.spec.limits[].defaultRequest.memory", ".spec.limits[].defaultRequest.memory"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
         "RES-008-2",
         "no default memory limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"default_memory_limit": None}),
-        check_path=["LimitRange.spec.limits.default.memory", ".spec.limits.default.memory"],
+        # container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
+        check_path=["LimitRange.spec.limits[].default.memory", ".spec.limits[].default.memory"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
         "RES-008-3",
         "no default memory limits for namespace",
         limit_range=LimitRangeConfig(kwargs={"min_memory": None, "max_memory": None}),
+        # container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None, request_memory=None)),
         check_path=[
-            "LimitRange.spec.limits.min.memory",
-            "LimitRange.spec.limits.max.memory",
-            ".spec.limits.min.memory",
-            ".spec.limits.max.memory",
+            "LimitRange.spec.limits[].min.memory",
+            "LimitRange.spec.limits[].max.memory",
+            "LimitRange.spec.limits[].default.memory",
+            ".spec.limits[].min.memory",
+            ".spec.limits[].max.memory",
+            ".spec.limits[].default.memory",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     NamespaceCheck(
@@ -329,6 +385,11 @@ def gen_namespace_resource_checks(app: App) -> None:
         "no resource quota applied to namespace",
         resource_quota=ResourceQuotaConfig(enabled=False),
         check_path=["ResourceQuota.metadata.namespace"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value, K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     NamespaceCheck(
         app,
@@ -347,6 +408,11 @@ def gen_namespace_resource_checks(app: App) -> None:
             ".spec.hard.requests.memory",
             ".spec.hard.pods",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value, K8sChecklistControls.asc_ad_memory_limit.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
 
@@ -358,6 +424,13 @@ def gen_network_policy_checks(app) -> None:
         network_policy=NetworkPolicyConfig(enabled=False),
         use_default_deny_all_network_policy=False,
         check_path=["NetworkPolicy.metadata.namespace"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_3_2.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a18.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ns_default_network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_network_policies.value]}],
     )
 
     for i, policy_type in enumerate(["Ingress", "Egress"], start=1):
@@ -367,6 +440,12 @@ def gen_network_policy_checks(app) -> None:
             f"only {policy_type.lower()} is blocked",
             network_policy=NetworkPolicyConfig(kwargs={"policy_types": [policy_type]}),
             check_path=["NetworkPolicy.spec.policyTypes[]", ".spec.policyTypes[]"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_3_1.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a7.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ns_network_policies.value, K8sChecklistControls.sc_ns_ingress_egress.value]}],
         )
 
     NamespaceCheck(
@@ -380,7 +459,10 @@ def gen_network_policy_checks(app) -> None:
                 "policy_types": ["Egress"],
             }
         ),
-        check_path=["NetworkPolicy.egress[].to[].ipBlock", ".egress[].to[].ipBlock"],
+        check_path=["NetworkPolicy.spec.egress[].to[].ipBlock", ".spec.egress[].to[].ipBlock"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.sensitive_cloud_infrastructure.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ns_cloud_metadata.value]}],
     )
 
     NamespaceCheck(
@@ -395,6 +477,12 @@ def gen_network_policy_checks(app) -> None:
             }
         ),
         check_path=["NetworkPolicy.spec.egress[].ports[].port", ".spec.egress[].ports[].port"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_3_1.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.network_policies.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a7.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ns_network_policies.value, K8sChecklistControls.sc_ns_ingress_egress.value]}],
     )
 
     NamespaceCheck(

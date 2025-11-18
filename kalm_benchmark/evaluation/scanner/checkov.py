@@ -40,7 +40,7 @@ CHECK_MAPPING = {
     "CKV_K8S_22": (CheckCategory.Workload, ".spec.containers[].securityContext.readOnlyRootFilesystem"),
     "CKV_K8S_23": (
         CheckCategory.Workload,
-        [".spec.containers[].securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsUser"],
+        [".spec.containers[].securityContext.runAsNonRoot", ".spec.securityContext.runAsNonRoot"],
     ),
     "CKV_K8S_24": (CheckCategory.AdmissionControl, ".spec.allowedCapabilities"),
     "CKV_K8S_25": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
@@ -167,6 +167,52 @@ CHECK_MAPPING = {
         CheckCategory.Network,
         "Ingress.metadata.annotations.nginx.ingress.kubernetes.io/server-snippet",
     ),  # check for CVE-2021-25742
+    "CKV_K8S_155": (        
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].apiGroups",
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].apiGroups",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    "CKV_K8S_156": (        
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].apiGroups",
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].apiGroups",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    "CKV_K8S_157": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].apiGroups",
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].apiGroups",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    "CKV_K8S_158": (
+        CheckCategory.IAM,
+        [
+            "ClusterRole.rules[].apiGroups",
+            "ClusterRole.rules[].resources",
+            "ClusterRole.rules[].verbs",
+            "Role.rules[].apiGroups",
+            "Role.rules[].resources",
+            "Role.rules[].verbs",
+        ],
+    ),
+    "CKV_K8S_159": (CheckCategory.Workload,
+        [".spec.containers[].env[].name"]),
 }
 
 
@@ -364,8 +410,14 @@ class Scanner(ScannerBase):
         check_results = []
 
         # Checkov returns results as a list of objects, extract the first one
-        if isinstance(results, list) and len(results) > 0:
-            results = results[0]
+        if isinstance(results, list) and results:
+            for result in results:
+                if isinstance(result, dict) and "check_type" in result:
+                    if result["check_type"] != "kubernetes":
+                        logger.debug(f"Checkov: Skipping non-kubernetes check type: {result['check_type']}")
+                        continue
+                    results = result
+                    break
 
         if not isinstance(results, dict):
             logger.warning(f"Checkov: Results are not in expected format: {type(results)}")

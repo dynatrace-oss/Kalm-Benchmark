@@ -98,6 +98,8 @@ def _validate_and_prepare_trends_data(
 ) -> pd.DataFrame | None:
     """Validate trends data and prepare DataFrame."""
     if not trends_data["trends"]:
+        if source_type is None:
+            source_type = ScanSourceType.BENCHMARK
         source_name = source_type.display_name()
         if chart_name:
             source_name += f" - {chart_name}"
@@ -107,6 +109,8 @@ def _validate_and_prepare_trends_data(
     trends_df = pd.DataFrame(trends_data["trends"])
 
     if trends_df.empty:
+        if source_type is None:
+            source_type = ScanSourceType.BENCHMARK
         source_name = source_type.display_name()
         if chart_name:
             source_name += f" - {chart_name}"

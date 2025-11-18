@@ -2,8 +2,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   annotations:
-    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
+    check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -12,28 +13,12 @@ metadata:
   namespace: res-007-3-no-cpu-limits-for-namespace
 ---
 apiVersion: v1
-kind: ResourceQuota
-metadata:
-  annotations:
-    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: RES-007-3
-  name: res-007-3-no-cpu-limits-for-namespace
-  namespace: res-007-3-no-cpu-limits-for-namespace
-spec:
-  hard:
-    cpu: 30
-    memory: 20Gi
-    pods: 1000
----
-apiVersion: v1
 kind: LimitRange
 metadata:
   annotations:
-    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
+    check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -48,37 +33,19 @@ spec:
         cpu: 1m
         memory: 1Ki
       max:
-        cpu: 100m
         memory: 10Mi
       min:
-        cpu: 1m
         memory: 1Ki
       type: Container
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  annotations:
-    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: RES-007-3
-  name: res-007-3-no-cpu-limits-for-namespace
-  namespace: res-007-3-no-cpu-limits-for-namespace
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-    - Ingress
 ---
 apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
-    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
+    check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -89,8 +56,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    check_path: LimitRange.spec.limits.min.cpu|LimitRange.spec.limits.max.cpu|.spec.limits.min.cpu|.spec.limits.max.cpu
+    check_path: LimitRange.spec.limits[].min.cpu|LimitRange.spec.limits[].max.cpu|.spec.limits[].min.cpu|.spec.limits[].max.cpu
     expected: alert
+    standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['CPU limit might be set on sensitive workloads.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RES-007-3
@@ -106,7 +74,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -122,7 +90,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

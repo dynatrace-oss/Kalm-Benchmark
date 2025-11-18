@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    check_path: RoleBinding.roleRef.name|ClusterRoleBinding.roleRef.name|.roleRef.name
+    description: Bindings to system:anonymous or system:unauthenticated should be reviewed
+    expected: alert
+    standards: "[{'standard': 'Kubernetes Security Checklist', 'controls': ['Review bindings for the system:unauthenticated group and remove them where possible, as this gives access to anyone who can contact the API server at a network level.']}]"
+  labels:
+    app.kubernetes.io/part-of: kalm-benchmark
+    check: RBAC-027-1
+  name: rbac-027-1-role-binds-to-anonymous-unauthenticated-rb-system:anonymous
+  namespace: kalm-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:anonymous
+subjects:
+  - apiGroup: ""
+    kind: User
+    name: rbac-027-1-role-binds-to-anonymous-unauthenticated-sa

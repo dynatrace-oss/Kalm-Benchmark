@@ -5,6 +5,7 @@ metadata:
     check_path: ClusterRole.rules[].verbs|Role.rules[].verbs|.rules[].verbs
     description: Attackers can use destructive permissions to destroy data and resources
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-013-1

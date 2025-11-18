@@ -18,14 +18,16 @@ from .scanner_evaluator import (
 )
 
 CHECK_MAPPING = {
-    "Pod or Container Without LimitRange": (CheckCategory.Reliability, ".metadata.namespace"),
-    "Pod or Container Without ResourceQuota": (CheckCategory.Reliability, ".metadata.namespace"),
+    "Pod or Container Without LimitRange": (CheckCategory.Reliability, "LimitRange.metadata.namespace"),
+    "Pod or Container Without ResourceQuota": (CheckCategory.Reliability, "ResourceQuota.metadata.namespace"),
     # the provided information of this check is inaccurate (points to rules and not the verbs)
     "RBAC Roles with Read Secrets Permissions": (CheckCategory.IAM, ".rules[].verbs"),
     # search key points only to the requests field, not the cpu
-    "CPU Requests Not Set": (CheckCategory.Reliability, ".spec.containers[].resources.requests.cpu"),
+    "CPU Requests Not Set": (CheckCategory.Reliability, ".spec.containers[].resources.requests"),
     # search key points only to the limits field, not the cpu
-    "CPU Limits Not Set": (CheckCategory.Reliability, ".spec.containers[].resources.limits.cpu"),
+    "CPU Limits Not Set": (CheckCategory.Reliability, ".spec.containers[].resources.limits"),
+    "Pod or Container Without Security Context": (CheckCategory.DataSecurity, ".spec.containers[].securityContext"),
+    "No Drop Capabilities for Containers": (CheckCategory.DataSecurity, ".spec.containers[].securityContext.capabilities.drop"),
 }
 
 META_NAME_PATTERN = re.compile(r"metadata.name=({{.*?}}|[\w-]*)")
@@ -60,6 +62,7 @@ class Scanner(ScannerBase):
     CI_MODE = True
     RUNS_OFFLINE = True
     VERSION_CMD = ["docker", "run", "checkmarx/kics", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     EXIT_CODES = {
         0: "No Results were Found",

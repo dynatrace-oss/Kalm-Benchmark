@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from enum import auto
 from functools import lru_cache
+import json
 from pathlib import Path
 
 import cdk8s
@@ -56,6 +57,8 @@ class Col(SnakeCaseStrEnum):
     ScannerCheckId = auto()
     ScannerCheckName = auto()
     ResultType = auto()
+    Standards = auto()
+    BenchmarkId = auto()
 
 
 @dataclass
@@ -111,6 +114,7 @@ def get_confusion_matrix(df: pd.DataFrame, margins: bool = True) -> pd.DataFrame
         index={CheckStatus.Alert: "actual alert", CheckStatus.Pass: "actual pass"},
         columns={CheckStatus.Alert: "scanner alert", CheckStatus.Pass: "scanner pass"},
     )
+    logger.info("Confusion matrix:\n {df_xtab}", df_xtab=df_xtab)
 
     return df_xtab
 
@@ -224,9 +228,12 @@ def evaluate_scanner(
 
     df_scanner["check_id"] = df_scanner["check_id"].infer_objects(copy=False).fillna(extracted_check_id)
     df_scanner["check_id"] = df_scanner["check_id"].astype(str).str.upper().replace("NONE", None)
+    df_scanner["benchmark_id"] = df_scanner["check_id"].str.extract(r"^([A-Z]+-\d+)", expand=False)
 
     df_bench = load_benchmark()
-    df = merge_dataframes(df_bench, df_scanner, id_column=Col.CheckId)
+    df_bench["check_id"] = df_bench["check_id"].astype(str).str.upper().replace("NONE", None)
+    df_bench["benchmark_id"] = df_bench["check_id"].str.extract(r"^([A-Z]+-\d+)", expand=False)
+    df = merge_dataframes(df_bench, df_scanner, id_column=Col.CheckId, path_column_1="path_to_check", path_column_2=scanner.PATH_COLUMNS[0] if scanner.PATH_COLUMNS else None)
 
     required_cols = [Col.PathToCheck, Col.CheckedPath, Col.ScannerCheckId, Col.ScannerCheckName]
     for col in required_cols:
@@ -246,6 +253,9 @@ def evaluate_scanner(
         .pipe(classify_results)
         .pipe(order_columns)
     )
+
+    # print(f"Consolidated dataframe:\n {df.to_csv()}")
+
     return df
 
 
@@ -253,7 +263,8 @@ def merge_dataframes(
     df1: pd.DataFrame,
     df2: pd.DataFrame,
     id_column: str | tuple[str, str],
-    path_columns: str | list[str] | None = None,
+    path_column_1: str | None = None,
+    path_column_2: str | None = None,
 ) -> pd.DataFrame:
     """Merge two dataframes on check ID with path matching support.
 
@@ -264,8 +275,8 @@ def merge_dataframes(
     :param keep_matched_paths: whether to keep matched path information
     :return: merged dataframe
     """
-    if path_columns is not None and isinstance(path_columns, str):
-        return _merge_with_path_matching(df1, df2, id_column, path_columns)
+    if path_column_1 is not None and path_column_2 is not None:
+        return _merge_with_path_matching(df1, df2, id_column, path_column_1, path_column_2)
 
     if isinstance(id_column, str):
         df = df1.merge(df2, on=id_column, how="outer", suffixes=("_bench", "_scanner"))
@@ -298,7 +309,7 @@ def merge_dataframes(
     return df
 
 
-def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: str, path_column: str) -> pd.DataFrame:
+def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: str, path_column_1: str, path_column_2: str) -> pd.DataFrame:
     """Merge dataframes with path matching logic for pipe-separated paths.
     Performs intelligent matching based on both ID and path columns,
     handling cases where paths are pipe-separated lists.
@@ -306,7 +317,7 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
     :param df1: the first dataframe to merge
     :param df2: the second dataframe to merge
     :param id_column: the column name to use for initial grouping
-    :param path_column: the column name containing paths for matching
+    :param path_column: the column names containing paths for matching
     :return: the merged dataframe with matched rows combined
     """
     results = []
@@ -320,26 +331,27 @@ def _merge_with_path_matching(df1: pd.DataFrame, df2: pd.DataFrame, id_column: s
 
         if df1_rows.empty and not df2_rows.empty:
             for _, row2 in df2_rows.iterrows():
-                results.append(_combine_rows(None, row2, path_column))
+                results.append(_combine_rows(None, row2))
         elif not df1_rows.empty and df2_rows.empty:
             for _, row1 in df1_rows.iterrows():
-                results.append(_combine_rows(row1, None, path_column))
+                results.append(_combine_rows(row1, None))
         elif not df1_rows.empty and not df2_rows.empty:
             matched_pairs = set()
 
+            # first add all matching rows of the two datasets to a matched set
             for _, row1 in df1_rows.iterrows():
                 for _, row2 in df2_rows.iterrows():
-                    if _paths_match(row1.get(path_column), row2.get(path_column)):
-                        results.append(_combine_rows(row1, row2, path_column))
+                    if _paths_match(row1.get(path_column_1), row2.get(path_column_2)):
+                        results.append(_combine_rows(row1, row2))
                         matched_pairs.add((row1.name, row2.name))
 
             for _, row1 in df1_rows.iterrows():
                 if not any(pair[0] == row1.name for pair in matched_pairs):
-                    results.append(_combine_rows(row1, None, path_column))
+                    results.append(_combine_rows(row1, None))
 
             for _, row2 in df2_rows.iterrows():
                 if not any(pair[1] == row2.name for pair in matched_pairs):
-                    results.append(_combine_rows(None, row2, path_column))
+                    results.append(_combine_rows(None, row2))
 
     return pd.DataFrame(results) if results else pd.DataFrame()
 
@@ -369,14 +381,13 @@ def _paths_match(path1, path2):
     return False
 
 
-def _combine_rows(row1, row2, path_column):
+def _combine_rows(row1, row2) -> dict:
     """Combine two rows from different dataframes, handling missing values.
     Merges row data by preferring non-null values from either row,
     with special handling for the specified path column.
 
     :param row1: the first row (pandas Series) or None
     :param row2: the second row (pandas Series) or None
-    :param path_column: the name of the path column that needs special handling
     :return: a dictionary containing the combined row data
     """
     if row1 is None:
@@ -388,8 +399,6 @@ def _combine_rows(row1, row2, path_column):
         for col, val in row2.items():
             if col not in combined or pd.isna(combined[col]):
                 combined[col] = val
-            elif col == path_column:
-                combined[col] = val if not pd.isna(val) else combined[col]
         return combined
 
 
@@ -532,6 +541,49 @@ def categorize_by_check_id(check_id: str | None) -> str | None:
     return get_category_by_prefix(prefix)
 
 
+def _extract_standards(standards_str: str | None) -> dict[str, str]:
+    """Extract standards from standards JSON string.
+    
+    :param standards_str: JSON string containing standards information
+    :return: dict with formatted strings
+    """
+    if not standards_str or standards_str == "None":
+        return {}
+
+    try:
+        standards_list = json.loads(standards_str)  # Parse the JSON string
+        
+        if not isinstance(standards_list, list):
+            return {standards_str: ""}
+
+        formatted_items = dict()
+        for standard in standards_list:
+            if isinstance(standard, dict):
+                name = standard.get('standard', '')
+                version = standard.get('version', '')
+                controls = standard.get('controls', [])
+                
+                # Format as: "Standard Name (version): controls"
+                item = name
+                if version:
+                    item += f" ({version})"
+
+                control = ""
+                if controls:
+                    if isinstance(controls, list):
+                        control += f"{'\n'.join(controls)}"
+                    else:
+                        control += f"{controls}"
+
+                formatted_items[item] = control
+
+        return formatted_items
+    
+    except (ValueError, SyntaxError):
+        # If parsing fails, return the original string
+        return {standards_str: ""}
+    
+
 def tabulate_manifests(manifests: list[cdk8s.Chart]) -> pd.DataFrame:
     """Convert a collection of generated manifests into a dataframe with the essential information as columns.
 
@@ -542,16 +594,21 @@ def tabulate_manifests(manifests: list[cdk8s.Chart]) -> pd.DataFrame:
     for chart in manifests:
         if not isinstance(chart, Check):
             continue
+        
+        check = dict()
+        check[Col.CheckId] = chart.labels.get(CheckKey.CheckId, None)
+        check[Col.Name] = chart.name
+        check[Col.Expected] = chart.meta.annotations.get(CheckKey.Expect, None)
+        check[Col.Description] = chart.meta.annotations.get(CheckKey.Description, None)
+        check[Col.PathToCheck] = chart.meta.annotations.get(CheckKey.CheckPath, None)
 
-        checks.append(
-            {
-                Col.CheckId: chart.labels.get(CheckKey.CheckId, None),
-                Col.Name: chart.name,
-                Col.Expected: chart.meta.annotations.get(CheckKey.Expect, None),
-                Col.Description: chart.meta.annotations.get(CheckKey.Description, None),
-                Col.PathToCheck: chart.meta.annotations.get(CheckKey.CheckPath, None),
-            }
-        )
+        standards = _extract_standards(chart.meta.annotations.get(CheckKey.Standards, None))
+        for standard_name in standards.keys():
+            check[standard_name] = standards[standard_name]
+
+        # check[Col.Standards] = chart.meta.annotations.get(CheckKey.Standards, None)
+
+        checks.append(check)
     return pd.DataFrame(checks)
 
 
@@ -623,13 +680,13 @@ def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | 
     # note the only information from the scanner is the 'got' column which is required for the score calculation
     # all others infos from the scanners are dropped to avoid pollution of the results
     # e.g., having countless scanner_checks per benchmark check
-    relevant_columns = [Col.CheckId, Col.Category, Col.ResultType, Col.Expected, Col.Got]
-    df_unique_checks = df[relevant_columns].drop_duplicates(relevant_columns, ignore_index=True)
+    relevant_columns = [Col.BenchmarkId, Col.Category, Col.PathToCheck, Col.CheckedPath, Col.ResultType, Col.Expected, Col.Got]
+    df_unique_checks = df[relevant_columns].drop(df[df[Col.PathToCheck] == "-"].index).drop_duplicates(relevant_columns, ignore_index=True)
 
     # consolidate conflicting check results (e.g. TP, FP, ...) by taking the 'worst'
     # i.e., FP in case of both TP and FP
     df_unique_checks = (
-        df_unique_checks.groupby(by=[Col.CheckId, Col.ResultType])
+        df_unique_checks.groupby(by=[Col.BenchmarkId, Col.ResultType])
         .apply(_consolidate_conflicting_checks)
         .reset_index(drop=True)
     )
@@ -659,7 +716,7 @@ def _consolidate_conflicting_checks(df: pd.DataFrame):
     if len(df) == 1:
         return df
     else:
-        return df[df[Col.Expected] != df[Col.Got]].head(1)
+        return df[df[Col.Expected] == df[Col.Got]].sort_values(by=Col.Expected, ascending=True).head(1)
 
 
 def check_summary_per_category(df: pd.DataFrame) -> dict:
@@ -677,11 +734,12 @@ class OverviewType(LowercaseStrEnum):
     Latex = auto()
 
 
-def create_benchmark_overview(dest_dir: Path) -> list[str]:
+def create_benchmark_overview(dest_dir: Path, format: OverviewType = OverviewType.Markdown) -> list[str]:
     """Create a markdown file 'benchmark-checks.md' with an overview of all the checks at the destination folder.
     If the file already exists, it will be overwritten.
 
     :param dest_dir: the folder where the file will be created
+    :param format: the output format type (Markdown or Latex)
     """
     IMPLEMENTED_COL = "Implemented"
     df_bench = load_benchmark()
@@ -707,7 +765,8 @@ def create_benchmark_overview(dest_dir: Path) -> list[str]:
 
     # replace the '|' to avoid formatting issues in resulting markdown table
     df[Col.PathToCheck] = df[Col.PathToCheck].str.replace("|", "\n", regex=False)
-    df = df.sort_values(by=Col.CheckId, ascending=True).rename(columns=snake_case_to_title)
+    
+    df = df.sort_values(by=Col.CheckId, ascending=True).rename(columns=snake_case_to_title).fillna("")
 
     col_descriptions = {
         Col.CheckId: "The ID of the check for the benchmark",
@@ -717,6 +776,7 @@ def create_benchmark_overview(dest_dir: Path) -> list[str]:
         Col.PathToCheck: "The path(s) to the field(s) on the resource which must be evaulated for this check",
         IMPLEMENTED_COL: "boolean flag, if this check is actually implemented for the benchmark",
         Col.Category: "The general category to which this checks belongs to. ",
+        Col.Standards: "Security standards and compliance frameworks that this check addresses",
     }
 
     with open(dest_dir / "benchmark-checks.md", "w") as f:
@@ -736,7 +796,7 @@ def create_benchmark_overview_latex_table() -> str:
     """
     df_bench = load_benchmark(with_categories=True)
 
-    tbl = df_bench.to_latex(
+    tbl = df_bench.fillna("-").to_latex(
         caption="An overview of all generated checks and number of variants, grouped by their respective categories"
     )
     return tbl

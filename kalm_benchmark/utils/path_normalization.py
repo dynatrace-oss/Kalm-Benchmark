@@ -125,11 +125,21 @@ class PathNormalizationService:
     def _normalize_kubesec_path(cls, path: str) -> str:
         """Normalize path for Kubesec scanner."""
         # Clean up spaces and quotes
-        path = path.replace(" .", ".")
-        path = path.replace('"', "")
+        equals_index = path.find("==")
+        if equals_index != -1:
+            path = path[:equals_index]
+        gt_index = path.find("-gt")
+        if gt_index != -1:
+            path = path[:gt_index]
 
+        path = path.replace(" ", "")
+        path = path.replace('"', "")
+        
         # Add spec prefix for containers
         if path.startswith("containers"):
+            path = ".spec." + path
+
+        if path.startswith("volumes"):
             path = ".spec." + path
 
         return path

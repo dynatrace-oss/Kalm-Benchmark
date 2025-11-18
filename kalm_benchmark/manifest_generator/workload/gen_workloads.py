@@ -3,17 +3,28 @@ from constructs import Construct
 from ..cdk8s_imports import k8s
 from ..check import Check
 from ..constants import (
-    CMDS,
     DANGEROUS_CAPABILITIES,
     INSECURE_CAPABILITIES,
     MAIN_NS,
     SENSITIVE_KEYS,
     SENSITIVE_VALUES,
+    AppArmorProfile,
+    BsiK8sControls,
     CheckStatus,
+    CisBenchmarkControls,
+    CisBenchmarkVersions,
     ContainerConfig,
     ContainerResourceConfig,
+    K8sChecklistControls,
+    K8sStigControls,
+    NsaCisaControls,
+    MsThreatMatrixControls,
+    OwaspControls,
+    PciGuidanceControls,
     PodSchedulingConfig,
     PodSecurityConfig,
+    StandardsAndGuidelines,
+    StandardsFields,
 )
 from .pod_base import Pod, Workload
 
@@ -32,6 +43,7 @@ class PodCheck(Check):
         expect: str = CheckStatus.Alert,
         descr: str = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -46,7 +58,7 @@ class PodCheck(Check):
         :param check_path: the path(s) which is the essence of the check
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path, kwargs, namespace)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards, kwargs, namespace)
         Workload(self, self.name, self.meta, **kwargs)
 
 
@@ -90,6 +102,7 @@ class VolumeMountCheck(Check):
         mount_type: str | None = None,  # e.g. File, Directory, etc.
         sub_path: str | None = None,
         read_only: bool | None = True,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -124,6 +137,7 @@ class VolumeMountCheck(Check):
                 ".spec.volumes[].hostPath.path",
                 ".spec.containers[].volumeMounts[]",
             ],
+            standards=standards
         )  # id, name, expect, descr)
 
         empty_dir = k8s.EmptyDirVolumeSource() if volume_type == "empty" else None
@@ -192,6 +206,7 @@ class ConfigMapCheck(Check):
         descr: str = None,
         data: dict | None = None,
         check_path: str | list[str] | None = None,
+        standards: list[dict] | None = None,
         **kwargs,
     ):
         """
@@ -205,7 +220,7 @@ class ConfigMapCheck(Check):
         :param data: a dictionary representing the content of the configmap
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards)
         k8s.KubeConfigMap(self, check_id, metadata=self.meta, data=data)
 
 
@@ -226,6 +241,31 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         " to API server is needed when access to API server is needed.",
         security=PodSecurityConfig(service_account_name="default"),
         check_path=".spec.serviceAccountName",
+        standards=[{
+                        StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, 
+                        StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, 
+                        StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_5.value]
+                    }, 
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, 
+                        StandardsFields.controls.value: [NsaCisaControls.service_account_tokens.value]
+                    },
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, 
+                        StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]
+                    }, 
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, 
+                        StandardsFields.controls.value: [PciGuidanceControls.pci_1_2_a.value]
+                    },
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, 
+                        StandardsFields.controls.value: [K8sChecklistControls.sc_se_service_account_tokens.value, K8sChecklistControls.asc_sa_service_account.value]
+                    },
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, 
+                        StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]
+                    }],
     )
     PodCheck(
         app,
@@ -236,6 +276,31 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Create a dedicated ServiceAccount without any permissions instead.",
         security=PodSecurityConfig(service_account_name=None),
         check_path=".spec.serviceAccountName",
+        standards=[{
+                        StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, 
+                        StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, 
+                        StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_5.value]
+                    }, 
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, 
+                        StandardsFields.controls.value: [NsaCisaControls.service_account_tokens.value]
+                    },
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, 
+                        StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]
+                    }, 
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, 
+                        StandardsFields.controls.value: [PciGuidanceControls.pci_1_2_a.value]
+                    },
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, 
+                        StandardsFields.controls.value: [K8sChecklistControls.sc_se_service_account_tokens.value, K8sChecklistControls.asc_sa_service_account.value]
+                    },
+                    {
+                        StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, 
+                        StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]
+                    }],
     )
 
     pod_sa_automount_combos = [
@@ -314,6 +379,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             check_path=[".spec.automountServiceAccountToken", ".automountServiceAccountToken"],
             expect=cfg["expect"],
             descr=cfg["descr"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_1_6.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.service_account_tokens.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9025.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_service_account_tokens.value, K8sChecklistControls.asc_sa_service_account_token.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
         )
 
     PodCheck(
@@ -323,6 +395,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Pods with high risk workloads can be assigned to specific node to separate them from other workloads",
         scheduling=PodSchedulingConfig(node_selector=None, node_affinity=False),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a14.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_pp_isolated.value]}],
     )
     PodCheck(
         app,
@@ -332,6 +407,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         scheduling=PodSchedulingConfig(node_selector=None),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a14.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_pp_isolated.value]}],
     )
     PodCheck(
         app,
@@ -341,6 +419,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         scheduling=PodSchedulingConfig(node_affinity=False),
         check_path=[".spec.nodeSelector", ".spec.affinity.nodeAffinity"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a14.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_pp_isolated.value]}],
     )
 
     PodCheck(
@@ -350,6 +431,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability",
         scheduling=PodSchedulingConfig(priority_class=None),
         check_path=".spec.priorityClassName",
+        standards=[],
     )
 
     PodCheck(
@@ -361,6 +443,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         container=ContainerConfig(),  # Will use defaults, need to handle readiness_probe separately
         container_kwargs={"readiness_probe": None},
         check_path=".spec.containers[].readinessProbe",
+        standards=[],
     )
 
     PodCheck(
@@ -372,6 +455,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         container=ContainerConfig(),  # Will use defaults, need to handle liveness_probe separately
         container_kwargs={"liveness_probe": None},
         check_path=".spec.containers[].livenessProbe",
+        standards=[],
     )
 
     PodCheck(
@@ -382,6 +466,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="The hostPID defaults to `false` and thus should be okay",
         security=PodSecurityConfig(host_pid=None),
         check_path=".spec.hostPID",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_3.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     PodCheck(
@@ -392,6 +483,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "cross-container influence and may expose the host itself to potentially malicious or destructive actions",
         security=PodSecurityConfig(host_pid=True),
         check_path=".spec.hostPID",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_3.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     PodCheck(
@@ -402,6 +500,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="The hostIPC defaults to `false` and thus should be okay",
         security=PodSecurityConfig(host_ipc=None),
         check_path=".spec.hostIPC",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     PodCheck(
@@ -412,6 +517,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         " cross-container influence and may expose the host itself to potentially malicious or destructive actions",
         security=PodSecurityConfig(host_ipc=True),
         check_path=".spec.hostIPC",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     PodCheck(
@@ -422,6 +534,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="The hostNetwork defaults to `false` and thus should be okay",
         security=PodSecurityConfig(host_network=None),
         check_path=".spec.hostNetwork",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_5.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
     PodCheck(
         app,
@@ -430,6 +550,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Containers should be isolated from the host machine as much as possible.",
         security=PodSecurityConfig(host_network=True),
         check_path=".spec.hostNetwork",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_5.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
     )
 
     PodCheck(
@@ -438,28 +566,36 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Pod uses hostPort",
         descr="When you bind a Pod to a hostPort, it limits the number of places the  Pod can be scheduled, "
         "because each <hostIP, hostPort, protocol> combination must be unique.",
-        container_kwargs={"ports": [k8s.ContainerPort(container_port=31337, host_port=31337)]},
+        container_kwargs={"ports": [k8s.ContainerPort(container_port=31337, host_port=31335)]},
         check_path=".spec.containers[].ports[].hostPort",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_12.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242414.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
-    PodCheck(
-        app,
-        "POD-012",
-        "Pod uses HostAliases to modify its /etc/hosts",
-        descr="Managing /etc/hosts aliases can prevent Docker from modifying the file after a pod's"
-        " containers have already been started",
-        host_aliases=[k8s.HostAlias(ip="127.0.0.1", hostnames=["foo.com"])],
-        check_path=".spec.hostAliases",
-    )
+#    PodCheck(
+#        app,
+#        "POD-012",
+#        "Pod uses HostAliases to modify its /etc/hosts",
+#        descr="Managing /etc/hosts aliases can prevent Docker from modifying the file after a pod's"
+#        " containers have already been started",
+#        host_aliases=[k8s.HostAlias(ip="127.0.0.1", hostnames=["foo.com"])],
+#        check_path=".spec.hostAliases",
+#        standards=[{StandardsFields.standard.value: "BSI", StandardsFields.controls.value: ["APP.4.4.A4[B]"]}],
+#    )
 
-    PodCheck(
-        app,
-        "POD-013",
-        "deprecate serviceAccount field used",
-        descr="ServiceAccount field is deprecated, ServiceAccountName should be used instead",
-        security=PodSecurityConfig(service_account="deprecated-sa", service_account_name=None),
-        check_path=".spec.serviceAccount",
-    )
+#    PodCheck(
+#        app,
+#        "POD-013",
+#        "deprecated serviceAccount field used",
+#        descr="ServiceAccount field is deprecated, ServiceAccountName should be used instead",
+#        security=PodSecurityConfig(service_account="deprecated-sa", service_account_name=None),
+#        check_path=".spec.serviceAccount",
+#    )
 
     PodCheck(
         app,
@@ -470,19 +606,42 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
-            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io"
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.hardening_container.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s5_unwanted_kernel_modules.value]}],
     )
 
     # TODO implement seccomp check
-    # PodCheck(
-    #     app,
-    #     "POD-015",
-    #     "seccomp not enabled",
-    #     descr="",
-    #     seccomp_profile=None,
-    # )
+    PodCheck(
+        app,
+        "POD-015",
+        "seccomp not enabled",
+        descr="A seccomp profile can be used to restrict the syscalls that a container can make.",
+        security=PodSecurityConfig(pod_security_context=k8s.PodSecurityContext(seccomp_profile=None)),
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None}),
+        check_path=[
+            ".spec.containers[].securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile.type",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io",
+            ".metadata.annotations[container.seccomp.security.alpha.kubernetes.io/pod]",
+        ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_2.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.hardening_container.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.sc_ps_seccomp.value, K8sChecklistControls.asc_lcs_seccomp.value]}],
+    )
 
     # =============================== PodSecurityContext ======================================
 
@@ -493,6 +652,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="not providing a podSecurityContext leads to the use of too permissive settings for the pod",
         security=PodSecurityConfig(pod_security_context=None),
         check_path=".spec.securityContext",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_3.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
     )
 
     # the hardened version in this benchmark prioritizes the run_as_user field,
@@ -573,10 +735,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[
                 ".spec.securityContext.runAsNonRoot",
-                ".spec.securityContext.runAsUser",
                 ".spec.containers[].securityContext.runAsNonRoot",
-                ".spec.containers[].securityContext.runAsUser",
             ],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.non_root_containers.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_12_3_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_pl_run_as_non_root.value, K8sChecklistControls.asc_pl_less_privileged.value, K8sChecklistControls.sc_im_unprivileged_user.value, K8sChecklistControls.sc_im_start_unprivileged.value, K8sChecklistControls.sc_im_security_context.value]}],
         )
 
     # the configurations assume, that the user on the hardened pod
@@ -628,10 +795,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[
                 ".spec.securityContext.runAsUser",
-                ".spec.securityContext.runAsNonRoot",
                 ".spec.containers[].securityContext.runAsUser",
-                ".spec.containers[].securityContext.runAsNonRoot",
             ],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.non_root_containers.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_12_3_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_pl_run_as_non_root.value, K8sChecklistControls.asc_pl_less_privileged.value, K8sChecklistControls.sc_im_unprivileged_user.value, K8sChecklistControls.sc_im_start_unprivileged.value, K8sChecklistControls.sc_im_security_context.value]}],
         )
 
     run_as_group_configs = [
@@ -680,13 +852,20 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             security=PodSecurityConfig(pod_security_context_kwargs=cfg["pod"]),
             container=ContainerConfig(security_context_kwargs=cfg["container"]),
             check_path=[".spec.securityContext.runAsGroup", ".spec.containers[].securityContext.runAsGroup"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_7.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.non_root_containers.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_12_3_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_pl_run_as_non_root.value, K8sChecklistControls.asc_pl_less_privileged.value, K8sChecklistControls.sc_im_unprivileged_user.value, K8sChecklistControls.sc_im_start_unprivileged.value, K8sChecklistControls.sc_im_security_context.value]}],
         )
 
     for i, (sysctl, value) in enumerate(
         [
-            ("kernel.shm_rmid_forced", "1"),
-            ("net.ipv4.tcp_keepalive_time", "100000"),
-            ("net.ipv4.tcp_keepalive_probes", "10"),
+            ("kernel.oops_limit", "10000"),
+            ("kernel.pid_max", "4194304"),
+            ("net.core.rmem_default", "212992"),
         ]
     ):
         PodCheck(
@@ -696,6 +875,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             descr="Giving dangerous capabilities to a container increases the impact of a container compromise",
             security=PodSecurityConfig(pod_security_context_kwargs={"sysctls": [k8s.Sysctl(name=sysctl, value=value)]}),
             check_path=".spec.securityContext.sysctls[]",
+            standards=[],
         )
 
     # ============================= harden linux =============================
@@ -711,13 +891,22 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
             ".spec.securityContext.seccompProfile",
             ".spec.securityContext.seLinuxOptions",
             ".spec.containers[].securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile.type",
             ".spec.containers[].securityContext.seLinuxOptions",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.hardening_container.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value, K8sChecklistControls.asc_lcs_selinux.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value, OwaspControls.s5_unwanted_kernel_modules.value]}],
     )
 
     PodCheck(
@@ -727,9 +916,11 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         descr="Not hardening a linux system can increase the impact of a compromise",
         security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None}),
-        apparmor_profile=None,
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None}),
+        apparmor_profile=[("container.apparmor.security.beta.kubernetes.io", AppArmorProfile.RuntimeDefault)],
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
             ".spec.securityContext.seccompProfile",
@@ -737,6 +928,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             ".spec.containers[].securityContext.seccompProfile",
             ".spec.containers[].securityContext.seLinuxOptions",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.hardening_container.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value, K8sChecklistControls.asc_lcs_selinux.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value, OwaspControls.s5_unwanted_kernel_modules.value]}],
     )
     PodCheck(
         app,
@@ -745,9 +943,11 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         expect=CheckStatus.Pass,
         descr="Not hardening a linux system can increase the impact of a compromise",
         security=PodSecurityConfig(pod_security_context_kwargs={"se_linux_level": None}),
+        container=ContainerConfig(security_context_kwargs={"se_linux_level": None}),
         apparmor_profile=None,
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io/nginx",
             ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
             ".metadata.annotations[container.apparmor.security.beta.kubernetes.io]",
             ".spec.securityContext.seccompProfile",
@@ -755,6 +955,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             ".spec.containers[].securityContext.seccompProfile",
             ".spec.containers[].securityContext.seLinuxOptions",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.hardening_container.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value, K8sChecklistControls.asc_lcs_selinux.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value, OwaspControls.s5_unwanted_kernel_modules.value]}],
     )
 
     PodCheck(
@@ -763,26 +970,38 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "no seccomp profile defined",
         descr="not providing a seccomp profile allows a process more capabilities than necessary",
         security=PodSecurityConfig(pod_security_context_kwargs={"seccomp_profile": None}),
+        container=ContainerConfig(security_context_kwargs={"seccomp_profile": None}),
+        apparmor_profile=[("container.apparmor.security.beta.kubernetes.io", AppArmorProfile.RuntimeDefault)],
         check_path=[
             ".metadata.annotations",
+            ".metadata.annotations.container.seccomp.security.alpha.kubernetes.io/pod",
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io/pod",  # deprecated and removed in v1.25
             ".metadata.annotations[seccomp.security.alpha.kubernetes.io/pod]",  # deprecated and removed in v1.25
             ".spec.securityContext.seccompProfile",
             ".spec.containers[].securityContext.seccompProfile",
+            ".spec.containers[].securityContext.seccompProfile.type",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_2.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.hardening_container.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.sc_ps_seccomp.value, K8sChecklistControls.asc_lcs_seccomp.value]}],
     )
 
     # =================== Container checks ====================================
-    for i, cmd in enumerate(CMDS):
-        PodCheck(
-            app,
-            f"POD-024-{i}",
-            f"usage of {cmd} in container",
-            descr="Attackers who can run a cmd/bash script inside a container can use it to execute malicious code",
-            container=ContainerConfig(),
-            container_kwargs={"command": [cmd]},
-            check_path=[".spec.containers[].command"],
-        )
+    #for i, cmd in enumerate(CMDS):
+    #    PodCheck(
+    #        app,
+    #        f"POD-024-{i}",
+    #        f"usage of {cmd} in container",
+    #        descr="Attackers who can run a cmd/bash script inside a container can use it to execute malicious code",
+    #        container=ContainerConfig(),
+    #        container_kwargs={"command": [cmd]},
+    #        check_path=[".spec.containers[].command"],
+    #        standards=[{StandardsFields.standard.value: "Kubernetes Security Checklist", StandardsFields.controls.value: ["Images"]}],
+    #    )
 
     EnvVarCheck(
         app,
@@ -791,6 +1010,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Attackers can retrieve and use sensitive information provided via environment variables",
         env_keys=SENSITIVE_KEYS,
         check_path=[".spec.containers[].env[].name"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_4_1.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.secrets.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242415.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_mounted_volumes.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_6_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9026.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_finding_secrets.value]}],
     )
 
     PodCheck(
@@ -801,6 +1027,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Kubernetes may run older version of the container images without user knowing about this",
         container=ContainerConfig(image_pull_policy=None),
         check_path=[".spec.containers[].imagePullPolicy"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_1_2_11.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ac_always_pull_images.value]}],
     )
     for i, img_pull_policy in enumerate(["Never", "IfNotPresent"]):
         PodCheck(
@@ -810,6 +1038,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             descr="Kubernetes may run older version of the container images without user knowing about this",
             container=ContainerConfig(image_pull_policy=img_pull_policy),
             check_path=[".spec.containers[].imagePullPolicy"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_1_2_11.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ac_always_pull_images.value]}],
         )
 
     PodCheck(
@@ -820,6 +1050,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Specify an explicit tag or digest to have full control over the running container image",
         container=ContainerConfig(image_tag=":1.12.6"),
         check_path=[".spec.containers[].image"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_im_sha256_digest.value]}],
     )
 
     PodCheck(
@@ -829,6 +1061,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="When using latest image tag the used image can change without the user knowing about this",
         container=ContainerConfig(image_tag=":latest"),
         check_path=[".spec.containers[].image"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_im_sha256_digest.value]}],
     )
 
     PodCheck(
@@ -838,6 +1072,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Kubernetes may run older version of the container images without user knowing about this",
         container=ContainerConfig(image_tag=None),
         check_path=[".spec.containers[].image"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_im_sha256_digest.value]}],
     )
 
     # POD-029
@@ -853,6 +1089,9 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Not providing a securityContext leads to the use of too permissive settings for the containers",
         container=ContainerConfig(security_context=None),
         check_path=[".spec.containers[].securityContext"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_3.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
     )
 
     PodCheck(
@@ -863,6 +1102,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "add only the ones you need through the capabilities settings. ",
         container=ContainerConfig(security_context_kwargs={"allow_privilege_escalation": None}),
         check_path=".spec.containers[].securityContext.allowPrivilegeEscalation",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_6.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_allow_privilege_escalation.value]}],
     )
 
     PodCheck(
@@ -873,6 +1119,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "add only the ones you need through the capabilities settings. ",
         container=ContainerConfig(security_context_kwargs={"allow_privilege_escalation": True}),
         check_path=".spec.containers[].securityContext.allowPrivilegeEscalation",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_6.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_allow_privilege_escalation.value]}],
     )
 
     PodCheck(
@@ -883,6 +1136,13 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Changing the privileged flag is optional as it defaults to False",
         container=ContainerConfig(security_context_kwargs={"privileged": None}),
         check_path=".spec.containers[].securityContext.privileged",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_2.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]}],
     )
 
     PodCheck(
@@ -891,11 +1151,17 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "privileged container",
         descr="Privileged containers can do almost every action that can be performed directly on the host.",
         # privilege can't be set to True with when allowPrivilegeEscalation is explicitly disabled
-        container=ContainerConfig(security_context_kwargs={"privileged": True, "allow_privilege_escalation": None}),
+        container=ContainerConfig(security_context_kwargs={"privileged": True}),
         check_path=[
             ".spec.containers[].securityContext.privileged",
-            ".spec.containers[].securityContext.allowPrivilegeEscalation",
         ],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_2.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]}],
     )
 
     PodCheck(
@@ -906,6 +1172,10 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "permanent local changes.",
         container=ContainerConfig(security_context_kwargs={"read_only_root_filesystem": None}),
         check_path=".spec.containers[].securityContext.readOnlyRootFilesystem",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.immutable_filesystem.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_8_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_read_only_root_filesystem.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
     )
 
     PodCheck(
@@ -916,6 +1186,10 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "permanent local changes.",
         container=ContainerConfig(security_context_kwargs={"read_only_root_filesystem": False}),
         check_path=".spec.containers[].securityContext.readOnlyRootFilesystem",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.immutable_filesystem.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_8_2_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_read_only_root_filesystem.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
     )
 
     # taken from:
@@ -930,7 +1204,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"using dangerous capability {cap}",
             descr="Dangerous capabilities can increase the impact of a container compromise",
             container=ContainerConfig(security_context_kwargs={"add_capabilities": [cap]}),
-            check_path=".spec.containers[].securityContext.capabilities",
+            check_path=[".spec.containers[].securityContext.capabilities", ".spec.containers[].securityContext.capabilities.add", ".spec.containers[].securityContext.capabilities.add[]", "spec.containers[app].securityContext.capabilities.add.SYS_ADMIN"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_9.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_drop_capabilities.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
         )
 
     # taken from:
@@ -948,7 +1230,15 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             f"using insecure capability {cap}",
             descr="Insecure capabilities can increase the impact of a container compromise",
             container=ContainerConfig(security_context_kwargs={"add_capabilities": [cap]}),
-            check_path=".spec.containers[].securityContext.capabilities",
+            check_path=[".spec.containers[].securityContext.capabilities", ".spec.containers[].securityContext.capabilities.add", ".spec.containers[].securityContext.capabilities.add[]"],
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_9.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_drop_capabilities.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
         )
 
     PodCheck(
@@ -960,7 +1250,34 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "defined by the container runtime, which is often fairly generous and "
         "does not adhere to principle of least privilege",
         container=ContainerConfig(security_context_kwargs={"drop_capabilities": None}),  # remove  drop: "ALL"
-        check_path=".spec.containers[].securityContext.capabilities.drop",
+        check_path=[".spec.containers[].securityContext.capabilities.drop", ".spec.containers[].securityContext.capabilities"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_9.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242437.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_drop_capabilities.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+
+    )
+
+    
+    PodCheck(
+        app,
+        "POD-046",
+        "Minimize the admission of Windows HostProcess Containers",
+        descr="A Windows container making use of the hostProcess flag can interact with the "
+              "underlying Windows cluster node. As per the Kubernetes documentation, this provides "
+              "\"privileged access\" to the Windows node.",
+        container=ContainerConfig(security_context_kwargs={"windows_options": {"host_process": True}}),
+        check_path=".spec.containers[].securityContext.windowsOptions.hostProcess",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_10.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}]
     )
 
     # ==================== pod resource requests/limits ===================
@@ -976,6 +1293,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="using hostPath is not ideal but can be tolerated when it's read-only",
         volume_type="hostpath",
         read_only=True,
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     VolumeMountCheck(
@@ -985,6 +1308,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Attackers can use a writable hostpath to gain persistence on underlying host system",
         volume_type="hostpath",
         read_only=False,
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     VolumeMountCheck(
@@ -994,6 +1323,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Attackers can use a writable hostpath to gain persistence on underlying host system",
         volume_type="hostpath",
         read_only=None,
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     files = [("azure", "/etc/kubernetes/azure.json")]
@@ -1009,6 +1344,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             mount_path=path,
             mount_type="File",
             read_only=True,
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
         )
 
     VolumeMountCheck(
@@ -1021,6 +1362,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         volume_type="hostpath",
         mount_path="/var/run/docker.sock",
         read_only=True,
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     VolumeMountCheck(
@@ -1033,6 +1380,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         volume_type="hostpath",
         mount_path="/var/lib/docker",
         read_only=True,
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     # this check requires special kubernetes version
@@ -1047,6 +1400,12 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         mount_path="/mnt/data",
         sub_path="symlink",
         volume_type="empty",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_2_11.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.security_enforcements.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
     )
 
     ConfigMapCheck(
@@ -1055,7 +1414,10 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "sensitive key referenced in configmap",
         descr="Attackers can retrieve and use sensitive information provided via config maps",
         data={sk: SENSITIVE_VALUES for sk in SENSITIVE_KEYS},
-        check_path=[f".data.{key}" for key in SENSITIVE_KEYS],
+        check_path=[f".data.{key}" for key in SENSITIVE_KEYS] + ["ConfigMap.data"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_6_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9026.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_config_maps.value]}],
     )
 
     # ================= Namespace checks ====================
@@ -1063,9 +1425,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         app,
         "NS-001",
         "use default namespace",
-        descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
+        descr="The default namespace should not be used for custom workloads",
         namespace="default",
         check_path=".metadata.namespace",
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_4.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.namespaces.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242383.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_namespace_isolation.value]}],
     )
 
     for i, ns in enumerate(["kube-system", "kube-public"]):
@@ -1073,9 +1440,14 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             app,
             f"NS-002-{i+1}",
             f"place pod in {ns}",
-            descr=f"{name} should not be used for custom workloads",
+            descr=f"{ns} should not be used for custom workloads",
             namespace=ns,
             check_path=".metadata.namespace",
+            standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_1.value]}, 
+                    {StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.namespaces.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242417.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_1_a.value]},
+                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_namespace_isolation.value]}],
         )
 
 
@@ -1096,7 +1468,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting default memory requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.requests.memory",
+        check_path=[".spec.containers[].resources.requests.memory", ".spec.containers[].resources.requests"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     PodCheck(
         app,
@@ -1105,7 +1482,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting memory requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_memory=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.requests.memory",
+        check_path=[".spec.containers[].resources.requests.memory", ".spec.containers[].resources.requests"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     PodCheck(
@@ -1116,7 +1498,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.limits.memory",
+        check_path=[".spec.containers[].resources.limits.memory", ".spec.containers[].resources.limits"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     PodCheck(
         app,
@@ -1125,7 +1512,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting memory limit can lead to the pod suffocating the node by using all available memory",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_memory=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.limits.memory",
+        check_path=[".spec.containers[].resources.limits.memory", ".spec.containers[].resources.limits"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     PodCheck(
@@ -1136,7 +1528,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting default CPU requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.requests.cpu",
+        check_path=[".spec.containers[].resources.requests.cpu", ".spec.containers[].resources.requests"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     PodCheck(
         app,
@@ -1145,7 +1542,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting CPU requests can lead to problems upon admission",
         container=ContainerConfig(resources=ContainerResourceConfig(request_cpu=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.requests.cpu",
+        check_path=[".spec.containers[].resources.requests.cpu", ".spec.containers[].resources.requests"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     PodCheck(
@@ -1156,7 +1558,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting CPU limit can lead to the pod suffocating the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.limits.cpu",
+        check_path=[".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     PodCheck(
         app,
@@ -1165,7 +1572,12 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting CPU limit can lead to the pod suffocating the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_cpu=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.limits.cpu",
+        check_path=[".spec.containers[].resources.limits.cpu", ".spec.containers[].resources.limits"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     PodCheck(
@@ -1176,7 +1588,11 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storarge limit can suffocate the node by using all available storage",
         container=ContainerConfig(resources=ContainerResourceConfig(request_ephemeral_storage=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.requests.ephemeral-storage",
+        check_path=[".spec.containers[].resources.requests.ephemeral-storage", ".spec.containers[].resources.requests"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     PodCheck(
         app,
@@ -1185,7 +1601,11 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(request_ephemeral_storage=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.requests.ephemeral-storage",
+        check_path=[".spec.containers[].resources.requests.ephemeral-storage", ".spec.containers[].resources.requests"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
 
     PodCheck(
@@ -1196,7 +1616,11 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storarge limit can suffocate the node by using all available storage",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=main_ns,
-        check_path=".spec.containers[].resources.limits.ephemeral-storage",
+        check_path=[".spec.containers[].resources.limits.ephemeral-storage", ".spec.containers[].resources.limits"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )
     PodCheck(
         app,
@@ -1205,5 +1629,9 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
         descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=unrestricted_ns,
-        check_path=".spec.containers[].resources.limits.ephemeral-storage",
+        check_path=[".spec.containers[].resources.limits.ephemeral-storage", ".spec.containers[].resources.limits"],
+        standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.resource_policies.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
+                   {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
     )

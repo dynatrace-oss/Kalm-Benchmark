@@ -5,6 +5,7 @@ metadata:
     check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources
     description: The ability to create pods in a cluster opens up possibilities for privilege escalation
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.1.4']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Role-Based Access Control']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A9']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['1.5.b']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9003']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['RBAC rights to create, update, patch, delete workloads is only granted if necessary.']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-004-3

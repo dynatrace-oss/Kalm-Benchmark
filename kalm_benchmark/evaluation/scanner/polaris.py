@@ -10,14 +10,16 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         [".spec.automountServiceAccountToken", "ServiceAccount.automountServiceAccountToken"],
     ),
-    "cpuLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits.cpu"),
-    "cpuRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.cpu"),
+    "cpuLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits"),
+    "cpuRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests"),
     "dangerousCapabilities": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
     "deploymentMissingReplicas": (CheckCategory.Reliability, "Deployment.spec.replicas"),
     "hostIPCSet": (CheckCategory.Workload, ".spec.hostIPC"),
     "hostNetworkSet": (CheckCategory.Workload, ".spec.hostNetwork"),
+    "hostPathSet": (CheckCategory.Workload, ".spec.volumes[].hostPath"),
     "hostPIDSet": (CheckCategory.Workload, ".spec.hostPID"),
-    "hostPortSet": (CheckCategory.Workload, ".spec.containers[].ports"),
+    "hostPortSet": (CheckCategory.Workload, ".spec.containers[].ports[].hostPort"),
+    "hostProcess": (CheckCategory.Workload, ".spec.containers[].securityContext.windowsOptions.hostProcess"),
     "insecureCapabilities": (CheckCategory.Workload, ".spec.containers[].securityContext.capabilities"),
     "linuxHardening": (
         CheckCategory.Workload,
@@ -30,13 +32,13 @@ CHECK_MAPPING = {
         ],
     ),
     "livenessProbeMissing": (CheckCategory.Reliability, ".spec.containers[].livenessProbe"),
-    "metadataAndInstanceMismatched": (CheckCategory.Reliability, ".metadata.labels"),
-    "memoryLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits.memory"),
-    "memoryRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests.memory"),
+    "metadataAndInstanceMismatched": (CheckCategory.Reliability, [".metadata.labels", ".metadata.name"]),
+    "memoryLimitsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.limits"),
+    "memoryRequestsMissing": (CheckCategory.Reliability, ".spec.containers[].resources.requests"),
     "missingPodDisruptionBudget": (CheckCategory.Reliability, "PodDisruptionBudget"),  # ignored by default
     "missingNetworkPolicy": (
         CheckCategory.Segregation,
-        ["NetworkPolicy.spec.podSelector", "NetworkPolicy.spec.ingress", "Networkpolicy.spec.egress"],
+        ["NetworkPolicy.spec.podSelector", "NetworkPolicy.spec.ingress", "Networkpolicy.spec.egress", "NetworkPolicy.metadata.namespace"],
     ),
     "notReadOnlyRootFilesystem": (
         CheckCategory.Workload,
@@ -56,7 +58,7 @@ CHECK_MAPPING = {
     ),
     "sensitiveContainerEnvVar": (
         CheckCategory.Workload,
-        [".spec.containers[].env[].valueFrom", ".spec.containers[].env[].value"],
+        [".spec.containers[].env[].valueFrom", ".spec.containers[].env[].value", ".spec.containers[].env[].name"],
     ),
     "sensitiveConfigmapContent": (
         CheckCategory.DataSecurity,
@@ -65,11 +67,11 @@ CHECK_MAPPING = {
     "tagNotSpecified": (CheckCategory.Workload, ".spec.containers[].image"),
     "topologySpreadConstraint": (CheckCategory.Reliability, ".spec.topologySpreadConstraints[].topologyKey"),
     "tlsSettingsMissing": (CheckCategory.Network, "Ingress.spec.tls"),
-    "clusterrolePodExecAttach": (CheckCategory.IAM, "ClusterRole.rules[].resources"),
-    "rolePodExecAttach": (CheckCategory.IAM, "Role.rules[].resources"),
-    "clusterrolebindingPodExecAttach": (CheckCategory.IAM, "ClusterRole.rules[].resources"),
-    "rolebindingClusterRolePodExecAttach": (CheckCategory.IAM, "ClusterRole.rules[].resources"),
-    "rolebindingRolePodExecAttach": (CheckCategory.IAM, "Role.rules[].resources"),
+    "clusterrolePodExecAttach": (CheckCategory.IAM, [".rules[].resources.pods.exec", ".rules[].resources.pods.attach"]),
+    "rolePodExecAttach": (CheckCategory.IAM, [".rules[].resources.pods.exec", ".rules[].resources.pods.attach"]),
+    "clusterrolebindingPodExecAttach": (CheckCategory.IAM, [".rules[].resources.pods.exec", ".rules[].resources.pods.attach"]),
+    "rolebindingClusterRolePodExecAttach": (CheckCategory.IAM, [".rules[].resources.pods.exec", ".rules[].resources.pods.attach"]),
+    "rolebindingRolePodExecAttach": (CheckCategory.IAM, [".rules[].resources.pods.exec", ".rules[].resources.pods.attach"]),
     "clusterrolebindingClusterAdmin": (CheckCategory.IAM, "ClusterRoleBinding.roleRef.name"),
     "rolebindingClusterAdminClusterRole": (CheckCategory.IAM, "RoleBinding.roleRef.name"),
     "rolebindingClusterAdminRole": (CheckCategory.IAM, ".rules[].resources"),
@@ -86,6 +88,7 @@ class Scanner(ScannerBase):
     RUNS_OFFLINE = True
     IMAGE_URL = "https://polaris.docs.fairwinds.com/img/polaris-logo.png"
     VERSION_CMD = ["polaris", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     @classmethod
     def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:

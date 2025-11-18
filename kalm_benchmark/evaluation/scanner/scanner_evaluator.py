@@ -66,6 +66,7 @@ class ScannerBase(ABC):
     RUNS_OFFLINE: Union[bool, str] = False
     IMAGE_URL: Optional[str] = None
     FORMATS: list[str] = []
+    PATH_COLUMNS: list[str] = []
 
     def __init__(self) -> None:
         self._results: list[CheckResult] = []

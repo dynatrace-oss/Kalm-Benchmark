@@ -6,6 +6,7 @@ metadata:
     check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
     description: disabling automounting at Pod level takes precedence over SA
     expected: pass
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.1.6']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting Pod service account tokens']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A9']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['1.5.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9025']}, {'standard': 'Kubernetes Security Checklist', 'controls': [\"Service account tokens are not mounted in pods that don't require them.\", 'automountServiceAccountToken should be set to false unless the pod specifically requires access to the Kubernetes API to operate.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-003-9
@@ -19,6 +20,7 @@ metadata:
     check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
     description: disabling automounting at Pod level takes precedence over SA
     expected: pass
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.1.6']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting Pod service account tokens']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A9']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['1.5.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9025']}, {'standard': 'Kubernetes Security Checklist', 'controls': [\"Service account tokens are not mounted in pods that don't require them.\", 'automountServiceAccountToken should be set to false unless the pod specifically requires access to the Kubernetes API to operate.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: POD-003-9
@@ -34,7 +36,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -50,7 +52,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

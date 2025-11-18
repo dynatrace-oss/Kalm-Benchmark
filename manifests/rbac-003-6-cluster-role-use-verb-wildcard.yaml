@@ -2,9 +2,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
-    check_path: ClusterRole.rules[].verbs|Role.rules[].verbs|.rules[].verbs
+    check_path: ClusterRole.rules[].apiGroups|Role.rules[].apiGroups|.rules[].apiGroups
     description: Allowing wildcards violates principle of least privilege
     expected: alert
+    standards: "[{'standard': 'CIS Kubernetes Benchmark', 'version': '1.12', 'controls': ['5.1.3']}, {'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Role-Based Access Control']}, {'standard': 'BSI APP.4.4 Kubernetes', 'controls': ['APP.4.4.A9']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['2.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9003']}]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: RBAC-003-6
@@ -12,7 +13,7 @@ metadata:
   namespace: kalm-benchmark
 rules:
   - apiGroups:
-      - ""
+      - "*"
     resources:
       - jobs
     verbs:

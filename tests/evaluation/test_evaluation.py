@@ -54,18 +54,24 @@ class TestResultSummarization:
     def test_summary_counts_distinct_benchmark_checks(self):
         category = "cat1"
         res_type = ResultType.Covered
+        path_to_check = "path/to/check"
+        checked_path = "checked/path"
         data = [
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
+                Col.PathToCheck: path_to_check,
+                Col.CheckedPath: checked_path,
                 Col.ResultType: res_type,
                 Col.Category: category,
                 Col.Expected: CheckStatus.Pass,
                 Col.Got: CheckStatus.Pass,
             },
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
+                Col.PathToCheck: path_to_check,
+                Col.CheckedPath: checked_path,
                 Col.ResultType: res_type,
                 Col.Category: category,
                 Col.Expected: CheckStatus.Pass,
@@ -83,18 +89,25 @@ class TestResultSummarization:
     def test_summary_extra_checks_are_ignored_from_cat(self):
         category = "cat1"
         res_type = ResultType.Covered
+        path_to_check = "path/to/check"
+        checked_path = "checked/path"
+
         data = [
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
+                Col.PathToCheck: path_to_check,
+                Col.CheckedPath: checked_path,
                 Col.ResultType: ResultType.Covered,
                 Col.Category: category,
                 Col.Expected: CheckStatus.Pass,
                 Col.Got: CheckStatus.Pass,
             },
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
+                Col.PathToCheck: path_to_check,
+                Col.CheckedPath: checked_path,
                 Col.ResultType: ResultType.Extra,
                 Col.Category: category,
                 Col.Expected: CheckStatus.Pass,
@@ -112,18 +125,25 @@ class TestResultSummarization:
     def test_summary_use_more_pessimistic_result_when_inconsistent(self):
         category = "cat1"
         res_type = ResultType.Covered
+        path_to_check = "path/to/check"
+        checked_path = "checked/path"
+
         data = [
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
+                Col.PathToCheck: path_to_check,
+                Col.CheckedPath: checked_path,
                 Col.ResultType: res_type,
                 Col.Category: category,
                 Col.Expected: CheckStatus.Pass,
                 Col.Got: CheckStatus.Pass,
             },
             {
-                Col.CheckId: "POD-001",
+                Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
+                Col.PathToCheck: path_to_check,
+                Col.CheckedPath: checked_path,
                 Col.ResultType: res_type,
                 Col.Category: category,
                 Col.Expected: CheckStatus.Alert,
@@ -555,7 +575,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_columns="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
 
         # Check that we have the expected number of rows (one match + extras)
         assert len(df_res) == 7  # 1 match + 6 extras
@@ -572,7 +592,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk, "sk": [".1|.2"]})
         df2 = pd.DataFrame({"pk": pk, "sk": [".2|.3"]})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_columns="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that the result contains the matching path ".2"
         assert len(df_res) >= 1
@@ -593,7 +613,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk_left": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk_right": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_columns=["sk_left", "sk_right"])
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we have the essential columns
         assert "pk" in df_res.columns
@@ -613,7 +633,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_columns="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we get results and that matching occurs appropriately
         assert len(df_res) >= 3  # Should have at least the matches
@@ -637,11 +657,11 @@ class TestDataframeMerge:
         data_right = [1, 2, 3]
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_columns="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
         df_expect = pd.DataFrame(
             {
                 "pk": pk_right,
-                "sk": sk_right,
+                "sk": [".1|.2|.3|.4", ".9", ".1"],
                 "left": [100, None, None],  # only the 1st roow of right df matches
                 "right": data_right,
             }
@@ -655,7 +675,7 @@ class TestDataframeMerge:
         data_right = [10, 20, 30, 40]
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk", path_columns="sk")
+        df_res = merge_dataframes(df1, df2, id_column="pk")
 
         # Check that we have the essential structure
         assert len(df_res) >= 3  # Should have multiple matches

@@ -5,76 +5,13 @@ metadata:
     check_path: Namespace.metadata.labels.pod-security.kubernetes.io
     description: When only warnings for violations are generated insecure workloads can still be deployed
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: PSA-003
     pod-security.kubernetes.io/warn: restricted
   name: psa-003-just-warning-about-violations-of-the-pod-security-stand
   namespace: psa-003-just-warning-about-violations-of-the-pod-security-stand
----
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  annotations:
-    check_path: Namespace.metadata.labels.pod-security.kubernetes.io
-    description: When only warnings for violations are generated insecure workloads can still be deployed
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: PSA-003
-  name: psa-003-just-warning-about-violations-of-the-pod-security-stand
-  namespace: psa-003-just-warning-about-violations-of-the-pod-security-stand
-spec:
-  hard:
-    cpu: 30
-    memory: 20Gi
-    pods: 1000
----
-apiVersion: v1
-kind: LimitRange
-metadata:
-  annotations:
-    check_path: Namespace.metadata.labels.pod-security.kubernetes.io
-    description: When only warnings for violations are generated insecure workloads can still be deployed
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: PSA-003
-  name: psa-003-just-warning-about-violations-of-the-pod-security-stand
-  namespace: psa-003-just-warning-about-violations-of-the-pod-security-stand
-spec:
-  limits:
-    - default:
-        cpu: 100m
-        memory: 1Mi
-      defaultRequest:
-        cpu: 1m
-        memory: 1Ki
-      max:
-        cpu: 100m
-        memory: 10Mi
-      min:
-        cpu: 1m
-        memory: 1Ki
-      type: Container
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  annotations:
-    check_path: Namespace.metadata.labels.pod-security.kubernetes.io
-    description: When only warnings for violations are generated insecure workloads can still be deployed
-    expected: alert
-  labels:
-    app.kubernetes.io/part-of: kalm-benchmark
-    check: PSA-003
-  name: psa-003-just-warning-about-violations-of-the-pod-security-stand
-  namespace: psa-003-just-warning-about-violations-of-the-pod-security-stand
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-    - Ingress
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -84,6 +21,7 @@ metadata:
     check_path: Namespace.metadata.labels.pod-security.kubernetes.io
     description: When only warnings for violations are generated insecure workloads can still be deployed
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: PSA-003
@@ -97,6 +35,7 @@ metadata:
     check_path: Namespace.metadata.labels.pod-security.kubernetes.io
     description: When only warnings for violations are generated insecure workloads can still be deployed
     expected: alert
+    standards: "[]"
   labels:
     app.kubernetes.io/part-of: kalm-benchmark
     check: PSA-003
@@ -112,7 +51,7 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/app: runtime/default
-        container.seccomp.security.alpha.kubernetes.io/app: runtime/default
+        container.seccomp.security.alpha.kubernetes.io/pod: runtime/default
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
       labels:
         app.kubernetes.io/part-of: kalm-benchmark
@@ -128,7 +67,8 @@ spec:
               weight: 1
       automountServiceAccountToken: false
       containers:
-        - image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+        - env: []
+          image: nginx@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

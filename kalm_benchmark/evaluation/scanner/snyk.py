@@ -29,6 +29,7 @@ class Scanner(ScannerBase):
         3: "failure, no supported projects detected",
     }
     VERSION_CMD = ["snyk", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     @classmethod
     def parse_results(cls, results: dict | list[list[dict]]) -> list[CheckResult]:

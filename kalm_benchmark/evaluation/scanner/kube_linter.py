@@ -43,6 +43,10 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         ["HorizontalPodAutoscaler.spec.scaleTargetRef", ".spec.scaleTargetRef"],
     ),
+    "dangling-ingress": (
+        CheckCategory.Network,
+        ["Ingress.spec.rules[].http.paths[].backend.service", ".spec.rules[].http.paths[].backend.service"],
+    ),
     "dangling-networkpolicy": (
         CheckCategory.Network,
         ["NetworkPolicy.spec.podSelector", ".spec.podSelector"],
@@ -60,6 +64,10 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         [".spec.selector", ".metadata.labels"],
     ),
+    "dangling-service-monitor": (
+        CheckCategory.Workload,
+        [".spec.selector.matchLabels", ".metadata.labels"],
+    ),
     "default-service-account": (
         CheckCategory.Workload,
         [".spec.serviceAccountName"],
@@ -67,6 +75,10 @@ CHECK_MAPPING = {
     "deprecated-service-account-field": (
         CheckCategory.Workload,
         [".spec.serviceAccount"],
+    ),
+    "dnsconfig-options": (
+        CheckCategory.Network,
+        [".spec.dnsConfig", ".spec.dnsConfig.options[].name"],
     ),
     "docker-sock": (
         CheckCategory.Workload,
@@ -78,7 +90,14 @@ CHECK_MAPPING = {
     ),
     "drop-net-raw-capability": (
         CheckCategory.Network,
-        [".spec.containers[].securityContext.capabilities.drop"],
+        [
+            ".spec.containers[].securityContext.capabilities.drop",
+            ".spec.containers[].securityContext.capabilities",
+        ],
+    ),
+    "duplicate-env-var": (
+        CheckCategory.DataSecurity,
+        [".spec.containers[].env[].name"],
     ),
     "env-var-secret": (
         CheckCategory.DataSecurity,
@@ -109,13 +128,28 @@ CHECK_MAPPING = {
         CheckCategory.Reliability,
         ["HorizontalPodAutoscaler.spec.minReplicas", ".spec.minReplicas"],
     ),
+    "invalid-target-ports": (
+        CheckCategory.Workload,
+        ["Service.spec.ports[].targetPort", ".spec.ports[].targetPort"],
+    ),
+    "job-ttl-seconds-after-finished": (
+        CheckCategory.Workload,
+        [".spec.ttlSecondsAfterFinished"],
+    ),
     "latest-tag": (
         CheckCategory.Workload,
         [".spec.containers[].image"],
     ),
+    "liveness-port": (
+        CheckCategory.Workload,
+        [
+            ".spec.containers[].livenessProbe.httpGet.port",
+            ".spec.containers[].livenessProbe",
+        ],
+    ),
     "minimum-three-replicas": (
         CheckCategory.Reliability,
-        ["Deployment.spec.replicas", ".spec.replicas"],
+        ["ReplicaSet.spec.replicas", ".spec.replicas"],
     ),
     "mismatching-selector": (
         CheckCategory.Workload,
@@ -157,9 +191,25 @@ CHECK_MAPPING = {
         CheckCategory.Network,
         ["NetworkPolicy.spec.podSelector", ".spec.podSelector"],
     ),
+    "pdb-max-unavailable": (
+        CheckCategory.Reliability,
+        ["PodDistributionBudget.spec.maxUnavailable", ".spec.maxUnavailable"],
+    ),
+    "pdb-min-available": (
+        CheckCategory.Reliability,
+        ["PodDistributionBudget.spec.minAvailable", ".spec.minAvailable"],
+    ),
+    "pdb-unhealthy-pod-eviction-policy": (
+        CheckCategory.Reliability,
+        ["PodDistributionBudget.spec.unhealthyPodEvictionPolicy", ".spec.unhealthyPodEvictionPolicy"],
+    ),
+    "priority-class-name": (
+        CheckCategory.Workload,
+        [".spec.priorityClassName"],
+    ),
     "privilege-escalation-container": (
         CheckCategory.Workload,
-        [".spec.containers[].securityContext.allowPrivilegeEscalation"],
+        [".spec.containers[].securityContext.allowPrivilegeEscalation", ".spec.containers[].securityContext.capabilities"],
     ),
     "privileged-container": (
         CheckCategory.Workload,
@@ -173,6 +223,10 @@ CHECK_MAPPING = {
         CheckCategory.DataSecurity,
         [".spec.containers[].env[].valueFrom.SecretKeyRef"],
     ),
+    "readiness-port": (
+        CheckCategory.Workload,
+        [".spec.containers[].readinessProbe.httpGet.port", ".spec.containers[].readinessProbe"],
+    ),
     "required-annotation-email": (
         CheckCategory.Misc,
         [".metadata.annotations.email"],
@@ -181,12 +235,20 @@ CHECK_MAPPING = {
         CheckCategory.Misc,
         [".metadata.annotations.owner"],
     ),
+    "restart-policy": (
+        CheckCategory.Reliability,
+        [".spec.restartPolicy", ".spec.containers[].restartPolicy"],
+    ),
     "run-as-non-root": (
         CheckCategory.Workload,
         [
             ".spec.securityContext.runAsNonRoot",
             ".spec.containers[].securityContext.runAsNonRoot",
         ],
+    ),
+    "scc-deny-privileged-container": (
+        CheckCategory.Workload,
+        ["SecurityContextConstraints.allowPrivilegedContainer", ".allowPrivilegedContainer"],
     ),
     "sensitive-host-mounts": (
         CheckCategory.Workload,
@@ -200,23 +262,32 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         [".spec.containers[].ports[].containerPort"],
     ),
+    "startup-port": (
+        CheckCategory.Workload,
+        [".spec.containers[].startupProbe.httpGet.port"],
+    ),
     "unsafe-proc-mount": (
         CheckCategory.Workload,
         [
-            "spec.containers[].securityContext.procMount",
-            "spec.initContainers[].securityContext.procMount",
-            "spec.ephemeralContainers[].securityContext.procMount",
+            ".spec.containers[].securityContext.procMount",
+            ".spec.initContainers[].securityContext.procMount",
+            ".spec.ephemeralContainers[].securityContext.procMount",
         ],
     ),
     "unsafe-sysctls": (
         CheckCategory.Workload,
-        [".spec.securityContext.sysctls[].name"],
+        [
+            ".spec.securityContext.sysctls[].name",
+            ".spec.securityContext.sysctls[]",
+        ],
     ),
     "unset-cpu-requirements": (
         CheckCategory.Reliability,
         [
             ".spec.containers[].resources.requests.cpu",
             ".spec.containers[].resources.limits.cpu",
+            ".spec.containers[].resources.limits",
+            ".spec.containers[].resources.requests",
         ],
     ),
     "unset-memory-requirements": (
@@ -224,6 +295,8 @@ CHECK_MAPPING = {
         [
             ".spec.containers[].resources.requests.memory",
             ".spec.containers[].resources.limits.memory",
+            ".spec.containers[].resources.limits",
+            ".spec.containers[].resources.requests",
         ],
     ),
     "use-namespace": (
@@ -266,6 +339,7 @@ class Scanner(ScannerBase):
     CI_MODE = True
     RUNS_OFFLINE = True
     VERSION_CMD = ["kube-linter", "version"]
+    PATH_COLUMNS = ["checked_path"]
 
     @classmethod
     def parse_results(cls, results: list[list[dict]]) -> list[CheckResult]:

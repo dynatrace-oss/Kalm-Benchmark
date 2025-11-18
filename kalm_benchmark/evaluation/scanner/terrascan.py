@@ -7,19 +7,19 @@ from .scanner_evaluator import CheckCategory, CheckResult, CheckStatus, ScannerB
 CHECK_MAPPING = {
     "CpuRequestsCheck": (
         CheckCategory.Workload,
-        [".spec.containers[].resources.requests.cpu"],
+        [".spec.containers[].resources.requests"],
     ),
     "CpulimitsCheck": (
         CheckCategory.Workload,
-        [".spec.containers[].resources.limits.cpu"],
+        [".spec.containers[].resources.limits"],
     ),
     "MemoryRequestsCheck": (
         CheckCategory.Workload,
-        [".spec.containers[].resources.requests.memory"],
+        [".spec.containers[].resources.requests"],
     ),
     "MemorylimitsCheck": (
         CheckCategory.Workload,
-        [".spec.containers[].resources.limits.memory"],
+        [".spec.containers[].resources.limits"],
     ),
     "allowedHostPath": (
         CheckCategory.Workload,
@@ -38,6 +38,7 @@ CHECK_MAPPING = {
         [
             ".metadata.annotations.apparmor.security.beta.kubernetes.io/defaultProfileName",
             "container.apparmor.security.beta.kubernetes.io/app",
+            ".metadata.annotations.container.apparmor.security.beta.kubernetes.io",
         ],
     ),
     "autoMountTokenEnabled": (
@@ -48,9 +49,23 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         [".spec.securityContext.runAsUser", ".spec.containers[].securityContext.runAsUser", ".spec.runAsUser"],
     ),
+    "disallowedSysCalls": (
+        CheckCategory.Workload,
+        [
+            ".spec.securityContext.sysctls[]",
+        ],
+    ),
+    "disAllowedVolumes": (
+        CheckCategory.Workload,
+        [
+            ".spec.volumes[]", 
+            ".spec.containers[].volumeMounts[]"
+        ],
+    ),
     "dontConnectDockerSock": (
         CheckCategory.Workload,
         [
+            ".spec.volumes[]",
             ".spec.volumes[].hostPath",
             ".spec.volumes[].hostPath.path",
             ".spec.containers[].volumeMounts[].mountPath",
@@ -96,9 +111,9 @@ CHECK_MAPPING = {
         CheckCategory.Workload,
         [".metadata.namespace"],
     ),
-    "priviledgedContainersEnabled": (
+    "privilegedContainersEnabled": (
         CheckCategory.AdmissionControl,
-        [".spec.privileged"],
+        [".spec.containers[].securityContext.privileged"],
     ),
     "privilegeEscalationCheck": (
         CheckCategory.Workload,
@@ -110,13 +125,13 @@ CHECK_MAPPING = {
     ),
     "runAsNonRootCheck": (
         CheckCategory.Workload,
-        [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot"],
+        [".spec.securityContext.runAsNonRoot", ".spec.containers[].securityContext.runAsNonRoot", ".spec.securityContext.runAsUser"],
     ),
     "secCompProfile": (
         CheckCategory.Workload,
         [
             ".metadata.annotations.seccomp.security.alpha.kubernetes.io",
-            ".spec.securityContext.seccompProfile.type",
+            ".spec.securityContext.seccompProfile",
             ".spec.containers[].securityContext.seccompProfile.type",
         ],
     ),
@@ -143,6 +158,7 @@ class Scanner(ScannerBase):
         4: "scan summary has errors but no violations",
         5: "scan summary has errors and violations",
     }
+    PATH_COLUMNS = ["checked_path"]
     # can be integrated with K8s admission webhooks: https://runterrascan.io/docs/integrations/_print/#overview
 
     @classmethod
