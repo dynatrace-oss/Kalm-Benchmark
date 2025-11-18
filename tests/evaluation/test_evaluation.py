@@ -575,7 +575,7 @@ class TestDataframeMerge:
         df1 = pd.DataFrame({"pk": pk_left, "sk": sk_left, "left": data_left})
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk")
+        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
 
         # Check that we have the expected number of rows (one match + extras)
         assert len(df_res) == 7  # 1 match + 6 extras
@@ -657,7 +657,7 @@ class TestDataframeMerge:
         data_right = [1, 2, 3]
         df2 = pd.DataFrame({"pk": pk_right, "sk": sk_right, "right": data_right})
 
-        df_res = merge_dataframes(df1, df2, id_column="pk")
+        df_res = merge_dataframes(df1, df2, id_column="pk", path_column_1="sk", path_column_2="sk")
         df_expect = pd.DataFrame(
             {
                 "pk": pk_right,
