@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "3.5"
+    ccss_severity: Low
     check_path: ClusterRole.rules[].verbs|Role.rules[].verbs|.rules[].verbs
     description: Attackers can use destructive permissions to destroy data and resources
     expected: alert

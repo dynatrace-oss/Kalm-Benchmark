@@ -1,3 +1,4 @@
+from kalm_benchmark.evaluation.ccss.ccss_models import MisconfigurationFinding, SourceType
 from loguru import logger
 
 from kalm_benchmark.utils.helm_metrics import create_helm_evaluation_summary
@@ -8,7 +9,7 @@ from ..utils.constants import (
 )
 from .ccss.ccss_service import CCSSService
 from .database import KalmDatabase
-from .evaluation import EvaluationSummary, create_summary, evaluate_scanner
+from .evaluation import EvaluationSummary, consolidate_scan_evaluation_results, create_summary, unique_results_enriched_with_ccss, evaluate_scanner
 from .scanner.scanner_evaluator import CheckResult
 from .scanner_manager import SCANNERS
 
@@ -86,6 +87,8 @@ class EvaluationService:
                     # Use traditional benchmark evaluation
                     df = evaluate_scanner(scanner, results)
                     summary = create_summary(df, version=scanner_version)
+                    unique_scan_checks = unique_results_enriched_with_ccss(results, df)
+                    self.ccss_service.process_benchmark_evaluation(scanner_name=scanner_name, unique_scan_checks=unique_scan_checks)
 
                 if summary:
                     # Get scan timestamp from database
@@ -231,6 +234,8 @@ class EvaluationService:
         self,
         scanner_name: str,
         results: list[CheckResult],
+        scanner_version: str | None = None,
+        source_identifier: str | None = None,
         source_type: str = "manifest",
         is_research_dataset: bool = False,
     ) -> str:
@@ -245,7 +250,7 @@ class EvaluationService:
         :param is_research_dataset: Whether results are part of research dataset
         :return: Scan run identifier for the processed results
         """
-        scan_run_id = self.save_scanner_results(scanner_name, results)
+        scan_run_id = self.save_scanner_results(scanner_name, results, scanner_version=scanner_version, source_file=source_identifier)
 
         if any(hasattr(r, "severity") and r.severity for r in results):
             findings = self.ccss_service.process_scanner_results(

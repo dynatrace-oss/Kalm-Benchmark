@@ -132,6 +132,7 @@ class TestResultSummarization:
             {
                 Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-1",
+                Col.CheckId: "POD-001-1",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
                 Col.ResultType: res_type,
@@ -142,6 +143,7 @@ class TestResultSummarization:
             {
                 Col.BenchmarkId: "POD-001",
                 Col.ScannerCheckId: "check-2",
+                Col.CheckId: "POD-001-2",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
                 Col.ResultType: res_type,

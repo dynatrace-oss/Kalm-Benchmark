@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -24,6 +26,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -45,6 +49,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -67,6 +73,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -88,6 +96,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -110,6 +120,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -131,6 +143,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -153,6 +167,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -174,6 +190,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -196,6 +214,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -217,6 +237,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -239,6 +261,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -260,6 +284,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -282,6 +308,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -303,6 +331,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -325,6 +355,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -346,6 +378,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -368,6 +402,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -389,6 +425,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert
@@ -411,6 +449,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRoleBinding.subjects[].name|RoleBinding.subjects[].name|.subjects[].name
     description: ""
     expected: alert

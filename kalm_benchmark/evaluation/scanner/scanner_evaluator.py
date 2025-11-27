@@ -28,6 +28,8 @@ class CheckResult:
     expected: Optional[str] = None
     checked_path: Optional[str] = None
     severity: Optional[str] = None
+    ccss_score: Optional[float] = None
+    ccss_severity: Optional[str] = None
     kind: Optional[str] = None
     namespace: Optional[str] = None  # None means it's a cluster resource check
     details: Optional[str] = None

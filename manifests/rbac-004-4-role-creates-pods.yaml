@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources
     description: The ability to create pods in a cluster opens up possibilities for privilege escalation
     expected: alert

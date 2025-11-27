@@ -104,8 +104,15 @@ def normalize_severity_dataframe(severity_data: list, has_ccss_column: bool) -> 
     """
     severity_list = []
     for row in severity_data:
-        scanner_name, severity, count = row["scanner_name"], row["severity"], row["finding_count"]
+        scanner_name, severity, count = row["scanner_name"], row["severity"].lower(), row["finding_count"]
         avg_ccss = row.get("avg_ccss_score") if has_ccss_column else None
+        if "(" in severity and ")" in severity:
+            try:
+                severity = severity.split("(")[0].strip()
+            except (IndexError, ValueError):
+                pass
+
+
         score = CCSSConverter._severity_to_score(severity)
 
         # Normalize scanner names to match the SCANNERS registry

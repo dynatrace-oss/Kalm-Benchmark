@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   annotations:
+    ccss_score: "3.5"
+    ccss_severity: Low
     check_path: NetworkPolicy.spec.podSelector|.spec.podSelector
     expected: alert
   labels:
@@ -15,6 +17,8 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   annotations:
+    ccss_score: "3.5"
+    ccss_severity: Low
     check_path: NetworkPolicy.spec.podSelector|.spec.podSelector
     expected: alert
   labels:
@@ -35,6 +39,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "3.5"
+    ccss_severity: Low
     check_path: NetworkPolicy.spec.podSelector|.spec.podSelector
     expected: alert
   labels:
@@ -47,6 +53,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "3.5"
+    ccss_severity: Low
     check_path: NetworkPolicy.spec.podSelector|.spec.podSelector
     expected: alert
   labels:

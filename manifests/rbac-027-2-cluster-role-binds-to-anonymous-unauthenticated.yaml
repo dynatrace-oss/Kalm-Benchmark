@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
+    ccss_score: "4.0"
+    ccss_severity: Medium
     check_path: RoleBinding.roleRef.name|ClusterRoleBinding.roleRef.name|.roleRef.name
     description: Bindings to system:anonymous or system:unauthenticated should be reviewed
     expected: alert

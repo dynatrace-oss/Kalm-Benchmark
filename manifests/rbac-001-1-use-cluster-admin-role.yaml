@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   annotations:
+    ccss_score: "9.0"
+    ccss_severity: Critical
     check_path: RoleBinding.roleRef.name|ClusterRoleBinding.roleRef.name|.roleRef.name
     description: The role cluster-admin provides wide-ranging powers over the environment and should be used only where and when needed
     expected: alert

@@ -26,6 +26,7 @@ class TestCCSSModels:
             resource_type="Pod",
             resource_name="test-pod",
             scanner_name="test-scanner",
+            scanner_check_id="CHK-001",
             native_severity="HIGH",
             native_score=7.0,
             ccss_score=6.5,
@@ -46,6 +47,7 @@ class TestCCSSModels:
             resource_type="Deployment",
             resource_name="test-deployment",
             scanner_name="trivy",
+            scanner_check_id="TRV-002",
             native_severity="MEDIUM",
         )
 
@@ -67,6 +69,7 @@ class TestCCSSModels:
             total_findings=100,
             avg_alignment_score=0.82,
             score_variance=0.15,
+            aligned_categories=["workload", "network", "iam", "data"],
             best_aligned_categories=["workload", "network"],
             worst_aligned_categories=["iam", "data"],
             overall_ccss_correlation=0.78,
@@ -115,6 +118,7 @@ class TestCCSSDatabase:
                 resource_type="Pod",
                 resource_name="pod-1",
                 scanner_name="trivy",
+                scanner_check_id="TRV-001",
                 native_severity="HIGH",
                 native_score=8.0,
                 ccss_score=7.5,
@@ -127,6 +131,7 @@ class TestCCSSDatabase:
                 resource_type="Service",
                 resource_name="svc-1",
                 scanner_name="checkov",
+                scanner_check_id="CKV-001",
                 native_severity="MEDIUM",
                 native_score=5.0,
                 ccss_score=4.8,
@@ -155,6 +160,7 @@ class TestCCSSDatabase:
             resource_type="Pod",
             resource_name="stats-pod",
             scanner_name="test-scanner",
+            scanner_check_id="STAT-001",
             native_severity="HIGH",
             alignment_score=0.75,
         )
@@ -255,6 +261,7 @@ class TestCCSSService:
                 resource_type="Pod",
                 resource_name="sim-pod",
                 scanner_name="test-scanner",
+                scanner_check_id="SIM-001",
                 native_severity="HIGH",
                 native_score=7.0,
             )

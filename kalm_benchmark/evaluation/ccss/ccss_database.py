@@ -65,9 +65,11 @@ class CCSSDatabase:
                     resource_type TEXT NOT NULL,
                     resource_name TEXT NOT NULL,
                     scanner_name TEXT NOT NULL,
+                    scanner_check_id TEXT NOT NULL,
                     native_severity TEXT NOT NULL,
                     native_score REAL,
                     ccss_score REAL,
+                    kalm_check_id TEXT NOT NULL,
                     alignment_score REAL,
                     manifest_source TEXT DEFAULT '',
                     category TEXT DEFAULT '',
@@ -88,9 +90,12 @@ class CCSSDatabase:
                     total_findings INTEGER NOT NULL,
                     avg_alignment_score REAL NOT NULL,
                     score_variance REAL NOT NULL,
+                    aligned_categories TEXT NOT NULL,
                     best_aligned_categories TEXT NOT NULL,
                     worst_aligned_categories TEXT NOT NULL,
                     overall_ccss_correlation REAL NOT NULL,
+                    mean_squared_deviation REAL,
+                    mean_signed_deviation REAL,
                     evaluation_run_id TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (evaluation_run_id) REFERENCES ccss_evaluation_runs (id)
@@ -206,10 +211,10 @@ class CCSSDatabase:
                 cursor.execute(
                     """
                     INSERT OR REPLACE INTO misconfiguration_findings
-                    (id, title, description, resource_type, resource_name, scanner_name,
-                     native_severity, native_score, ccss_score, alignment_score,
+                    (id, title, description, resource_type, resource_name, scanner_name, scanner_check_id,
+                     native_severity, native_score, ccss_score, kalm_check_id, alignment_score,
                      manifest_source, category, source_type, is_research_dataset, evaluation_run_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         finding.id,
@@ -218,9 +223,11 @@ class CCSSDatabase:
                         finding.resource_type,
                         finding.resource_name,
                         finding.scanner_name,
+                        finding.scanner_check_id,
                         finding.native_severity,
                         finding.native_score,
                         finding.ccss_score,
+                        finding.kalm_check_id,
                         finding.alignment_score,
                         finding.manifest_source,
                         finding.category,
@@ -251,9 +258,10 @@ class CCSSDatabase:
             cursor.execute(
                 """
                 INSERT INTO scanner_ccss_alignment
-                (id, scanner_name, total_findings, avg_alignment_score, score_variance,
-                 best_aligned_categories, worst_aligned_categories, overall_ccss_correlation, evaluation_run_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, scanner_name, total_findings, avg_alignment_score, score_variance, aligned_categories,
+                 best_aligned_categories, worst_aligned_categories, overall_ccss_correlation,
+                mean_squared_deviation, mean_signed_deviation, evaluation_run_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     alignment_id,
@@ -261,9 +269,12 @@ class CCSSDatabase:
                     alignment.total_findings,
                     alignment.avg_alignment_score,
                     alignment.score_variance,
+                    json.dumps(alignment.aligned_categories),
                     json.dumps(alignment.best_aligned_categories),
                     json.dumps(alignment.worst_aligned_categories),
                     alignment.overall_ccss_correlation,
+                    alignment.mean_squared_deviation,
+                    alignment.mean_signed_deviation,
                     evaluation_run_id,
                 ),
             )
@@ -301,6 +312,7 @@ class CCSSDatabase:
                 query += " AND evaluation_run_id = ?"
                 params.append(evaluation_run_id)
 
+            query += " GROUP BY scanner_name, kalm_check_id ORDER BY scanner_name, kalm_check_id"
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
@@ -313,9 +325,11 @@ class CCSSDatabase:
                     resource_type=row["resource_type"],
                     resource_name=row["resource_name"],
                     scanner_name=row["scanner_name"],
+                    scanner_check_id = row["scanner_check_id"],
                     native_severity=row["native_severity"],
                     native_score=row["native_score"],
                     ccss_score=row["ccss_score"],
+                    kalm_check_id = row["kalm_check_id"],
                     alignment_score=row["alignment_score"],
                     manifest_source=row["manifest_source"] or "",
                     category=row["category"] or "",
@@ -342,7 +356,7 @@ class CCSSDatabase:
                 query += " AND evaluation_run_id = ?"
                 params.append(evaluation_run_id)
 
-            query += " ORDER BY avg_alignment_score DESC"
+            query += " GROUP BY scanner_name ORDER BY avg_alignment_score DESC"
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
@@ -354,9 +368,12 @@ class CCSSDatabase:
                     total_findings=row["total_findings"],
                     avg_alignment_score=row["avg_alignment_score"],
                     score_variance=row["score_variance"],
+                    aligned_categories=json.loads(row["aligned_categories"]),
                     best_aligned_categories=json.loads(row["best_aligned_categories"]),
                     worst_aligned_categories=json.loads(row["worst_aligned_categories"]),
                     overall_ccss_correlation=row["overall_ccss_correlation"],
+                    mean_squared_deviation=row["mean_squared_deviation"],
+                    mean_signed_deviation=row["mean_signed_deviation"],
                     evaluation_run_id=row["evaluation_run_id"],
                 )
                 alignments.append(alignment)

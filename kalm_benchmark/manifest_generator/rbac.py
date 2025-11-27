@@ -1,6 +1,16 @@
 from constructs import Construct
 from strenum import StrEnum
 
+from kalm_benchmark.utils.scoring import (
+    CcssAccessComplexity,
+    CcssAccessVector,
+    CcssAuthentication,
+    CcssAvailabilityImpact,
+    CcssConfidentialityImpact,
+    CcssIntegrityImpact,
+    ccss_score_calculator,
+)
+
 from .cdk8s_imports import k8s
 from .check import Check
 from .constants import (
@@ -79,6 +89,7 @@ class RBACCheck(Check):
         subject: SubjectConfig = None,
         role: RoleConfig = None,
         binding: RBACBindingConfig = None,
+        ccss: float = 0.0,
         **kwargs,
     ):
         """
@@ -93,7 +104,7 @@ class RBACCheck(Check):
         :param role: configuration for the RBAC role settings
         :param binding: configuration for the RBAC binding settings
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path, standards, forwarded_kwargs=kwargs)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards, forwarded_kwargs=kwargs, ccss=ccss)
 
         subject, role, binding = self._get_configurations(subject, role, binding)
         subj_name = self._create_service_account_if_needed(subject)
@@ -320,6 +331,7 @@ def gen_rbac(app) -> None:
                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_2_a.value]},
                        {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
         # wildcards for both resource and verbs affect this as well, but it will be covered in RBAC-003
@@ -343,6 +355,7 @@ def gen_rbac(app) -> None:
                            {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]},
                            {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                            {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         RBACCheck(
@@ -357,6 +370,7 @@ def gen_rbac(app) -> None:
                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
                        {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
         RBACCheck(
             app,
@@ -370,6 +384,7 @@ def gen_rbac(app) -> None:
                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
                        {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
         RBACCheck(
             app,
@@ -385,6 +400,7 @@ def gen_rbac(app) -> None:
                        {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                        {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
                        {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
         # wildcard variants are covered with RBAC-003
@@ -409,6 +425,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_rbac.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         RBACCheck(
@@ -429,6 +446,7 @@ def gen_rbac(app) -> None:
                 name=f"{pfx}role-attaches-to-pods", is_cluster_role=is_cluster, resources="pods/attach", verbs="create"
             ),
             standards=[],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
         RBACCheck(
@@ -447,7 +465,7 @@ def gen_rbac(app) -> None:
             ],
             role=RoleConfig(name=f"{pfx}role-exec-into-pods", is_cluster_role=is_cluster, resources="pods/exec", verbs="create"),
             standards=[{StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9010.value]}],
-
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
         RBACCheck(
@@ -476,6 +494,7 @@ def gen_rbac(app) -> None:
                         {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_2_a.value]},
                         {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_service_account_tokens.value, K8sChecklistControls.asc_sa_service_account.value]},
                         {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
         for j, verb in enumerate(["get", "list", "watch"]):
@@ -497,6 +516,7 @@ def gen_rbac(app) -> None:
                     name=f"{pfx}pod-forward", is_cluster_role=is_cluster, resources="pods/portforward", verbs="create"
                 ),
                 standards=[],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.NONE),
             )
 
         RBACCheck(
@@ -528,6 +548,7 @@ def gen_rbac(app) -> None:
                         {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
                         {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_privilege_escalation.value]},
                         {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
         for j, res in enumerate(["rolebindings", "clusterrolebindings", "roles", "clusterroles"]):
@@ -554,6 +575,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_privilege_escalation.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         for j, res in enumerate(["rolebindings", "clusterrolebindings", "roles", "clusterroles"]):
@@ -580,6 +602,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_privilege_escalation.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         for j, verb in enumerate(["get", "list", "watch"]):
@@ -613,6 +636,7 @@ def gen_rbac(app) -> None:
                     verbs=verb,
                 ),
                 standards=[],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         for j, verb in enumerate(["delete", "deletecollection"]):
@@ -643,6 +667,7 @@ def gen_rbac(app) -> None:
                     verbs=verb,
                 ),
                 standards=[],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
             )
 
         for j, verb in enumerate(["delete", "deletecollection"]):
@@ -660,6 +685,7 @@ def gen_rbac(app) -> None:
                     name=f"{pfx}-destroy-events", is_cluster_role=is_cluster, resources="events", verbs=verb
                 ),
                 standards=[],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.NONE),
             )
 
         for j, verb in enumerate(["update", "patch"]):
@@ -677,6 +703,7 @@ def gen_rbac(app) -> None:
                     name=f"{pfx}role-poison-dns", is_cluster_role=is_cluster, resources="configmaps", verbs=verb
                 ),
                 standards=[],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         for j, verb in enumerate(["create", "update", "patch"]):
@@ -702,6 +729,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                             {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         for j, verb in enumerate(["create", "update", "patch"]):
@@ -722,6 +750,7 @@ def gen_rbac(app) -> None:
                     name=f"{pfx}role-{verb}-netpol", is_cluster_role=is_cluster, resources="networkpolicies", verbs=verb
                 ),
                 standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a7.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
             )
 
         for j, verb in enumerate(["get"]):
@@ -751,6 +780,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                             {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
 
         for j, verb in enumerate(["create", "update", "patch", "delete"]):
@@ -782,6 +812,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                             {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+                ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
             )
             
         RBACCheck(
@@ -810,6 +841,7 @@ def gen_rbac(app) -> None:
                             {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a9.value]}, 
                             {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                             {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
         RBACCheck(
@@ -842,6 +874,7 @@ def gen_rbac(app) -> None:
                         {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_1_5_b.value]},
                         {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
                         {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ac_certificate_signing.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
         RBACCheck(
@@ -854,6 +887,7 @@ def gen_rbac(app) -> None:
             role=RoleConfig(name="system:anonymous", exists=True, is_cluster_role=True),
             binding=RBACBindingConfig(is_cluster_binding=is_cluster),
             standards=[{StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_review_bindings.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
         RBACCheck(
@@ -866,6 +900,7 @@ def gen_rbac(app) -> None:
             role=RoleConfig(name="system:unauthenticated", exists=True, is_cluster_role=True),
             binding=RBACBindingConfig(is_cluster_binding=is_cluster),
             standards=[{StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_rbac_review_bindings.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
     RBACCheck(
@@ -885,6 +920,7 @@ def gen_rbac(app) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_aa_rbac.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s2_rbac.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     roles = [f"role-{i}-too-much" for i in range(10)]
@@ -903,6 +939,7 @@ def gen_rbac(app) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a3.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_2_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9003.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # for subject_ns in ["default", "kube-system"]:

@@ -3,6 +3,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "7.1"
+    ccss_severity: High
     check_path: .spec.containers[].securityContext.windowsOptions.hostProcess
     description: A Windows container making use of the hostProcess flag can interact with the underlying Windows cluster node. As per the Kubernetes documentation, this provides "privileged access" to the Windows node.
     expected: alert
@@ -17,6 +19,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "7.1"
+    ccss_severity: High
     check_path: .spec.containers[].securityContext.windowsOptions.hostProcess
     description: A Windows container making use of the hostProcess flag can interact with the underlying Windows cluster node. As per the Kubernetes documentation, this provides "privileged access" to the Windows node.
     expected: alert

@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.0"
+    ccss_severity: Medium
     check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
     description: ()
     expected: alert

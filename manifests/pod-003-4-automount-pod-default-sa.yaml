@@ -2,6 +2,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
     description: enabling automounting at Pod level takes precedence over SA
     expected: alert
@@ -16,6 +18,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
     description: enabling automounting at Pod level takes precedence over SA
     expected: alert

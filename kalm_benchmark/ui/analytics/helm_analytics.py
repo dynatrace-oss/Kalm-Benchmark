@@ -167,6 +167,7 @@ def render_helm_chart_security_profile(unified_service, chart_name: str):
         st.markdown("**🚨 Severity Distribution**")
         if profile["severity_distribution"]:
             severity_df = pd.DataFrame(profile["severity_distribution"])
+            severity_df["severity"] = severity_df["severity"].str.upper().str.split("(").str[0].str.strip()
 
             chart = (
                 alt.Chart(severity_df)

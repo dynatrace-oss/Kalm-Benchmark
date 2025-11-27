@@ -3,6 +3,8 @@ kind: ServiceAccount
 automountServiceAccountToken: true
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
     description: allowing automounting on SA leads to all pods without explicit setting to mount it automatically
     expected: alert
@@ -17,6 +19,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: .spec.automountServiceAccountToken|.automountServiceAccountToken
     description: allowing automounting on SA leads to all pods without explicit setting to mount it automatically
     expected: alert

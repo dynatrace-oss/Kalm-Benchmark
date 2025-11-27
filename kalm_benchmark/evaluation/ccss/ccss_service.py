@@ -24,6 +24,20 @@ class CCSSService:
         self.db = CCSSDatabase(db_path)
         self.converter = CCSSConverter()
 
+    def process_benchmark_evaluation(self, scanner_name: str, unique_scan_checks: list[CheckResult]) -> list[MisconfigurationFinding]:
+        """Process all stored scanner results for benchmark evaluations.
+        """                    
+        ccss_run_id = self.create_evaluation_run(SourceType.Manifest)
+        findings = self.process_scanner_results(
+                        scanner_name=scanner_name,
+                        check_results=unique_scan_checks,
+                        evaluation_run_id=ccss_run_id,
+                    )
+        self.calculate_scanner_alignment(scanner_name=scanner_name, evaluation_run_id=ccss_run_id)
+
+        logger.info(f"Processed {len(findings)} CCSS findings for {scanner_name}")
+        return findings
+
     def create_evaluation_run(self, source_type: SourceType, **kwargs) -> str:
         """Create a new CCSS evaluation run.
 
@@ -154,18 +168,24 @@ class CCSSService:
         category_averages = {cat: statistics.mean(scores) for cat, scores in category_scores.items()}
         sorted_categories = sorted(category_averages.items(), key=lambda x: x[1], reverse=True)
 
+        aligned_categories = category_averages
         best_categories = [cat for cat, _ in sorted_categories[:3]]
         worst_categories = [cat for cat, _ in sorted_categories[-3:]]
 
         correlation = self._calculate_simple_correlation(scored_findings)
+        mean_squared_deviation = self._calculate_mean_squared_deviation(scored_findings)
+        mean_signed_deviation = self._calculate_mean_signed_deviation(scored_findings)
 
         alignment = ScannerCCSSAlignment(
             scanner_name=scanner_name,
             total_findings=len(findings),
             avg_alignment_score=avg_alignment,
             score_variance=score_variance,
+            aligned_categories=aligned_categories,
             best_aligned_categories=best_categories,
             worst_aligned_categories=worst_categories,
+            mean_squared_deviation=mean_squared_deviation,
+            mean_signed_deviation=mean_signed_deviation,
             overall_ccss_correlation=correlation,
             evaluation_run_id=evaluation_run_id,
         )
@@ -173,6 +193,48 @@ class CCSSService:
         self.db.save_scanner_alignment(alignment, evaluation_run_id)
 
         return alignment
+
+    def _calculate_mean_signed_deviation(self, findings: list[MisconfigurationFinding]) -> float:
+        """Calculate mean signed deviation between native and CCSS scores.
+
+        :param findings: list of findings with both native and CCSS scores
+        :return: Mean signed deviation value
+        """
+        if not findings:
+            return 0.0
+
+        signed_diffs = [
+            (f.native_score - f.ccss_score)
+            for f in findings
+            if f.native_score is not None and f.ccss_score is not None
+        ]
+
+        if not signed_diffs:
+            return 0.0
+
+        return sum(signed_diffs) / len(signed_diffs)
+
+
+    def _calculate_mean_squared_deviation(self, findings: list[MisconfigurationFinding]) -> float:
+        """Calculate mean squared deviation between native and CCSS scores.
+
+        :param findings: list of findings with both native and CCSS scores
+        :return: Mean squared deviation value
+        """
+        if not findings:
+            return 0.0
+
+        squared_diffs = [
+            (f.native_score - f.ccss_score) ** 2
+            for f in findings
+            if f.native_score is not None and f.ccss_score is not None
+        ]
+
+        if not squared_diffs:
+            return 0.0
+
+        return sum(squared_diffs) / len(squared_diffs)
+
 
     def _calculate_simple_correlation(self, findings: list[MisconfigurationFinding]) -> float:
         """Simple Pearson correlation calculation between native and CCSS scores.
