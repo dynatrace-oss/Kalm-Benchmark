@@ -679,22 +679,31 @@ def unique_results_enriched_with_ccss(results: list[CheckResult], df: pd.DataFra
     """
     _, df_unique_checks_no_extra = consolidate_scan_evaluation_results(df)
     df_scanner_findings = (
-        df_unique_checks_no_extra[(df_unique_checks_no_extra["scanner_check_id"] != "-") & df_unique_checks_no_extra[Col.CcssScore].notnull()].groupby(["scanner_check_id", "severity"])
+        df_unique_checks_no_extra[
+            (df_unique_checks_no_extra["scanner_check_id"] != "-") & 
+            df_unique_checks_no_extra[Col.CcssScore].notnull()
+        ]
+        .groupby(["scanner_check_id", "severity"])
         .apply(_consolidate_conflicting_checks)
         .reset_index(drop=True)
     )
 
+    findings_lookup = {
+        row[Col.ScannerCheckId]: row
+        for _, row in df_scanner_findings.iterrows()
+    }
+
     unique_scan_checks = dict()
 
     for res in results:
-        matching_row = df_scanner_findings[(df_scanner_findings[Col.ScannerCheckId] == res.scanner_check_id) & (df_scanner_findings[Col.CcssScore].notnull())]
-        if not matching_row.empty:
-            res.ccss_score = matching_row.iloc[0][Col.CcssScore]
-            res.ccss_severity = matching_row.iloc[0][Col.CcssSeverity]
-            if res.check_id and matching_row.iloc[0][Col.CheckId] == res.check_id.upper():
+        matching_row = findings_lookup.get(res.scanner_check_id)
+        if matching_row is not None and pd.notna(matching_row[Col.CcssScore]):
+            res.ccss_score = matching_row[Col.CcssScore]
+            res.ccss_severity = matching_row[Col.CcssSeverity]
+            if res.check_id and matching_row[Col.CheckId] == res.check_id.upper():
                 unique_scan_checks[res.scanner_check_id] = res
 
-    return unique_scan_checks.values()
+    return list(unique_scan_checks.values())
 
 
 def consolidate_scan_evaluation_results(df: pd.DataFrame) -> pd.DataFrame:

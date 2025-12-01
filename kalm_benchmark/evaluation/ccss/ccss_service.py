@@ -209,10 +209,7 @@ class CCSSService:
             if f.native_score is not None and f.ccss_score is not None
         ]
 
-        if not signed_diffs:
-            return 0.0
-
-        return sum(signed_diffs) / len(signed_diffs)
+        return sum(signed_diffs) / len(signed_diffs) if signed_diffs else 0.0
 
 
     def _calculate_mean_squared_deviation(self, findings: list[MisconfigurationFinding]) -> float:
@@ -230,10 +227,7 @@ class CCSSService:
             if f.native_score is not None and f.ccss_score is not None
         ]
 
-        if not squared_diffs:
-            return 0.0
-
-        return sum(squared_diffs) / len(squared_diffs)
+        return sum(squared_diffs) / len(squared_diffs) if squared_diffs else 0.0
 
 
     def _calculate_simple_correlation(self, findings: list[MisconfigurationFinding]) -> float:

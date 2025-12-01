@@ -285,8 +285,10 @@ def show_scanner_check_details(ccss_service: CCSSService, evaluation_run_id: str
     df_matrix = pd.DataFrame(matrix_data)
 
     heatmap_data = df_matrix.pivot(index="Kalm Check ID", columns="Scanner", values="Native Severity")
-    heatmap_data.insert(1, "Mean", heatmap_data[[i for i in list(heatmap_data.columns) if i not in ['KALM', "Kalm Check ID"]]].mean(axis=1))
-    heatmap_data.insert(2, "Median", heatmap_data[[i for i in list(heatmap_data.columns) if i not in ['KALM', "Kalm Check ID", "Mean"]]].median(axis=1))
+    scanner_cols = [col for col in heatmap_data.columns if col not in ["KALM", "Kalm Check ID"]]
+    heatmap_data.insert(1, "Mean", heatmap_data[scanner_cols].mean(axis=1))
+    heatmap_data.insert(2, "Median", heatmap_data[scanner_cols].median(axis=1))
+    heatmap_data.insert(3, "Variance", heatmap_data[scanner_cols].var(axis=1))
 
     styled_heatmap = heatmap_data.style.background_gradient(cmap="cividis", vmin=0, vmax=10).highlight_null("white")
     st.dataframe(styled_heatmap, use_container_width=True)

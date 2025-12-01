@@ -1,5 +1,9 @@
 from enum import Enum
 
+# CCSS (Common Cybersecurity Scoring System) Enums and Scoring Functions
+# Values and formulas are based on the CCSS specification
+# Reference: https://www.nist.gov/publications/common-configuration-scoring-system-ccss-metrics-software-security-configuration
+
 class CcssAccessVector(float, Enum):
     NETWORK = 1.0
     ADJACENT = 0.646
