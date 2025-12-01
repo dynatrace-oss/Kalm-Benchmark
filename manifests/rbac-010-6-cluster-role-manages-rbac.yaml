@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
+    ccss_score: "9.0"
+    ccss_severity: Critical
     check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
     description: Attackers can escalate privileges if they can update roles
     expected: alert

@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: NetworkPolicy.spec.egress[].to[].ipBlock|.spec.egress[].to[].ipBlock
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting sensitive cloud infrastructure']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9018']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Access from the workloads to the cloud metadata API is filtered.']}]"
@@ -16,6 +18,8 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: NetworkPolicy.spec.egress[].to[].ipBlock|.spec.egress[].to[].ipBlock
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting sensitive cloud infrastructure']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9018']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Access from the workloads to the cloud metadata API is filtered.']}]"
@@ -34,6 +38,8 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: NetworkPolicy.spec.egress[].to[].ipBlock|.spec.egress[].to[].ipBlock
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting sensitive cloud infrastructure']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9018']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Access from the workloads to the cloud metadata API is filtered.']}]"
@@ -56,6 +62,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: NetworkPolicy.spec.egress[].to[].ipBlock|.spec.egress[].to[].ipBlock
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting sensitive cloud infrastructure']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9018']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Access from the workloads to the cloud metadata API is filtered.']}]"
@@ -69,6 +77,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: NetworkPolicy.spec.egress[].to[].ipBlock|.spec.egress[].to[].ipBlock
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Protecting sensitive cloud infrastructure']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9018']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Access from the workloads to the cloud metadata API is filtered.']}]"

@@ -2,6 +2,7 @@ from cdk8s import Chart
 from constructs import Construct
 
 from ..utils.data.validation import sanitize_kubernetes_name as sanitize_name
+from kalm_benchmark.utils.scoring import ccss_severity_from_base_score
 from .cdk8s_imports import k8s
 from .constants import MAIN_NS, CheckKey, CheckStatus
 
@@ -24,6 +25,7 @@ class Check(Chart):
         forwarded_kwargs: dict | None = None,  # don't process other kwargs for the resources
         namespace: str = MAIN_NS,
         annotations: dict | bool = True,
+        ccss: float | None = None,
     ):
         """
         Initialize a new check with the specified meta information
@@ -59,6 +61,11 @@ class Check(Chart):
                 annotations = {}
             annotations["standards"] = str(standards)
 
+        if ccss is not None:
+            if annotations is None:
+                annotations = {}
+            annotations["ccss_score"] = str(ccss)
+            annotations["ccss_severity"] = ccss_severity_from_base_score(ccss)
 
         self.meta = Meta(
             name=self.name,

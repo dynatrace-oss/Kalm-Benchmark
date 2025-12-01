@@ -2,6 +2,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   annotations:
+    ccss_score: "2.1"
+    ccss_severity: Low
     check_path: .metadata.ownerReferences|.kind
     description: Pods shouldn't be deployed without a resource managing it
     expected: alert
@@ -15,6 +17,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
+    ccss_score: "2.1"
+    ccss_severity: Low
     check_path: .metadata.ownerReferences|.kind
     container.apparmor.security.beta.kubernetes.io/app: runtime/default
     container.seccomp.security.alpha.kubernetes.io/pod: runtime/default

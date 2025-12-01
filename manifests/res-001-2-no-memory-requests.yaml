@@ -3,6 +3,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "4.0"
+    ccss_severity: Medium
     check_path: .spec.containers[].resources.requests.memory|.spec.containers[].resources.requests
     description: not setting memory requests can lead to problems upon admission
     expected: alert
@@ -17,6 +19,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "4.0"
+    ccss_severity: Medium
     check_path: .spec.containers[].resources.requests.memory|.spec.containers[].resources.requests
     description: not setting memory requests can lead to problems upon admission
     expected: alert

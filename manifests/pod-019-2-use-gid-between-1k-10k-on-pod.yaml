@@ -3,6 +3,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "4.6"
+    ccss_severity: Medium
     check_path: .spec.securityContext.runAsGroup|.spec.containers[].securityContext.runAsGroup
     description: An GID above 1000 is enough to avoid running as a system user
     expected: pass
@@ -17,6 +19,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "4.6"
+    ccss_severity: Medium
     check_path: .spec.securityContext.runAsGroup|.spec.containers[].securityContext.runAsGroup
     description: An GID above 1000 is enough to avoid running as a system user
     expected: pass

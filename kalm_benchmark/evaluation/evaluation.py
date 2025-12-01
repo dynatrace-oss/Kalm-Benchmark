@@ -59,6 +59,8 @@ class Col(SnakeCaseStrEnum):
     ScannerCheckName = auto()
     ResultType = auto()
     Standards = auto()
+    CcssScore = auto()
+    CcssSeverity = auto()
     BenchmarkId = auto()
 
 
@@ -254,8 +256,6 @@ def evaluate_scanner(
         .pipe(classify_results)
         .pipe(order_columns)
     )
-
-    # print(f"Consolidated dataframe:\n {df.to_csv()}")
 
     return df
 
@@ -607,7 +607,8 @@ def tabulate_manifests(manifests: list[cdk8s.Chart]) -> pd.DataFrame:
         for standard_name in standards.keys():
             check[standard_name] = standards[standard_name]
 
-        # check[Col.Standards] = chart.meta.annotations.get(CheckKey.Standards, None)
+        check[Col.CcssScore] = chart.meta.annotations.get(CheckKey.CcssScore, None)
+        check[Col.CcssSeverity] = chart.meta.annotations.get(CheckKey.CcssSeverity, None)
 
         checks.append(check)
     return pd.DataFrame(checks)
@@ -669,23 +670,56 @@ class EvaluationSummary:
         return EvaluationSummary(**data)
 
 
-def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | None = None) -> EvaluationSummary:
-    """
-    Create a summary of the evaluation results.
+def unique_results_enriched_with_ccss(results: list[CheckResult], df: pd.DataFrame) -> list[CheckResult]:
+    """Enrich the scan results with CCSS information from the benchmark dataframe.
 
-    :param df: the dataframe containing the execution results
-    :param metric: the metrics used for the calculation of the score
-    :param version: the version of the tool when the results were created
-    :returns: a summary of the evaluation
+    :param results: the collection of scan results
+    :param df: the dataframe containing the benchmark information
+    :return: a dataframe with enriched CCSS information
+    """
+    _, df_unique_checks_no_extra = consolidate_scan_evaluation_results(df)
+    df_scanner_findings = (
+        df_unique_checks_no_extra[
+            (df_unique_checks_no_extra["scanner_check_id"] != "-") & 
+            df_unique_checks_no_extra[Col.CcssScore].notnull()
+        ]
+        .groupby(["scanner_check_id", "severity"])
+        .apply(_consolidate_conflicting_checks)
+        .reset_index(drop=True)
+    )
+
+    findings_lookup = {
+        row[Col.ScannerCheckId]: row
+        for _, row in df_scanner_findings.iterrows()
+    }
+
+    unique_scan_checks = dict()
+
+    for res in results:
+        matching_row = findings_lookup.get(res.scanner_check_id)
+        if matching_row is not None and pd.notna(matching_row[Col.CcssScore]):
+            res.ccss_score = matching_row[Col.CcssScore]
+            res.ccss_severity = matching_row[Col.CcssSeverity]
+            if res.check_id and matching_row[Col.CheckId] == res.check_id.upper():
+                unique_scan_checks[res.scanner_check_id] = res
+
+    return list(unique_scan_checks.values())
+
+
+def consolidate_scan_evaluation_results(df: pd.DataFrame) -> pd.DataFrame:
+    """Consolidate scan evaluation results by grouping and aggregating.
+
+    :param df: the dataframe containing the scan evaluation results
+    :return: a consolidated dataframe with aggregated results
     """
     # note the only information from the scanner is the 'got' column which is required for the score calculation
     # all others infos from the scanners are dropped to avoid pollution of the results
     # e.g., having countless scanner_checks per benchmark check
     relevant_columns = [Col.BenchmarkId, Col.Category, Col.PathToCheck, Col.CheckedPath, Col.ResultType, Col.Expected, Col.Got]
-    df_unique_checks = df[relevant_columns].drop(df[df[Col.PathToCheck] == "-"].index).drop_duplicates(relevant_columns, ignore_index=True)
+    df_unique_checks = df.drop(df[df[Col.PathToCheck] == "-"].index).drop_duplicates(relevant_columns, ignore_index=True)
 
-    # consolidate conflicting check results (e.g. TP, FP, ...) by taking the 'worst'
-    # i.e., FP in case of both TP and FP
+    # consolidate conflicting check results (e.g. TP, FP, ...) by taking the 'best'
+    # i.e., TP in case of both TP and FP
     df_unique_checks = (
         df_unique_checks.groupby(by=[Col.BenchmarkId, Col.ResultType])
         .apply(_consolidate_conflicting_checks)
@@ -695,6 +729,21 @@ def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | 
     # extra checks can have a huge impact on the score and coverage
     # and are outside of the benchmarks scope, distorting the true values
     df_no_extra = df_unique_checks[df_unique_checks[Col.ResultType] != ResultType.Extra]
+    
+    return df_unique_checks, df_no_extra
+
+
+def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | None = None) -> EvaluationSummary:
+    """
+    Create a summary of the evaluation results.
+
+    :param df: the dataframe containing the execution results
+    :param metric: the metrics used for the calculation of the score
+    :param version: the version of the tool when the results were created
+    :returns: a summary of the evaluation
+    """
+
+    df_unique_checks, df_no_extra = consolidate_scan_evaluation_results(df)
 
     return EvaluationSummary(
         version,
@@ -707,9 +756,9 @@ def create_summary(df: pd.DataFrame, metric: Metric = Metric.F1, version: str | 
 
 
 def _consolidate_conflicting_checks(df: pd.DataFrame):
-    """Consolidate conflicting check results by selecting the worst case scenario.
+    """Consolidate conflicting check results by selecting the best case scenario.
     When multiple results exist for the same check, prioritize cases where
-    the expected result differs from the actual result (i.e., false positives/negatives).
+    the expected result matches the actual result (i.e., true positives/negatives).
 
     :param df: the dataframe containing potentially conflicting check results
     :return: a single row representing the consolidated result
@@ -717,7 +766,7 @@ def _consolidate_conflicting_checks(df: pd.DataFrame):
     if len(df) == 1:
         return df
     else:
-        return df[df[Col.Expected] == df[Col.Got]].sort_values(by=Col.Expected, ascending=True).head(1)
+        return df[df[Col.Expected] == df[Col.Got]].sort_values(by=[Col.Expected, Col.CheckId, Col.Category], ascending=True).head(1)
 
 
 def check_summary_per_category(df: pd.DataFrame) -> dict:

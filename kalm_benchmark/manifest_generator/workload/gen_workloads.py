@@ -1,5 +1,15 @@
 from constructs import Construct
 
+from kalm_benchmark.utils.scoring import (
+    CcssAvailabilityImpact,
+    CcssConfidentialityImpact,
+    CcssIntegrityImpact,
+    CcssAccessVector,
+    CcssAuthentication,
+    CcssAccessComplexity,
+    ccss_score_calculator, 
+)
+
 from ..cdk8s_imports import k8s
 from ..check import Check
 from ..constants import (
@@ -44,6 +54,7 @@ class PodCheck(Check):
         descr: str = None,
         check_path: str | list[str] | None = None,
         standards: list[dict] | None = None,
+        ccss: float | None = None,
         **kwargs,
     ):
         """
@@ -58,7 +69,7 @@ class PodCheck(Check):
         :param check_path: the path(s) which is the essence of the check
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path, standards, kwargs, namespace)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards, kwargs, namespace, ccss=ccss)
         Workload(self, self.name, self.meta, **kwargs)
 
 
@@ -103,6 +114,7 @@ class VolumeMountCheck(Check):
         sub_path: str | None = None,
         read_only: bool | None = True,
         standards: list[dict] | None = None,
+        ccss: float | None = None,
         **kwargs,
     ):
         """
@@ -137,7 +149,8 @@ class VolumeMountCheck(Check):
                 ".spec.volumes[].hostPath.path",
                 ".spec.containers[].volumeMounts[]",
             ],
-            standards=standards
+            standards=standards,
+            ccss=ccss
         )  # id, name, expect, descr)
 
         empty_dir = k8s.EmptyDirVolumeSource() if volume_type == "empty" else None
@@ -207,6 +220,7 @@ class ConfigMapCheck(Check):
         data: dict | None = None,
         check_path: str | list[str] | None = None,
         standards: list[dict] | None = None,
+        ccss: float | None = None,
         **kwargs,
     ):
         """
@@ -220,7 +234,7 @@ class ConfigMapCheck(Check):
         :param data: a dictionary representing the content of the configmap
         :param kwargs: any additional keyword arguments will be passed on to the resource
         """
-        super().__init__(scope, check_id, name, expect, descr, check_path, standards)
+        super().__init__(scope, check_id, name, expect, descr, check_path, standards, ccss=ccss)
         k8s.KubeConfigMap(self, check_id, metadata=self.meta, data=data)
 
 
@@ -231,6 +245,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         "Unmanaged Pods are discouraged",
         descr="Pods shouldn't be deployed without a resource managing it",
         check_path=[".metadata.ownerReferences", ".kind"],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -266,6 +281,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                         StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, 
                         StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]
                     }],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL)
     )
     PodCheck(
         app,
@@ -301,6 +317,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                         StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, 
                         StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]
                     }],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     pod_sa_automount_combos = [
@@ -386,6 +403,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9025.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_service_account_tokens.value, K8sChecklistControls.asc_sa_service_account_token.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
     PodCheck(
@@ -398,6 +416,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a14.value]}, 
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_pp_isolated.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
     PodCheck(
         app,
@@ -410,6 +429,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a14.value]}, 
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_pp_isolated.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
     PodCheck(
         app,
@@ -422,6 +442,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a14.value]}, 
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_pp_isolated.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -431,7 +452,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         descr="Pods with high risk workloads can be assigned higher PriorityClasses to ensure reliability",
         scheduling=PodSchedulingConfig(priority_class=None),
         check_path=".spec.priorityClassName",
-        standards=[],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -443,7 +464,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         container=ContainerConfig(),  # Will use defaults, need to handle readiness_probe separately
         container_kwargs={"readiness_probe": None},
         check_path=".spec.containers[].readinessProbe",
-        standards=[],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -455,7 +476,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         container=ContainerConfig(),  # Will use defaults, need to handle liveness_probe separately
         container_kwargs={"liveness_probe": None},
         check_path=".spec.containers[].livenessProbe",
-        standards=[],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -473,6 +494,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -490,6 +512,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -507,6 +530,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -524,6 +548,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -542,6 +567,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
     PodCheck(
         app,
@@ -558,6 +584,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -575,6 +602,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
 #    PodCheck(
@@ -617,6 +645,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s5_unwanted_kernel_modules.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # TODO implement seccomp check
@@ -641,6 +670,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.sc_ps_seccomp.value, K8sChecklistControls.asc_lcs_seccomp.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # =============================== PodSecurityContext ======================================
@@ -655,6 +685,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_3.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # the hardened version in this benchmark prioritizes the run_as_user field,
@@ -744,6 +775,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_12_3_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_pl_run_as_non_root.value, K8sChecklistControls.asc_pl_less_privileged.value, K8sChecklistControls.sc_im_unprivileged_user.value, K8sChecklistControls.sc_im_start_unprivileged.value, K8sChecklistControls.sc_im_security_context.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
     # the configurations assume, that the user on the hardened pod
@@ -804,6 +836,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_12_3_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_pl_run_as_non_root.value, K8sChecklistControls.asc_pl_less_privileged.value, K8sChecklistControls.sc_im_unprivileged_user.value, K8sChecklistControls.sc_im_start_unprivileged.value, K8sChecklistControls.sc_im_security_context.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
     run_as_group_configs = [
@@ -859,6 +892,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_12_3_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_pl_run_as_non_root.value, K8sChecklistControls.asc_pl_less_privileged.value, K8sChecklistControls.sc_im_unprivileged_user.value, K8sChecklistControls.sc_im_start_unprivileged.value, K8sChecklistControls.sc_im_security_context.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
     for i, (sysctl, value) in enumerate(
@@ -876,6 +910,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             security=PodSecurityConfig(pod_security_context_kwargs={"sysctls": [k8s.Sysctl(name=sysctl, value=value)]}),
             check_path=".spec.securityContext.sysctls[]",
             standards=[],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
     # ============================= harden linux =============================
@@ -907,6 +942,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value, K8sChecklistControls.asc_lcs_selinux.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value, OwaspControls.s5_unwanted_kernel_modules.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -935,6 +971,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value, K8sChecklistControls.asc_lcs_selinux.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value, OwaspControls.s5_unwanted_kernel_modules.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
     PodCheck(
         app,
@@ -962,6 +999,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_lcs_apparmor.value, K8sChecklistControls.asc_lcs_selinux.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_pod_security_policies.value, OwaspControls.s5_unwanted_kernel_modules.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -988,6 +1026,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_9_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.sc_ps_seccomp.value, K8sChecklistControls.asc_lcs_seccomp.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # =================== Container checks ====================================
@@ -1017,6 +1056,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_6_1_a.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9026.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_finding_secrets.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1029,6 +1069,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         check_path=[".spec.containers[].imagePullPolicy"],
             standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_1_2_11.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ac_always_pull_images.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.ADJACENT, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.NONE),
     )
     for i, img_pull_policy in enumerate(["Never", "IfNotPresent"]):
         PodCheck(
@@ -1040,6 +1081,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
             check_path=[".spec.containers[].imagePullPolicy"],
             standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_1_2_11.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ac_always_pull_images.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.ADJACENT, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.NONE),
         )
 
     PodCheck(
@@ -1052,6 +1094,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         check_path=[".spec.containers[].image"],
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_im_sha256_digest.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1063,6 +1106,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         check_path=[".spec.containers[].image"],
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_im_sha256_digest.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1074,6 +1118,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         check_path=[".spec.containers[].image"],
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_im_sha256_digest.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # POD-029
@@ -1092,6 +1137,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.cis_benchmark.value, StandardsFields.version.value: CisBenchmarkVersions.v_1_12.value, StandardsFields.controls.value: [CisBenchmarkControls.cis_5_6_3.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9017.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1109,6 +1155,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_allow_privilege_escalation.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -1126,6 +1173,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_allow_privilege_escalation.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -1143,6 +1191,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -1162,6 +1211,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_privileged_false.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -1176,6 +1226,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_8_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_read_only_root_filesystem.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1190,6 +1241,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_8_2_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_cl_read_only_root_filesystem.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # taken from:
@@ -1213,6 +1265,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_drop_capabilities.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
     # taken from:
@@ -1239,6 +1292,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_drop_capabilities.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
         )
 
     PodCheck(
@@ -1259,7 +1313,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9011.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value, K8sChecklistControls.asc_cl_drop_capabilities.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_security_context.value]}],
-
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     
@@ -1277,7 +1331,8 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.bsi_k8s.value, StandardsFields.controls.value: [BsiK8sControls.app_4_4_a4.value]}, 
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value]},
-                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}]
+                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.HIGH, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     # ==================== pod resource requests/limits ===================
@@ -1299,6 +1354,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     VolumeMountCheck(
@@ -1314,6 +1370,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     VolumeMountCheck(
@@ -1329,6 +1386,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     files = [("azure", "/etc/kubernetes/azure.json")]
@@ -1350,6 +1408,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
     VolumeMountCheck(
@@ -1368,6 +1427,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     VolumeMountCheck(
@@ -1386,6 +1446,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     # this check requires special kubernetes version
@@ -1406,6 +1467,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_3_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9013.value, MsThreatMatrixControls.ms_m9016.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ps_security_standards_policy.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.NONE),
     )
 
     ConfigMapCheck(
@@ -1418,6 +1480,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_6_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9026.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_se_config_maps.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.LOCAL, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     # ================= Namespace checks ====================
@@ -1433,6 +1496,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242383.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_namespace_isolation.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.ADJACENT, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     for i, ns in enumerate(["kube-system", "kube-public"]):
@@ -1448,6 +1512,7 @@ def gen_workloads(app, main_ns: str, unrestricted_ns: str) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_stig.value, StandardsFields.controls.value: [K8sStigControls.v_242417.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_16_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_namespace_isolation.value]}],
+            ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
         )
 
 
@@ -1474,6 +1539,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
     PodCheck(
         app,
@@ -1488,6 +1554,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1504,6 +1571,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
     )
     PodCheck(
         app,
@@ -1518,6 +1586,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -1534,6 +1603,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
     PodCheck(
         app,
@@ -1548,6 +1618,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1564,6 +1635,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
     )
     PodCheck(
         app,
@@ -1578,6 +1650,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
     )
 
     PodCheck(
@@ -1593,6 +1666,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
     PodCheck(
         app,
@@ -1606,6 +1680,7 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL),
     )
 
     PodCheck(
@@ -1621,12 +1696,13 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
     )
     PodCheck(
         app,
         "RES-006-2",
         "no ephemeral storage limits",
-        descr="not setting ephemeral storage limit can suffocate the node by using all available CPU",
+        descr="not setting ephemeral storage limit can suffocate the node by using all available storage",
         container=ContainerConfig(resources=ContainerResourceConfig(limits_ephemeral_storage=None)),
         namespace=unrestricted_ns,
         check_path=[".spec.containers[].resources.limits.ephemeral-storage", ".spec.containers[].resources.limits"],
@@ -1634,4 +1710,5 @@ def resource_checks(app, main_ns: str, unrestricted_ns: str):
                    {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_11_1_a.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                    {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE),
     )

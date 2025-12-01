@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   annotations:
+    ccss_score: "6.5"
+    ccss_severity: Medium
     check_path: ClusterRole.rules[].resources|Role.rules[].resources|.rules[].resources|.rules[].resources.pods.exec|.rules[].resources.pods.attach
     description: Allowing wildcards violates principle of least privilege
     expected: alert

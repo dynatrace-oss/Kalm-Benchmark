@@ -1,6 +1,15 @@
 from constructs import Construct
 
 from kalm_benchmark.manifest_generator.gen_namespaces import NamespaceCheck
+from kalm_benchmark.utils.scoring import (
+    CcssAccessComplexity,
+    CcssAccessVector,
+    CcssAuthentication,
+    CcssAvailabilityImpact,
+    CcssConfidentialityImpact,
+    CcssIntegrityImpact,
+    ccss_score_calculator
+)
 
 from .cdk8s_imports import k8s
 from .check import Check
@@ -217,6 +226,7 @@ def gen_pod_security_admission_checks(app) -> None:
         pod_security_admission_mode=None,
         pod_security_level=None,
         standards=[],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL)
     )
 
     NamespaceCheck(
@@ -229,6 +239,7 @@ def gen_pod_security_admission_checks(app) -> None:
         ],
         pod_security_level=PodSecurityLevel.Privileged,
         standards=[],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL)
     )
 
     NamespaceCheck(
@@ -241,6 +252,7 @@ def gen_pod_security_admission_checks(app) -> None:
         ],
         pod_security_admission_mode=PodSecurityAdmissionMode.Warn,
         standards=[],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.PARTIAL, availability=CcssAvailabilityImpact.PARTIAL)
     )
 
 

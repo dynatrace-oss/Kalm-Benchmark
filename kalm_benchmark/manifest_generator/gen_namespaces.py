@@ -3,6 +3,16 @@ from typing import Optional
 from cdk8s import App, Chart
 from constructs import Construct
 
+from kalm_benchmark.utils.scoring import (
+    CcssAccessVector,
+    CcssAuthentication,
+    CcssAccessComplexity,
+    CcssConfidentialityImpact,
+    CcssIntegrityImpact,
+    CcssAvailabilityImpact,
+    ccss_score_calculator
+)
+
 from ..utils.data.validation import sanitize_kubernetes_name as sanitize_name
 from .cdk8s_imports import k8s
 from .check import Check, Meta
@@ -226,6 +236,7 @@ class NamespaceCheck(Check):
         network_policy: NetworkPolicyConfig = None,
         pod_security_level: PodSecurityLevel = PodSecurityLevel.Restricted,
         pod_security_admission_mode: PodSecurityAdmissionMode = PodSecurityAdmissionMode.Enforce,
+        ccss: float | None = None,
         **kwargs,
     ):
         """
@@ -245,7 +256,7 @@ class NamespaceCheck(Check):
         # label names may at most have 63 characters, thus it restricts the namespace length
         # see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
         ns_name = sanitize_name(f"{check_id}-{name}", max_len=63)
-        super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, standards=standards, namespace=ns_name)
+        super().__init__(scope, check_id, ns_name, expect=expect, descr=descr, check_path=check_path, standards=standards, namespace=ns_name, ccss=ccss)
 
         # Use default configurations if None provided
         if resource_quota is None:
@@ -286,6 +297,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
     NamespaceCheck(
         app,
@@ -299,6 +311,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
     NamespaceCheck(
         app,
@@ -312,6 +325,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
     NamespaceCheck(
         app,
@@ -330,6 +344,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
 
     NamespaceCheck(
@@ -344,6 +359,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
     NamespaceCheck(
         app,
@@ -357,6 +373,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
     NamespaceCheck(
         app,
@@ -377,6 +394,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_memory_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
 
     NamespaceCheck(
@@ -390,6 +408,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value, K8sChecklistControls.asc_ad_memory_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
     NamespaceCheck(
         app,
@@ -413,6 +432,7 @@ def gen_namespace_resource_checks(app: App) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9029.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ad_cpu_limit.value, K8sChecklistControls.asc_ad_memory_limit.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_limiting_resource.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
 
 
@@ -431,6 +451,7 @@ def gen_network_policy_checks(app) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ns_default_network_policies.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.owasp_k8s.value, StandardsFields.controls.value: [OwaspControls.s4_network_policies.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL)
     )
 
     for i, policy_type in enumerate(["Ingress", "Egress"], start=1):
@@ -446,6 +467,7 @@ def gen_network_policy_checks(app) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ns_network_policies.value, K8sChecklistControls.sc_ns_ingress_egress.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
         )
 
     NamespaceCheck(
@@ -463,6 +485,7 @@ def gen_network_policy_checks(app) -> None:
         standards=[{StandardsFields.standard.value: StandardsAndGuidelines.nsa_cisa.value, StandardsFields.controls.value: [NsaCisaControls.sensitive_cloud_infrastructure.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9018.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.sc_ns_cloud_metadata.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.COMPLETE, integrity=CcssIntegrityImpact.COMPLETE, availability=CcssAvailabilityImpact.COMPLETE)
     )
 
     NamespaceCheck(
@@ -483,6 +506,7 @@ def gen_network_policy_checks(app) -> None:
                     {StandardsFields.standard.value: StandardsAndGuidelines.pci_guidance.value, StandardsFields.controls.value: [PciGuidanceControls.pci_4_1_a.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.ms_threat_matrix.value, StandardsFields.controls.value: [MsThreatMatrixControls.ms_m9014.value]},
                     {StandardsFields.standard.value: StandardsAndGuidelines.k8s_checklist.value, StandardsFields.controls.value: [K8sChecklistControls.asc_ns_network_policies.value, K8sChecklistControls.sc_ns_ingress_egress.value]}],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.LOW, confidentiality=CcssConfidentialityImpact.PARTIAL, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.COMPLETE)
     )
 
     NamespaceCheck(
@@ -491,4 +515,5 @@ def gen_network_policy_checks(app) -> None:
         "network policy refers no valid workload",
         network_policy=NetworkPolicyConfig(kwargs={"pod_selector": {"match_labels": {"app": "does-not-exist"}}}),
         check_path=["NetworkPolicy.spec.podSelector", ".spec.podSelector"],
+        ccss=ccss_score_calculator(access_vector=CcssAccessVector.NETWORK, authentication=CcssAuthentication.SINGLE, access_complexity=CcssAccessComplexity.MEDIUM, confidentiality=CcssConfidentialityImpact.NONE, integrity=CcssIntegrityImpact.NONE, availability=CcssAvailabilityImpact.PARTIAL)
     )

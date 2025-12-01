@@ -17,6 +17,8 @@ data:
   token: PRIVATE KEY eyJhbGciO JWT Bearer
 metadata:
   annotations:
+    ccss_score: "4.3"
+    ccss_severity: Medium
     check_path: .data.aws_access_key_id|.data.aws_secret_access_key|.data.azure_batchai_storage_account|.data.azure_batchai_storage_key|.data.azure_batch_account|.data.azure_batch_key|.data.secret|.data.key|.data.password|.data.pwd|.data.token|.data.jwt|.data.bearer|.data.credential|ConfigMap.data
     description: Attackers can retrieve and use sensitive information provided via config maps
     expected: alert

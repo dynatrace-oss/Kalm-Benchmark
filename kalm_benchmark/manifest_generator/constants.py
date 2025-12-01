@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import auto
+from enum import auto, Enum
 
 from strenum import (  # will be default in python 3.11+
     LowercaseStrEnum,
@@ -17,6 +17,8 @@ class CheckKey(SnakeCaseStrEnum):
     Description = auto()
     Expect = "expected"
     Standards = auto()
+    CcssScore = auto()
+    CcssSeverity = auto()
 
 
 CMDS = [
@@ -822,6 +824,14 @@ class PodSchedulingConfig:
     def __post_init__(self):
         if self.node_selector is None:
             self.node_selector = {"kubernetes.io/arch": "amd64"}
+
+
+@dataclass
+class Ccss:
+    """ Common Configuration Scoring System """
+
+    base_score: float = 0.0
+    severity: str = "None"
 
 
 MISSING_CHECKS = [

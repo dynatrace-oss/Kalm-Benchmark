@@ -3,6 +3,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "4.6"
+    ccss_severity: Medium
     check_path: .spec.securityContext.runAsUser|.spec.containers[].securityContext.runAsUser
     description: in case of conflicting settings, the value on the container takes precedence
     expected: alert
@@ -17,6 +19,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "4.6"
+    ccss_severity: Medium
     check_path: .spec.securityContext.runAsUser|.spec.containers[].securityContext.runAsUser
     description: in case of conflicting settings, the value on the container takes precedence
     expected: alert

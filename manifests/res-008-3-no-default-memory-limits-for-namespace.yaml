@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   annotations:
+    ccss_score: "6.8"
+    ccss_severity: Medium
     check_path: LimitRange.spec.limits[].min.memory|LimitRange.spec.limits[].max.memory|LimitRange.spec.limits[].default.memory|.spec.limits[].min.memory|.spec.limits[].max.memory|.spec.limits[].default.memory
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal to or greater than the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
@@ -16,6 +18,8 @@ apiVersion: v1
 kind: LimitRange
 metadata:
   annotations:
+    ccss_score: "6.8"
+    ccss_severity: Medium
     check_path: LimitRange.spec.limits[].min.memory|LimitRange.spec.limits[].max.memory|LimitRange.spec.limits[].default.memory|.spec.limits[].min.memory|.spec.limits[].max.memory|.spec.limits[].default.memory
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal to or greater than the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
@@ -43,6 +47,8 @@ kind: ServiceAccount
 automountServiceAccountToken: false
 metadata:
   annotations:
+    ccss_score: "6.8"
+    ccss_severity: Medium
     check_path: LimitRange.spec.limits[].min.memory|LimitRange.spec.limits[].max.memory|LimitRange.spec.limits[].default.memory|.spec.limits[].min.memory|.spec.limits[].max.memory|.spec.limits[].default.memory
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal to or greater than the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"
@@ -56,6 +62,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
+    ccss_score: "6.8"
+    ccss_severity: Medium
     check_path: LimitRange.spec.limits[].min.memory|LimitRange.spec.limits[].max.memory|LimitRange.spec.limits[].default.memory|.spec.limits[].min.memory|.spec.limits[].max.memory|.spec.limits[].default.memory
     expected: alert
     standards: "[{'standard': 'NSA-CISA Kubernetes Hardening Guide', 'controls': ['Resource policies']}, {'standard': 'PCI Guidance for Containers and Container Orchestration Tools', 'controls': ['11.1.a']}, {'standard': 'Microsoft Threat Matrix for Kubernetes', 'controls': ['MS-M9029']}, {'standard': 'Kubernetes Security Checklist', 'controls': ['Memory limit is set for the workloads with a limit equal to or greater than the request.']}, {'standard': 'OWASP Kubernetes Security Cheat Sheet', 'controls': ['Limiting resource usage on a cluster']}]"

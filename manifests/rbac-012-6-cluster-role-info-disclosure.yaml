@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
+    ccss_score: "8.5"
+    ccss_severity: High
     check_path: ClusterRole.rules[].resources|ClusterRole.rules[].verbs|Role.rules[].resources|Role.rules[].verbs|.rules[].resources|.rules[].verbs
     description: Attackers can use disclosed information to plan their next steps
     expected: alert

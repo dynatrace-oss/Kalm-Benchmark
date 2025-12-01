@@ -2,6 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
+    ccss_score: "3.5"
+    ccss_severity: Low
     check_path: ClusterRole.rules[].verbs|ClusterRole.rules[].resources|Role.rules[].verbs|Role.rules[].resources|.rules[].verbs|.rules[].resources
     description: Attackers can open a backdoor communication channel directly to the sockets inside target container bypassing network security restrictions
     expected: alert

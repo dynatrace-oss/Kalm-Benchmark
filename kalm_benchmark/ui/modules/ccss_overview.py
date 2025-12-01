@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from kalm_benchmark.evaluation.ccss.ccss_service import CCSSService
+from kalm_benchmark.utils.scoring import ccss_severity_from_base_score
 from kalm_benchmark.ui.interface.gen_utils import get_unified_service
 
 
@@ -97,6 +98,10 @@ def show():
 
     show_category_performance(summary["scanner_rankings"])
 
+    st.divider()
+
+    show_scanner_check_details(ccss_service, selected_run_id)
+
 
 def show_scanner_rankings(alignments: list):
     """Display scanner rankings table and chart based on CCSS alignment scores.
@@ -115,17 +120,17 @@ def show_scanner_rankings(alignments: list):
                 "Alignment Score": f"{alignment.avg_alignment_score:.3f}",
                 "Findings Count": alignment.total_findings,
                 "Score Variance": f"{alignment.score_variance:.3f}",
-                "CCSS Correlation": f"{alignment.overall_ccss_correlation:.3f}",
+                "Correlation": f"{alignment.overall_ccss_correlation:.3f}",
+                "Mean Squared Deviation": f"{alignment.mean_squared_deviation:.3f}" if alignment.mean_squared_deviation is not None else "N/A",
+                "Mean Signed Deviation": f"{alignment.mean_signed_deviation:.3f}" if alignment.mean_signed_deviation is not None else "N/A",
                 "Best Categories": ", ".join(alignment.best_aligned_categories[:2]),
-                "Worst Categories": ", ".join(alignment.worst_aligned_categories[:2]),
+                "Worst Categories": ", ".join(alignment.worst_aligned_categories[-2:]),
             }
         )
 
     df_rankings = pd.DataFrame(rankings_data)
 
-    styled_df = df_rankings.style.format(
-        {"Alignment Score": "{:.3f}", "Score Variance": "{:.3f}", "CCSS Correlation": "{:.3f}"}
-    ).apply(
+    styled_df = df_rankings.style.apply(
         lambda x: [
             "background-color: #d4edda" if i == 0 else "background-color: #f8d7da" if i == len(x) - 1 else ""
             for i in range(len(x))
@@ -215,8 +220,7 @@ def show_category_performance(alignments: list):
 
     all_categories = set()
     for alignment in alignments:
-        all_categories.update(alignment.best_aligned_categories)
-        all_categories.update(alignment.worst_aligned_categories)
+        all_categories.update(alignment.aligned_categories.keys())
 
     if not all_categories:
         st.info("No category performance data available.")
@@ -225,12 +229,8 @@ def show_category_performance(alignments: list):
     matrix_data = []
     for alignment in alignments:
         for category in sorted(all_categories):
-            if category in alignment.best_aligned_categories:
-                score = 0.8 + (alignment.avg_alignment_score * 0.2)
-            elif category in alignment.worst_aligned_categories:
-                score = alignment.avg_alignment_score * 0.6
-            else:
-                score = alignment.avg_alignment_score
+            score = 0.0
+            score = alignment.aligned_categories[category] if category in alignment.aligned_categories else float('nan')
 
             matrix_data.append({"Scanner": alignment.scanner_name, "Category": category, "Performance": score})
 
@@ -238,7 +238,7 @@ def show_category_performance(alignments: list):
 
     heatmap_data = df_matrix.pivot(index="Scanner", columns="Category", values="Performance")
 
-    styled_heatmap = heatmap_data.style.background_gradient(cmap="RdYlGn", vmin=0, vmax=1)
+    styled_heatmap = heatmap_data.style.background_gradient(cmap="RdYlGn", vmin=0, vmax=1).highlight_null("white")
     st.dataframe(styled_heatmap, use_container_width=True)
 
     heatmap_chart = (
@@ -251,6 +251,58 @@ def show_category_performance(alignments: list):
             tooltip=["Scanner", "Category", "Performance"],
         )
         .properties(width=600, height=400, title="Scanner Performance by Security Category")
+    )
+
+    st.altair_chart(heatmap_chart, use_container_width=True)
+
+
+def show_scanner_check_details(ccss_service: CCSSService, evaluation_run_id: str | None):
+    """Display detailed table of scanner checks with CCSS alignment scores.
+
+    :param ccss_service: CCSS service instance for data access
+    :param evaluation_run_id: Optional evaluation run ID for filtering
+    :return: None
+    """
+    st.subheader("🔍 Scanner Check Details")
+
+    findings = ccss_service.db.get_misconfiguration_findings(evaluation_run_id=evaluation_run_id)
+
+    if not findings:
+        st.info("No misconfiguration findings available for detailed view.")
+        return
+
+
+    ccss_rating = set()
+    matrix_data = []
+    for f in findings:
+        matrix_data.append({"Scanner": f.scanner_name, "Kalm Check ID": f.kalm_check_id, "Native Severity": f.native_score})
+        if f.kalm_check_id in ccss_rating:
+            continue
+        else:
+            ccss_rating.add(f.kalm_check_id)
+            matrix_data.append({"Scanner": "KALM", "Kalm Check ID": f.kalm_check_id, "Native Severity": f.ccss_score})
+
+    df_matrix = pd.DataFrame(matrix_data)
+
+    heatmap_data = df_matrix.pivot(index="Kalm Check ID", columns="Scanner", values="Native Severity")
+    scanner_cols = [col for col in heatmap_data.columns if col not in ["KALM", "Kalm Check ID"]]
+    heatmap_data.insert(1, "Mean", heatmap_data[scanner_cols].mean(axis=1))
+    heatmap_data.insert(2, "Median", heatmap_data[scanner_cols].median(axis=1))
+    heatmap_data.insert(3, "Variance", heatmap_data[scanner_cols].var(axis=1))
+
+    styled_heatmap = heatmap_data.style.background_gradient(cmap="cividis", vmin=0, vmax=10).highlight_null("white")
+    st.dataframe(styled_heatmap, use_container_width=True)
+
+    heatmap_chart = (
+        alt.Chart(df_matrix)
+        .mark_rect()
+        .encode(
+            x=alt.X("Scanner:N"),
+            y=alt.Y("Kalm Check ID:N"),
+            color=alt.Color("Native Severity:Q", scale=alt.Scale(scheme="cividis")),
+            tooltip=["Kalm Check ID", "Scanner", "Native Severity"],
+        )
+        .properties(width=600, height=400, title="Scanner Scoring by Kalm Check ID")
     )
 
     st.altair_chart(heatmap_chart, use_container_width=True)

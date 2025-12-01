@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+import re
 
 from ..scanner.scanner_evaluator import CheckResult
 from .ccss_models import MisconfigurationFinding, SourceType
@@ -33,6 +34,8 @@ class CCSSConverter:
         finding_id = str(uuid.uuid4())
 
         title = check_result.scanner_check_name or check_result.check_id or "Unknown Check"
+        scanner_check_id = check_result.scanner_check_id or "Unknown Check"
+        kalm_check_id = re.findall(r"^([A-Z]+-\d+)", check_result.check_id.upper())[0] if check_result.check_id else "Unknown Check"
         description = check_result.details or f"Check {check_result.check_id or 'unknown'} on {check_result.obj_name}"
 
         resource_type = check_result.kind or "Unknown"
@@ -49,9 +52,13 @@ class CCSSConverter:
             resource_type=resource_type,
             resource_name=resource_name,
             scanner_name=scanner_name,
+            scanner_check_id = scanner_check_id,
             native_severity=check_result.severity or "UNKNOWN",
             native_score=native_score,
             manifest_source=manifest_source,
+            kalm_check_id = kalm_check_id,
+            ccss_score=float(check_result.ccss_score) if check_result.ccss_score is not None else None,
+            alignment_score=(1.0 - abs(native_score - (float(check_result.ccss_score))) / 10.0) if check_result.ccss_score is not None and native_score is not None else None,
             category=category,
             source_type=source_type,
             is_research_dataset=is_research_dataset,
