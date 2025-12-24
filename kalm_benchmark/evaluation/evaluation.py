@@ -501,6 +501,10 @@ def categorize_result(row: pd.Series, scanner: ScannerBase | None = None) -> str
     if scanner is not None and cat is None:
         # try to further specify the category by using the scanner id information
         cat = scanner.categorize_check(row[Col.ScannerCheckId])
+    # fallback to Misc
+    if cat == None:
+        print(f"Could not categorize check id '{row[Col.CheckId]}' with scanner id '{row[Col.ScannerCheckId]}', defaulting to Misc")
+        return CheckCategory.Misc
     return cat
 
 
@@ -529,7 +533,7 @@ def categorize_by_check_id(check_id: str | None) -> str | None:
     :returns: the category as string
     """
     if check_id is None or pd.isnull(check_id):
-        return CheckCategory.Misc
+        return None
 
     # Check for specific mappings first (overrides prefix-based categorization)
     specific_category = get_category_by_specific_check(check_id)
