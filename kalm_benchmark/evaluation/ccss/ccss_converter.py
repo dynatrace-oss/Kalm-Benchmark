@@ -41,7 +41,10 @@ class CCSSConverter:
         resource_type = check_result.kind or "Unknown"
         resource_name = check_result.obj_name or "Unknown"
 
-        native_score = CCSSConverter._severity_to_score(check_result.severity)
+        if check_result.score is not None:
+            native_score = check_result.score
+        else:
+            native_score = CCSSConverter._severity_to_score(check_result.severity)
 
         category = check_result.check_id.split("-")[0].lower() if check_result.check_id else "unknown"
 

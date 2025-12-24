@@ -398,6 +398,7 @@ def parse_resource_result(res_result: dict, resource_info: dict) -> list[CheckRe
                 checked_path=checked_path,
                 got=status,
                 severity=severity,
+                score=numeric_severity if numeric_severity is not None else None,
             )
             results.append(res)
 

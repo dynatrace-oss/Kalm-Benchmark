@@ -28,6 +28,7 @@ class CheckResult:
     expected: Optional[str] = None
     checked_path: Optional[str] = None
     severity: Optional[str] = None
+    score: Optional[float] = None
     ccss_score: Optional[float] = None
     ccss_severity: Optional[str] = None
     kind: Optional[str] = None
