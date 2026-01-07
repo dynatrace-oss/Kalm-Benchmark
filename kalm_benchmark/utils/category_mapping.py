@@ -33,7 +33,7 @@ def get_category_by_prefix(prefix: str) -> CheckCategory:
     for prefixes, category in PREFIX_CATEGORY_MAPPINGS.items():
         if prefix_lower in prefixes:
             return category
-    return CheckCategory.Misc
+    return None
 
 
 def get_category_by_specific_check(check_id: str) -> CheckCategory | None:

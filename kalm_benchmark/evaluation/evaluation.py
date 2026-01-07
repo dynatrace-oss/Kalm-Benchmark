@@ -497,12 +497,14 @@ def categorize_result(row: pd.Series, scanner: ScannerBase | None = None) -> str
     :param scanner: the scanner, which created the result and will be used as fallback
     :return: the category of the check result
     """
-    cat = None
-    if scanner is not None:
+    cat = categorize_by_check_id(row[Col.CheckId])
+    if scanner is not None and cat is None:
         # try to further specify the category by using the scanner id information
         cat = scanner.categorize_check(row[Col.ScannerCheckId])
-    if cat is None:  # as fallback derive category from the check id
-        cat = categorize_by_check_id(row[Col.CheckId])
+    # fallback to Misc
+    if cat == None:
+        print(f"Could not categorize check id '{row[Col.CheckId]}' with scanner id '{row[Col.ScannerCheckId]}', defaulting to Misc")
+        return CheckCategory.Misc
     return cat
 
 
@@ -518,6 +520,7 @@ def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     num_removed = num_results - len(df_dedup)
     if num_removed > 0:
         logger.info(f"Dropped {num_removed} duplicates")
+
     return df_dedup
 
 
@@ -530,7 +533,7 @@ def categorize_by_check_id(check_id: str | None) -> str | None:
     :returns: the category as string
     """
     if check_id is None or pd.isnull(check_id):
-        return CheckCategory.Misc
+        return None
 
     # Check for specific mappings first (overrides prefix-based categorization)
     specific_category = get_category_by_specific_check(check_id)
@@ -721,7 +724,7 @@ def consolidate_scan_evaluation_results(df: pd.DataFrame) -> pd.DataFrame:
     # consolidate conflicting check results (e.g. TP, FP, ...) by taking the 'best'
     # i.e., TP in case of both TP and FP
     df_unique_checks = (
-        df_unique_checks.groupby(by=[Col.BenchmarkId, Col.ResultType])
+        df_unique_checks.groupby(by=[Col.BenchmarkId])
         .apply(_consolidate_conflicting_checks)
         .reset_index(drop=True)
     )
@@ -729,7 +732,7 @@ def consolidate_scan_evaluation_results(df: pd.DataFrame) -> pd.DataFrame:
     # extra checks can have a huge impact on the score and coverage
     # and are outside of the benchmarks scope, distorting the true values
     df_no_extra = df_unique_checks[df_unique_checks[Col.ResultType] != ResultType.Extra]
-    
+
     return df_unique_checks, df_no_extra
 
 
@@ -766,7 +769,7 @@ def _consolidate_conflicting_checks(df: pd.DataFrame):
     if len(df) == 1:
         return df
     else:
-        return df[df[Col.Expected] == df[Col.Got]].sort_values(by=[Col.Expected, Col.CheckId, Col.Category], ascending=True).head(1)
+        return df.sort_values(by=[Col.Expected, Col.Got, Col.CheckId, Col.Category], ascending=True).head(1)
 
 
 def check_summary_per_category(df: pd.DataFrame) -> dict:

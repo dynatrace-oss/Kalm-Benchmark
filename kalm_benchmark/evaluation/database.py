@@ -59,6 +59,7 @@ class KalmDatabase:
                         expected TEXT,
                         checked_path TEXT,
                         severity TEXT,
+                        score REAL,
                         kind TEXT,
                         namespace TEXT,
                         details TEXT,
@@ -278,9 +279,9 @@ class KalmDatabase:
                     """
                     INSERT INTO scanner_results
                     (id, scanner_name, scanner_version, check_id, obj_name, scanner_check_id,
-                     scanner_check_name, got, expected, checked_path, severity, kind, namespace,
+                     scanner_check_name, got, expected, checked_path, severity, score, kind, namespace,
                      details, extra, scan_timestamp, source_file)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         result_id,
@@ -294,6 +295,7 @@ class KalmDatabase:
                         expected,
                         result.checked_path,
                         result.severity,
+                        result.score,
                         result.kind,
                         result.namespace,
                         result.details,
@@ -356,6 +358,7 @@ class KalmDatabase:
                     expected=row["expected"],
                     checked_path=row["checked_path"],
                     severity=row["severity"],
+                    score=row["score"],
                     kind=row["kind"],
                     namespace=row["namespace"],
                     details=row["details"],

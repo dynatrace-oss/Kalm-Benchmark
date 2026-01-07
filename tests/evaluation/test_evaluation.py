@@ -95,6 +95,7 @@ class TestResultSummarization:
         data = [
             {
                 Col.BenchmarkId: "POD-001",
+                Col.CheckId: "POD-001-1",
                 Col.ScannerCheckId: "check-1",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -105,6 +106,7 @@ class TestResultSummarization:
             },
             {
                 Col.BenchmarkId: "POD-001",
+                Col.CheckId: "POD-001-2",
                 Col.ScannerCheckId: "check-2",
                 Col.PathToCheck: path_to_check,
                 Col.CheckedPath: checked_path,
@@ -408,7 +410,7 @@ class TestCheckCategorizationByCheckId:
     @pytest.mark.parametrize("id", ["ARST-1", "MISC-1", "INVALID", "", None])
     def test_all_other_are_misc(self, id: str | None):
         cat = categorize_by_check_id(id)
-        assert cat == CheckCategory.Misc
+        assert cat == None
 
 
 class TestOutOfScopeFilter:
