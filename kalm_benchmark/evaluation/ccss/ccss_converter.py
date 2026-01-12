@@ -124,30 +124,22 @@ class CCSSConverter:
             "UNKNOWN": None,
         }
 
-        standard_score = severity_mapping.get(severity.upper())
-        if standard_score is not None:
-            return standard_score
-
-        # Handle kube-score format like "Critical (1)", "Ok (10)", "Warning (5)"
-        if "(" in severity and ")" in severity:
-            try:
-                score_str = severity.split("(")[1].split(")")[0]
-                return float(score_str)
-            except (IndexError, ValueError):
-                pass
+        #standard_score = severity_mapping.get(severity.upper())
+        #if standard_score is not None:
+        #    return standard_score
 
         # Handle other scanner-specific formats
         severity_lower = severity.lower()
         if "critical" in severity_lower:
-            return 9.0
+            return 9.5
         elif "high" in severity_lower or "danger" in severity_lower:  # Polaris uses "danger"
-            return 7.0
+            return 8.0
         elif "medium" in severity_lower or "warning" in severity_lower:  # Polaris uses "warning"
-            return 4.0
+            return 6.0
         elif "low" in severity_lower:
             return 2.0
         elif "info" in severity_lower or "ok" in severity_lower:
-            return 1.0
+            return 0.1
         elif "skip" in severity_lower:
             return 0.0
 

@@ -197,7 +197,7 @@ class TestCCSSConverter:
         assert finding.resource_name == "test-pod"
         assert finding.scanner_name == "trivy"
         assert finding.native_severity == "HIGH"
-        assert math.isclose(finding.native_score, 7.0)
+        assert math.isclose(finding.native_score, 8.0)
 
     def test_batch_convert_check_results(self):
         check_results = [
@@ -214,11 +214,11 @@ class TestCCSSConverter:
 
     def test_severity_to_score_mapping(self):
         # Test severity mapping
-        assert math.isclose(CCSSConverter._severity_to_score("CRITICAL"), 9.0)
-        assert math.isclose(CCSSConverter._severity_to_score("HIGH"), 7.0)
-        assert math.isclose(CCSSConverter._severity_to_score("MEDIUM"), 4.0)
+        assert math.isclose(CCSSConverter._severity_to_score("CRITICAL"), 9.5)
+        assert math.isclose(CCSSConverter._severity_to_score("HIGH"), 8.0)
+        assert math.isclose(CCSSConverter._severity_to_score("MEDIUM"), 6.0)
         assert math.isclose(CCSSConverter._severity_to_score("LOW"), 2.0)
-        assert math.isclose(CCSSConverter._severity_to_score("INFO"), 1.0)
+        assert math.isclose(CCSSConverter._severity_to_score("INFO"), 0.1)
         assert CCSSConverter._severity_to_score("UNKNOWN") is None
         assert CCSSConverter._severity_to_score(None) is None
 

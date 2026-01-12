@@ -769,7 +769,7 @@ def _consolidate_conflicting_checks(df: pd.DataFrame):
     if len(df) == 1:
         return df
     else:
-        return df.sort_values(by=[Col.Expected, Col.Got, Col.CheckId, Col.Category], ascending=True).head(1)
+        return df.sort_values(by=[Col.ResultType, Col.Expected, Col.Got, Col.CheckId, Col.Category], ascending=True).head(1)
 
 
 def check_summary_per_category(df: pd.DataFrame) -> dict:
